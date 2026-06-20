@@ -34,7 +34,7 @@ export async function initMap(mapHostElement, apiKey) {
     showLoading(true, "Loading Google Maps...");
     const loader = new Loader({
         apiKey: apiKey,
-        version: "alpha",
+        version: "weekly",
         libraries: ["maps3d", "marker", "elevation", "places", "geometry", "core"] // Keep places for now if needed elsewhere, geometry for encoding
     });
 
@@ -60,7 +60,7 @@ export async function initMap(mapHostElement, apiKey) {
             tilt: 0, // Start looking straight down
             heading: 0,
             mode: MapMode.HYBRID, // Or SATELLITE
-            defaultUIDisabled: true, // Disable default controls; app provides custom accessible controls
+            defaultUIHidden: true, // Hide default controls; app provides custom accessible controls
         });
         mapHostElement.appendChild(map3d);
         console.log("3D Map initialized.");
@@ -181,7 +181,7 @@ export async function orbitCurrentView(duration = 9000) {
     if (!map3d?.flyCameraAround) return;
     try {
         showLoading(true, 'Orbiting route...');
-        await map3d.flyCameraAround({ camera: { center: map3d.center, range: map3d.range, tilt: Math.max(map3d.tilt ?? 65, 65), heading: map3d.heading ?? 0 }, durationMillis: duration, rounds: 1 });
+        await map3d.flyCameraAround({ camera: { center: map3d.center, range: map3d.range, tilt: Math.max(map3d.tilt ?? 65, 65), heading: map3d.heading ?? 0 }, durationMillis: duration, repeatCount: 1 });
     } catch (error) {
         if (!(error.name === 'AbortError' || error.message?.includes('interrupted'))) {
             console.error('flyCameraAround error:', error);
@@ -234,7 +234,7 @@ export function displayPolyline(decodedPathLatLng) { // Expects array of LatLng 
 
     // Create new 3D Polyline clamped to ground
     const routePolyline = new Polyline3DElement({
-        coordinates: decodedPathLatLng, // Pass the array of LatLng objects directly
+        path: decodedPathLatLng, // Pass the array of LatLng objects directly
         strokeColor: '#ff4d2e',
         strokeWidth: 14,
         outerColor: '#ffffff',

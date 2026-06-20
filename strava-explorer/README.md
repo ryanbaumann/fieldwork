@@ -18,7 +18,7 @@ A focused static web app for connecting Strava, selecting recent activities, and
 
 - Vanilla JavaScript modules, HTML, and Tailwind CDN utilities.
 - Vite for local development and production bundling.
-- Google Maps Platform Maps JavaScript API `alpha` channel with `maps3d`, `marker`, `elevation`, `geometry`, and `core` libraries.
+- Google Maps Platform Maps JavaScript API `weekly` channel with `maps3d`, `marker`, `elevation`, `geometry`, and `core` libraries.
 - Strava V3 API.
 
 ## Prerequisites
@@ -54,7 +54,7 @@ Never commit `.env.*` files. All `VITE_` variables are browser-exposed after bui
 
 Enable the APIs needed by the current app runtime:
 
-- Maps JavaScript API with the `alpha` channel for 3D Maps.
+- Maps JavaScript API with the `weekly` channel for 3D Maps.
 - Map Tiles API / Photorealistic 3D Tiles.
 - Elevation API.
 
