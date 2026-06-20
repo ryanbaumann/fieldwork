@@ -337,6 +337,7 @@ function createPhotoBillboardTemplate(imageUrl, caption) {
     image.alt = caption ? `Activity photo: ${caption}` : 'Activity photo marker';
     image.loading = 'eager';
     image.decoding = 'async';
+    image.referrerPolicy = 'no-referrer';
     image.width = 96;
     image.height = 96;
     image.style.cssText = `
