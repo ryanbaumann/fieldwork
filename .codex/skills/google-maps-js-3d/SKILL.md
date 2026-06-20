@@ -51,6 +51,7 @@ Read `references/3d-maps-js-api.md` when the task involves:
 - Blend current route bearing with a short look-ahead sample before applying camera heading to reduce abrupt yaw changes on switchbacks and dense GPS traces.
 - Prefer route stream altitude data when available, then fall back to batched Google Elevation lookups; never perform elevation calls per animation frame.
 - Keep camera settings user-adjustable, but make defaults good enough for immediate playback after activity load.
+- Scale follow-camera duration by route distance and sample nearby terrain elevations around the camera target so default pace and clearance remain comfortable on both short and long routes.
 
 ## PR checklist
 

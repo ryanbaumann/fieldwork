@@ -12,14 +12,14 @@ let followCameraTimeoutId = null; // Timeout ID for any delays
 let followCameraAnimationId = null; // requestAnimationFrame ID
 let followCameraCoords = []; // Coordinates of the current route
 let followCameraSamples = []; // Precomputed camera samples
-let followCameraBaseDuration = 60000; // Base duration (ms) for the full tour
+let followCameraBaseDuration = 90000; // Dynamic base duration (ms) for the full tour
 let followCameraPathDistance = 0; // Total distance of the path in km
 let followCameraSpeedMultiplier = 1.0; // Current speed multiplier
 
 // Tour Configurable Settings
-let cameraHeightOffset = 50; // meters above the path point
-let cameraRangeOffset = 500; // meters range
-let cameraTiltOffset = 75; // degrees tilt
+let cameraHeightOffset = 80; // meters of terrain clearance around the path point
+let cameraRangeOffset = 650; // meters range
+let cameraTiltOffset = 68; // degrees tilt
 let cameraSmoothness = 0.12; // LERP factor (0.01 to 0.3); higher defaults reduce lag during fly-throughs
 
 // Animation Progress variables
@@ -99,15 +99,47 @@ export function setFollowCameraSpeed(multiplier) {
 
 // --- Helper Functions ---
 
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function calculateTourDuration(pathDistanceKm) {
+    if (!Number.isFinite(pathDistanceKm) || pathDistanceKm <= 0) return 90000;
+    // Keep short activities brisk, but give long routes more time so camera ground
+    // speed does not become frantic. The duration tops out at five minutes.
+    return clamp(75000 + pathDistanceKm * 2500, 75000, 300000);
+}
+
+function calculateTerrainClearanceAltitude(distanceAlongPath, fallbackAltitude) {
+    const sampleWindowKm = Math.min(0.35, Math.max(0.08, followCameraPathDistance * 0.015));
+    const sampleDistances = [
+        distanceAlongPath - sampleWindowKm,
+        distanceAlongPath,
+        distanceAlongPath + sampleWindowKm,
+        distanceAlongPath + sampleWindowKm * 2
+    ];
+
+    let highestTerrainAltitude = fallbackAltitude ?? 10;
+    sampleDistances.forEach((distanceKm) => {
+        const sample = samplePointAlongLine(followCameraSamples, clamp(distanceKm, 0, followCameraPathDistance));
+        if (sample?.point?.altitude != null) {
+            highestTerrainAltitude = Math.max(highestTerrainAltitude, sample.point.altitude);
+        }
+    });
+
+    return highestTerrainAltitude + cameraHeightOffset;
+}
+
+
 /** Linear interpolation */
 function lerp(start, end, amt) {
-    amt = Math.max(0, Math.min(1, amt));
+    amt = clamp(amt, 0, 1);
     return (1 - amt) * start + amt * end;
 }
 
 /** Shortest angle interpolation (degrees) */
 function lerpAngle(start, end, amt) {
-    amt = Math.max(0, Math.min(1, amt));
+    amt = clamp(amt, 0, 1);
     const difference = Math.abs(end - start);
     if (difference > 180) {
         if (end > start) {
@@ -230,6 +262,8 @@ export async function loadTourRoute(routeCoords) {
     for (let i = 0; i < followCameraSamples.length - 1; i++) {
         followCameraPathDistance += haversineDistance(followCameraSamples[i], followCameraSamples[i + 1]);
     }
+    followCameraBaseDuration = calculateTourDuration(followCameraPathDistance);
+    console.log(`Follow camera duration set to ${(followCameraBaseDuration / 1000).toFixed(0)}s for ${followCameraPathDistance.toFixed(1)} km.`);
     
     currentProgress = 0;
     if (onProgressUpdate) onProgressUpdate(0, 0);
@@ -363,7 +397,8 @@ function frame(time) {
     const deltaTime = time - lastFrameTime;
     lastFrameTime = time;
 
-    // Calculate how much progress was made (60s base duration for full route)
+    // Calculate route-relative progress from a distance-aware duration. The speed
+    // multiplier stays sensitive because the base pace is already normalized by route length.
     const progressDelta = (deltaTime * followCameraSpeedMultiplier) / followCameraBaseDuration;
     currentProgress += progressDelta;
 
@@ -402,7 +437,13 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
 
     if (!alongCoords || !alongCoords.point) return;
 
-    const targetCameraAltitude = (alongCoords.point.altitude ?? 10) + cameraHeightOffset;
+    const targetCameraAltitude = calculateTerrainClearanceAltitude(distanceAlongPath, alongCoords.point.altitude ?? 10);
+
+    const lookAheadDistanceKm = Math.min(0.25, Math.max(0.03, followCameraPathDistance * 0.01));
+    const lookAheadCoords = samplePointAlongLine(followCameraSamples, Math.min(followCameraPathDistance, distanceAlongPath + lookAheadDistanceKm));
+    const smoothedBearing = lookAheadCoords?.bearing != null
+        ? lerpAngle(alongCoords.bearing, lookAheadCoords.bearing, 0.55)
+        : alongCoords.bearing;
 
     const lookAheadDistanceKm = Math.min(0.25, Math.max(0.03, followCameraPathDistance * 0.01));
     const lookAheadCoords = samplePointAlongLine(followCameraSamples, Math.min(followCameraPathDistance, distanceAlongPath + lookAheadDistanceKm));
@@ -444,7 +485,7 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
         map3d.center = interpolatedCamera.center;
         map3d.heading = interpolatedCamera.heading;
         map3d.range = Math.max(10, interpolatedCamera.range);
-        map3d.tilt = Math.max(0, Math.min(85, interpolatedCamera.tilt));
+        map3d.tilt = clamp(interpolatedCamera.tilt, 0, 85);
     }
 }
 

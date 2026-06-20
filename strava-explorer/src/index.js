@@ -27,7 +27,7 @@ let mapHost, loadingIndicator, loadingText, errorMessageDiv, statsContainer, act
 
 // Tour Player DOM elements
 let tourScrubber, tourPlayBtn, tourStopBtn, playIcon, pauseIcon, tourDistanceElapsed, tourDistanceTotal;
-let tourHeightSlider, tourHeightValue, tourRangeSlider, tourRangeValue, tourSmoothnessSlider, tourSmoothnessValue, followCameraSpeedSlider, followCameraSpeedValue;
+let tourHeightSlider, tourHeightValue, tourRangeSlider, tourRangeValue, tourTiltSlider, tourTiltValue, tourSmoothnessSlider, tourSmoothnessValue, followCameraSpeedSlider, followCameraSpeedValue;
 
 // Elevation Profile DOM elements
 let elevationProfileContainer, elevationPlaceholder, elevationSvg, elevationAreaPath, elevationLinePath, elevationHoverLine, elevationProgressLine, elevationHoverDot, elevationTooltip;
@@ -95,6 +95,8 @@ async function initApp() {
     tourHeightValue = document.getElementById('tour-height-value');
     tourRangeSlider = document.getElementById('tour-range-slider');
     tourRangeValue = document.getElementById('tour-range-value');
+    tourTiltSlider = document.getElementById('tour-tilt-slider');
+    tourTiltValue = document.getElementById('tour-tilt-value');
     tourSmoothnessSlider = document.getElementById('tour-smoothness-slider');
     tourSmoothnessValue = document.getElementById('tour-smoothness-value');
 
@@ -409,8 +411,8 @@ function clearActivityDisplay() {
     // Clear elevation widget
     currentActivityElevations = [];
     showElevationPlaceholder("No activity loaded");
-    if (tourDistanceElapsed) tourDistanceElapsed.textContent = '0.0 mi';
-    if (tourDistanceTotal) tourDistanceTotal.textContent = '0.0 mi';
+    if (tourDistanceElapsed) tourDistanceElapsed.textContent = '0.00 / 0.00 mi';
+    if (tourDistanceTotal) tourDistanceTotal.textContent = 'route total';
     if (tourScrubber) {
         tourScrubber.value = 0;
         tourScrubber.disabled = true;
@@ -857,12 +859,14 @@ function initTourPlayer() {
         (progress, distanceElapsedKm) => {
             const kmToMiles = 0.621371;
             const distanceElapsedMiles = distanceElapsedKm * kmToMiles;
+            const state = getTourState();
+            const totalMiles = state.pathDistance * kmToMiles;
             
             if (tourScrubber) {
                 tourScrubber.value = Math.round(progress * 1000);
             }
             if (tourDistanceElapsed) {
-                tourDistanceElapsed.textContent = `${distanceElapsedMiles.toFixed(2)} mi`;
+                tourDistanceElapsed.textContent = `${distanceElapsedMiles.toFixed(2)} / ${totalMiles.toFixed(2)} mi`;
             }
             if (elevationProgressLine && elevationProfileContainer) {
                 const rect = elevationProfileContainer.getBoundingClientRect();
@@ -917,12 +921,14 @@ function initTourPlayer() {
     if (followCameraSpeedSlider) {
         followCameraSpeedSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
-            if (followCameraSpeedValue) followCameraSpeedValue.textContent = `${val.toFixed(1)}x`;
+            if (followCameraSpeedValue) followCameraSpeedValue.textContent = `${val.toFixed(2)}x`;
             setFollowCameraSpeed(val);
         });
     }
 
     if (tourHeightSlider) {
+        tourHeightSlider.value = '80';
+        if (tourHeightValue) tourHeightValue.textContent = '80m';
         tourHeightSlider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
             if (tourHeightValue) tourHeightValue.textContent = `${val}m`;
@@ -931,10 +937,22 @@ function initTourPlayer() {
     }
 
     if (tourRangeSlider) {
+        tourRangeSlider.value = '650';
+        if (tourRangeValue) tourRangeValue.textContent = '650m';
         tourRangeSlider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
             if (tourRangeValue) tourRangeValue.textContent = `${val}m`;
             setTourSettings({ range: val });
+        });
+    }
+
+    if (tourTiltSlider) {
+        tourTiltSlider.value = '68';
+        if (tourTiltValue) tourTiltValue.textContent = '68°';
+        tourTiltSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (tourTiltValue) tourTiltValue.textContent = `${val}°`;
+            setTourSettings({ tilt: val });
         });
     }
 
