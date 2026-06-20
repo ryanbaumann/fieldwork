@@ -27,7 +27,7 @@ let mapHost, loadingIndicator, loadingText, errorMessageDiv, statsContainer, act
 
 // Tour Player DOM elements
 let tourScrubber, tourPlayBtn, tourStopBtn, playIcon, pauseIcon, tourDistanceElapsed, tourDistanceTotal;
-let tourHeightSlider, tourHeightValue, tourRangeSlider, tourRangeValue, tourSmoothnessSlider, tourSmoothnessValue, followCameraSpeedSlider, followCameraSpeedValue;
+let tourHeightSlider, tourHeightValue, tourRangeSlider, tourRangeValue, tourTiltSlider, tourTiltValue, tourSmoothnessSlider, tourSmoothnessValue, followCameraSpeedSlider, followCameraSpeedValue;
 
 // Elevation Profile DOM elements
 let elevationProfileContainer, elevationPlaceholder, elevationSvg, elevationAreaPath, elevationLinePath, elevationHoverLine, elevationProgressLine, elevationHoverDot, elevationTooltip;
@@ -95,6 +95,8 @@ async function initApp() {
     tourHeightValue = document.getElementById('tour-height-value');
     tourRangeSlider = document.getElementById('tour-range-slider');
     tourRangeValue = document.getElementById('tour-range-value');
+    tourTiltSlider = document.getElementById('tour-tilt-slider');
+    tourTiltValue = document.getElementById('tour-tilt-value');
     tourSmoothnessSlider = document.getElementById('tour-smoothness-slider');
     tourSmoothnessValue = document.getElementById('tour-smoothness-value');
 
@@ -142,18 +144,13 @@ async function initApp() {
             const authData = await strava.exchangeToken(temp_token);
             handleSuccessfulAuth(authData);
         } else {
-            // Show auth button and set up dynamic link if no code present
-            stravaAuthDiv.style.display = 'flex'; // Use flex to maintain centering
-            const authUrl = strava.getStravaAuthUrl();
-            if (authUrl) {
-                stravaConnectButton.addEventListener('click', () => {
-                    showLoading(true, "Redirecting to Strava...");
-                    window.location.href = authUrl;
-                });
+            const cachedAuthData = strava.getCachedAuthData();
+            if (cachedAuthData?.access_token) {
+                await strava.ensureValidToken();
+                handleSuccessfulAuth(strava.getCachedAuthData());
             } else {
-                 console.error("Could not get Strava Auth URL."); // Error already shown by strava.js
+                showStravaLogin();
             }
-            showLoading(false); // Hide loading if waiting for auth
         }
 
     } catch (error) {
@@ -190,6 +187,20 @@ function setCameraControlsEnabled(isEnabled) {
 }
 
 // --- Authentication Handling ---
+function showStravaLogin() {
+    stravaAuthDiv.style.display = 'flex';
+    const authUrl = strava.getStravaAuthUrl();
+    if (authUrl) {
+        stravaConnectButton.onclick = () => {
+            showLoading(true, "Redirecting to Strava...");
+            window.location.href = authUrl;
+        };
+    } else {
+         console.error("Could not get Strava Auth URL.");
+    }
+    showLoading(false);
+}
+
 function handleSuccessfulAuth(authData) {
     if (!authData || !authData.access_token) {
         showError("Strava authentication succeeded but no access token was received.");
@@ -209,7 +220,7 @@ function handleSuccessfulAuth(authData) {
 
     // Add listener to the fetch button
     if (fetchFilteredButton) {
-        fetchFilteredButton.addEventListener('click', handleFetchFilteredActivities);
+        fetchFilteredButton.onclick = handleFetchFilteredActivities;
     } else {
          console.error("Fetch filtered activities button not found.");
     }
@@ -217,7 +228,7 @@ function handleSuccessfulAuth(authData) {
     // Add listener for logout button and make it visible
     if (logoutButton) {
         logoutButton.classList.remove('hidden');
-        logoutButton.addEventListener('click', handleLogout);
+        logoutButton.onclick = handleLogout;
     } else {
         console.error("Logout button not found.");
     }
@@ -260,7 +271,7 @@ function handleLogout() {
 
 // --- Activity Fetching and Filtering ---
 async function handleFetchFilteredActivities() {
-    const token = strava.getStravaToken();
+    const token = await strava.ensureValidToken();
     if (!token) {
         showError("Not authenticated with Strava.");
         return;
@@ -400,8 +411,8 @@ function clearActivityDisplay() {
     // Clear elevation widget
     currentActivityElevations = [];
     showElevationPlaceholder("No activity loaded");
-    if (tourDistanceElapsed) tourDistanceElapsed.textContent = '0.0 mi';
-    if (tourDistanceTotal) tourDistanceTotal.textContent = '0.0 mi';
+    if (tourDistanceElapsed) tourDistanceElapsed.textContent = '0.00 / 0.00 mi';
+    if (tourDistanceTotal) tourDistanceTotal.textContent = 'route total';
     if (tourScrubber) {
         tourScrubber.value = 0;
         tourScrubber.disabled = true;
@@ -411,7 +422,7 @@ function clearActivityDisplay() {
 
 
 async function fetchAndDisplayDetailedActivity(activityId) {
-    const token = strava.getStravaToken();
+    const token = await strava.ensureValidToken();
     if (!token) {
         showError("Cannot fetch details, not authenticated.");
         return;
@@ -528,7 +539,7 @@ async function displayDetailedActivity(activityData, streams) {
     await loadTourRoute(decodedPathLatLng);
 
     // --- Fetch and Display Photos ---
-    const token = strava.getStravaToken();
+    const token = await strava.ensureValidToken();
     if (token) {
         try {
             const photosData = await strava.fetchPhotoData(activityData.id, token);
@@ -848,12 +859,14 @@ function initTourPlayer() {
         (progress, distanceElapsedKm) => {
             const kmToMiles = 0.621371;
             const distanceElapsedMiles = distanceElapsedKm * kmToMiles;
+            const state = getTourState();
+            const totalMiles = state.pathDistance * kmToMiles;
             
             if (tourScrubber) {
                 tourScrubber.value = Math.round(progress * 1000);
             }
             if (tourDistanceElapsed) {
-                tourDistanceElapsed.textContent = `${distanceElapsedMiles.toFixed(2)} mi`;
+                tourDistanceElapsed.textContent = `${distanceElapsedMiles.toFixed(2)} / ${totalMiles.toFixed(2)} mi`;
             }
             if (elevationProgressLine && elevationProfileContainer) {
                 const rect = elevationProfileContainer.getBoundingClientRect();
@@ -908,12 +921,14 @@ function initTourPlayer() {
     if (followCameraSpeedSlider) {
         followCameraSpeedSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
-            if (followCameraSpeedValue) followCameraSpeedValue.textContent = `${val.toFixed(1)}x`;
+            if (followCameraSpeedValue) followCameraSpeedValue.textContent = `${val.toFixed(2)}x`;
             setFollowCameraSpeed(val);
         });
     }
 
     if (tourHeightSlider) {
+        tourHeightSlider.value = '80';
+        if (tourHeightValue) tourHeightValue.textContent = '80m';
         tourHeightSlider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
             if (tourHeightValue) tourHeightValue.textContent = `${val}m`;
@@ -922,6 +937,8 @@ function initTourPlayer() {
     }
 
     if (tourRangeSlider) {
+        tourRangeSlider.value = '650';
+        if (tourRangeValue) tourRangeValue.textContent = '650m';
         tourRangeSlider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
             if (tourRangeValue) tourRangeValue.textContent = `${val}m`;
@@ -929,7 +946,19 @@ function initTourPlayer() {
         });
     }
 
+    if (tourTiltSlider) {
+        tourTiltSlider.value = '68';
+        if (tourTiltValue) tourTiltValue.textContent = '68°';
+        tourTiltSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (tourTiltValue) tourTiltValue.textContent = `${val}°`;
+            setTourSettings({ tilt: val });
+        });
+    }
+
     if (tourSmoothnessSlider) {
+        tourSmoothnessSlider.value = '0.12';
+        if (tourSmoothnessValue) tourSmoothnessValue.textContent = '0.12';
         tourSmoothnessSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
             if (tourSmoothnessValue) tourSmoothnessValue.textContent = val.toFixed(2);
