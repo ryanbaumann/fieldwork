@@ -338,16 +338,16 @@ function createPhotoBillboardTemplate(imageUrl, caption) {
     image.loading = 'eager';
     image.decoding = 'async';
     image.referrerPolicy = 'no-referrer';
-    image.width = 96;
-    image.height = 96;
+    image.width = 16;
+    image.height = 16;
     image.style.cssText = `
-        width: 96px;
-        height: 96px;
+        width: 16px;
+        height: 16px;
         object-fit: cover;
-        border-radius: 16px;
-        border: 4px solid #ffffff;
+        border-radius: 2px;
+        border: 1px solid #ffffff;
         background: #e5e7eb;
-        box-shadow: 0 14px 28px rgba(15,23,42,.38), 0 0 0 1px rgba(79,70,229,.32);
+        box-shadow: 0 2px 4px rgba(15,23,42,.38), 0 0 0 1px rgba(79,70,229,.32);
         cursor: pointer;
     `;
     image.onerror = () => { image.alt = 'Activity photo preview unavailable'; };
@@ -400,6 +400,7 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                 title: photo.caption || `Activity photo ${photo.unique_id}`,
                 extruded: true,
                 drawsWhenOccluded: true,
+                sizePreserved: false,
             });
             marker.append(createPhotoBillboardTemplate(photoThumbUrl, photo.caption));
 
