@@ -142,18 +142,13 @@ async function initApp() {
             const authData = await strava.exchangeToken(temp_token);
             handleSuccessfulAuth(authData);
         } else {
-            // Show auth button and set up dynamic link if no code present
-            stravaAuthDiv.style.display = 'flex'; // Use flex to maintain centering
-            const authUrl = strava.getStravaAuthUrl();
-            if (authUrl) {
-                stravaConnectButton.addEventListener('click', () => {
-                    showLoading(true, "Redirecting to Strava...");
-                    window.location.href = authUrl;
-                });
+            const cachedAuthData = strava.getCachedAuthData();
+            if (cachedAuthData?.access_token) {
+                await strava.ensureValidToken();
+                handleSuccessfulAuth(strava.getCachedAuthData());
             } else {
-                 console.error("Could not get Strava Auth URL."); // Error already shown by strava.js
+                showStravaLogin();
             }
-            showLoading(false); // Hide loading if waiting for auth
         }
 
     } catch (error) {
@@ -190,6 +185,20 @@ function setCameraControlsEnabled(isEnabled) {
 }
 
 // --- Authentication Handling ---
+function showStravaLogin() {
+    stravaAuthDiv.style.display = 'flex';
+    const authUrl = strava.getStravaAuthUrl();
+    if (authUrl) {
+        stravaConnectButton.onclick = () => {
+            showLoading(true, "Redirecting to Strava...");
+            window.location.href = authUrl;
+        };
+    } else {
+         console.error("Could not get Strava Auth URL.");
+    }
+    showLoading(false);
+}
+
 function handleSuccessfulAuth(authData) {
     if (!authData || !authData.access_token) {
         showError("Strava authentication succeeded but no access token was received.");
@@ -209,7 +218,7 @@ function handleSuccessfulAuth(authData) {
 
     // Add listener to the fetch button
     if (fetchFilteredButton) {
-        fetchFilteredButton.addEventListener('click', handleFetchFilteredActivities);
+        fetchFilteredButton.onclick = handleFetchFilteredActivities;
     } else {
          console.error("Fetch filtered activities button not found.");
     }
@@ -217,7 +226,7 @@ function handleSuccessfulAuth(authData) {
     // Add listener for logout button and make it visible
     if (logoutButton) {
         logoutButton.classList.remove('hidden');
-        logoutButton.addEventListener('click', handleLogout);
+        logoutButton.onclick = handleLogout;
     } else {
         console.error("Logout button not found.");
     }
@@ -260,7 +269,7 @@ function handleLogout() {
 
 // --- Activity Fetching and Filtering ---
 async function handleFetchFilteredActivities() {
-    const token = strava.getStravaToken();
+    const token = await strava.ensureValidToken();
     if (!token) {
         showError("Not authenticated with Strava.");
         return;
@@ -411,7 +420,7 @@ function clearActivityDisplay() {
 
 
 async function fetchAndDisplayDetailedActivity(activityId) {
-    const token = strava.getStravaToken();
+    const token = await strava.ensureValidToken();
     if (!token) {
         showError("Cannot fetch details, not authenticated.");
         return;
@@ -528,7 +537,7 @@ async function displayDetailedActivity(activityData, streams) {
     await loadTourRoute(decodedPathLatLng);
 
     // --- Fetch and Display Photos ---
-    const token = strava.getStravaToken();
+    const token = await strava.ensureValidToken();
     if (token) {
         try {
             const photosData = await strava.fetchPhotoData(activityData.id, token);
@@ -930,6 +939,8 @@ function initTourPlayer() {
     }
 
     if (tourSmoothnessSlider) {
+        tourSmoothnessSlider.value = '0.12';
+        if (tourSmoothnessValue) tourSmoothnessValue.textContent = '0.12';
         tourSmoothnessSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
             if (tourSmoothnessValue) tourSmoothnessValue.textContent = val.toFixed(2);

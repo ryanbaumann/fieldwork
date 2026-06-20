@@ -20,7 +20,7 @@ let followCameraSpeedMultiplier = 1.0; // Current speed multiplier
 let cameraHeightOffset = 50; // meters above the path point
 let cameraRangeOffset = 500; // meters range
 let cameraTiltOffset = 75; // degrees tilt
-let cameraSmoothness = 0.05; // LERP factor (0.01 to 0.3)
+let cameraSmoothness = 0.12; // LERP factor (0.01 to 0.3); higher defaults reduce lag during fly-throughs
 
 // Animation Progress variables
 let currentProgress = 0; // 0.0 to 1.0 (tour progress)
@@ -404,15 +404,23 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
 
     const targetCameraAltitude = (alongCoords.point.altitude ?? 10) + cameraHeightOffset;
 
+    const lookAheadDistanceKm = Math.min(0.25, Math.max(0.03, followCameraPathDistance * 0.01));
+    const lookAheadCoords = samplePointAlongLine(followCameraSamples, Math.min(followCameraPathDistance, distanceAlongPath + lookAheadDistanceKm));
+    const smoothedBearing = lookAheadCoords?.bearing != null
+        ? lerpAngle(alongCoords.bearing, lookAheadCoords.bearing, 0.55)
+        : alongCoords.bearing;
+
     const targetCameraPosition = {
         center: { lat: alongCoords.point.lat(), lng: alongCoords.point.lng(), altitude: targetCameraAltitude },
-        heading: alongCoords.bearing,
+        heading: smoothedBearing,
         range: cameraRangeOffset,
         tilt: cameraTiltOffset,
     };
 
-    // If scrubbing or snapping directly, set the camera directly without LERP interpolation
-    const factor = snapDirectly ? 1.0 : cameraSmoothness;
+    // If scrubbing or snapping directly, set the camera directly without LERP interpolation.
+    // During playback, bias the user-facing smoothness upward so the camera tracks the
+    // route without the old over-smoothed lag that made corners feel rubber-banded.
+    const factor = snapDirectly ? 1.0 : Math.max(cameraSmoothness, 0.08);
 
     const currentCamera = {
         center: map3d.center,
