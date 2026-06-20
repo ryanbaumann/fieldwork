@@ -325,37 +325,6 @@ function getMarkerPhotoUrl(imageUrl) {
     return imageUrl;
 }
 
-function createPhotoBillboardTemplate(imageUrl, caption, size = 600) {
-    const template = document.createElement('template');
-    const image = document.createElement('img');
-
-    // Maps 3D custom marker slots accept an HTMLImageElement directly inside
-    // the template. Use the Strava photo as that direct child so the marker is
-    // the actual photo, not a renderer-dependent SVG wrapper around the photo.
-    image.crossOrigin = 'anonymous';
-    image.src = getMarkerPhotoUrl(imageUrl);
-    image.alt = caption ? `Activity photo: ${caption}` : 'Activity photo marker';
-    image.loading = 'eager';
-    image.decoding = 'async';
-    image.referrerPolicy = 'no-referrer';
-    image.width = size;
-    image.height = size;
-    image.style.cssText = `
-        width: ${size}px;
-        height: ${size}px;
-        object-fit: cover;
-        border-radius: ${Math.round(size * 0.05)}px;
-        border: ${Math.round(size * 0.02)}px solid #ffffff;
-        background: #e5e7eb;
-        box-shadow: 0 ${Math.round(size * 0.02)}px ${Math.round(size * 0.04)}px rgba(15,23,42,.38);
-        cursor: pointer;
-    `;
-    image.onerror = () => { image.alt = 'Activity photo preview unavailable'; };
-
-    template.content.append(image);
-    return template;
-}
-
 // --- Photo Marker Handling ---
 export async function displayPhotoMarkers(photosData) { // photosData = array from Strava API
     if (!map3d || !Marker3DInteractiveElement || !PopoverElement || !AltitudeMode) {
@@ -400,20 +369,23 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                 photoWidth = 100;
             }
 
-            // Create an interactive 3D billboard marker. The altitude is relative to
-            // terrain so photo cards float consistently above the photorealistic mesh
-            // instead of inheriting sea-level elevation twice.
+            // Create an interactive 3D marker for the photo. The altitude is relative to
+            // terrain so it floats consistently above the photorealistic mesh.
             const marker = new Marker3DInteractiveElement({
                 position: position,
                 altitudeMode: AltitudeMode.RELATIVE_TO_GROUND,
                 title: photo.caption || `Activity photo ${photo.unique_id}`,
                 extruded: true,
-                drawsWhenOccluded: true,
-                sizePreserved: false,
+                drawsWhenOccluded: true
             });
-            const targetSizeMeters = 16;
-            marker.scale = targetSizeMeters / photoWidth;
-            marker.append(createPhotoBillboardTemplate(photoThumbUrl, photo.caption, photoWidth));
+
+            const pin = new PinElement({
+                scale: 1.5,
+                background: '#ffffff',
+                borderColor: '#e5e7eb',
+                glyph: new URL(getMarkerPhotoUrl(photoThumbUrl), window.location.href)
+            });
+            marker.append(pin);
 
             // Create Popover
             const popover = new PopoverElement({
