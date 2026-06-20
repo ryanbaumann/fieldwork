@@ -258,9 +258,14 @@ async function runCameraAction(status, action) {
     updateCameraStatus('Camera synced to the selected activity.');
 }
 
-function handleLogout() {
+async function handleLogout() {
     console.log("Logging out...");
-    strava.clearStravaToken(); // Clear token in the strava module
+    try {
+        await strava.deauthorizeStrava();
+    } catch (error) {
+        console.warn("Strava deauthorization failed; clearing local session.", error);
+        strava.clearStravaToken();
+    }
     // Hide footer info and logout button immediately
     if (footerAthleteInfo) footerAthleteInfo.classList.add('hidden');
     if (logoutButton) logoutButton.classList.add('hidden');
