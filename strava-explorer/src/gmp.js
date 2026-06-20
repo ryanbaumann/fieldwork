@@ -383,7 +383,7 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                 scale: 1.5,
                 background: '#ffffff',
                 borderColor: '#e5e7eb',
-                glyph: new URL(getMarkerPhotoUrl(photoThumbUrl), window.location.href)
+                glyphSrc: getMarkerPhotoUrl(photoThumbUrl)
             });
             marker.append(pin);
 
