@@ -44,8 +44,7 @@
     "@mapbox/polyline": "^1.2.1",
     "@turf/bbox": "^7.3.5",
     "@turf/helpers": "^7.3.5",
-    "analytics-node": "^6.2.0",
-    "geojson-polyline": "^0.4.0"
+    "analytics-node": "^6.2.0"
   },
   "engines": {
     "node": ">=20"
