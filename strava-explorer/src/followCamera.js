@@ -445,12 +445,6 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
         ? lerpAngle(alongCoords.bearing, lookAheadCoords.bearing, 0.55)
         : alongCoords.bearing;
 
-    const lookAheadDistanceKm = Math.min(0.25, Math.max(0.03, followCameraPathDistance * 0.01));
-    const lookAheadCoords = samplePointAlongLine(followCameraSamples, Math.min(followCameraPathDistance, distanceAlongPath + lookAheadDistanceKm));
-    const smoothedBearing = lookAheadCoords?.bearing != null
-        ? lerpAngle(alongCoords.bearing, lookAheadCoords.bearing, 0.55)
-        : alongCoords.bearing;
-
     const targetCameraPosition = {
         center: { lat: alongCoords.point.lat(), lng: alongCoords.point.lng(), altitude: targetCameraAltitude },
         heading: smoothedBearing,
