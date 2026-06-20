@@ -57,6 +57,7 @@ ROLES=(
   "roles/artifactregistry.admin"
   "roles/cloudbuild.builds.editor"
   "roles/iam.serviceAccountUser"
+  "roles/serviceusage.serviceUsageAdmin"
 )
 
 for role in "${ROLES[@]}"; do
