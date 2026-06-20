@@ -72,6 +72,8 @@ Use these repo-local skills when the task matches their scope:
 
 - `.codex/skills/google-maps-platform/SKILL.md` for broad Google Maps Platform, key-security, quota, Places, Routes, and general Maps JavaScript API work.
 - `.codex/skills/google-maps-js-3d/SKILL.md` for focused Maps JavaScript API 3D Maps work: `Map3DElement`, `maps3d`, 3D markers, popovers, altitude, drawing, and camera behavior.
+- `.codex/skills/google-maps-js-2d/SKILL.md` for focused Maps JavaScript API 2D Maps work: loader/imports, vector maps, Advanced Markers, overlays, deck.gl, WebGLOverlayView, Places widgets, and Mapbox-to-Google migration work.
+- `.codex/skills/google-maps-environment-apis/SKILL.md` for Google Maps Platform Environment APIs: Air Quality, Pollen, Solar, Weather, environmental heatmap tiles, quota, caching, source labeling, and environmental-data migrations.
 - `.codex/skills/frontend-responsive-design/SKILL.md` for responsive layout, accessibility, CSS architecture, Tailwind utility usage, and visual QA work.
 
 ## Pull Request Expectations
