@@ -2,7 +2,10 @@
 
 // --- Module-Level Variables ---
 let stravatoken = null;
+let refreshToken = null;
+let tokenExpiresAt = 0;
 let userid = null;
+const AUTH_STORAGE_KEY = 'trailsNinja.stravaAuth.v1';
 
 // --- Environment Variables ---
 const STRAVA_CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID;
@@ -46,10 +49,9 @@ export async function exchangeToken(code) {
         }
 
         const data = await response.json();
-        console.log("Strava Auth Response Data:", data);
+        console.log("Strava authentication succeeded; token cached in this browser.");
         if (data.access_token) {
-            stravatoken = data.access_token;
-            userid = data.athlete?.id;
+            storeAuthData(data);
             return data; // Return the full auth data including athlete info
         } else {
             throw new Error("Access token not found in Strava auth response.");
@@ -98,13 +100,93 @@ export function getStravaToken() {
     return stravatoken;
 }
 
+export function getCachedAuthData() {
+    const authData = readStoredAuthData();
+    if (!authData?.access_token) return null;
+    stravatoken = authData.access_token;
+    refreshToken = authData.refresh_token || refreshToken;
+    tokenExpiresAt = authData.expires_at || 0;
+    userid = authData.athlete?.id || userid;
+    return authData;
+}
+
+export function isTokenExpiringSoon() {
+    return Boolean(tokenExpiresAt && tokenExpiresAt * 1000 < Date.now() + 5 * 60 * 1000);
+}
+
+export async function ensureValidToken() {
+    if (!stravatoken) getCachedAuthData();
+    if (!stravatoken) return null;
+    if (!isTokenExpiringSoon()) return stravatoken;
+    const refreshed = await refreshAccessToken();
+    return refreshed?.access_token || null;
+}
+
 export function getUserId() {
     return userid;
 }
 
 export function clearStravaToken() {
     stravatoken = null;
+    refreshToken = null;
+    tokenExpiresAt = 0;
     userid = null;
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+}
+
+function storeAuthData(data) {
+    if (!data?.access_token) return;
+    stravatoken = data.access_token;
+    refreshToken = data.refresh_token || refreshToken;
+    tokenExpiresAt = data.expires_at || 0;
+    userid = data.athlete?.id || userid;
+
+    const existing = readStoredAuthData() || {};
+    const authData = {
+        ...existing,
+        ...data,
+        athlete: data.athlete || existing.athlete,
+        cached_at: Math.floor(Date.now() / 1000)
+    };
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
+}
+
+function readStoredAuthData() {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const authData = JSON.parse(raw);
+    if (!authData?.access_token) return null;
+    return authData;
+}
+
+async function refreshAccessToken() {
+    if (!STRAVA_CLIENT_ID || !STRAVA_CLIENT_SECRET || !refreshToken) {
+        clearStravaToken();
+        return null;
+    }
+    showLoading(true, "Refreshing Strava session...");
+    const params = new URLSearchParams({
+        client_id: STRAVA_CLIENT_ID,
+        client_secret: STRAVA_CLIENT_SECRET,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token'
+    });
+    try {
+        const response = await fetch('https://www.strava.com/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        });
+        if (!response.ok) {
+            clearStravaToken();
+            throw new Error(`Strava token refresh failed: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        storeAuthData(data);
+        return getCachedAuthData();
+    } finally {
+        showLoading(false);
+    }
 }
 
 export function getStravaAuthUrl() {
@@ -143,7 +225,7 @@ export async function fetchActivities(accessToken, beforeTimestamp = null, after
         }
 
         const activities = await response.json();
-        console.log("Parsed Activities:", activities);
+        console.log(`Parsed ${activities.length} activities.`);
         return activities;
 
     } catch (error) {
@@ -181,7 +263,7 @@ export async function fetchDetailedActivityData(activityId, accessToken) {
         }
 
         const detailedActivityData = await response.json();
-        console.log("Detailed Activity Data:", detailedActivityData);
+        console.log("Detailed activity data received.");
         return detailedActivityData;
 
     } catch (error) {
@@ -208,7 +290,7 @@ export async function fetchPhotoData(activityId, accessToken) {
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const photos = await response.json();
-        console.log(`[fetchPhotoData] Received ${photos.length} photos from Strava:`, photos);
+        console.log(`[fetchPhotoData] Received ${photos.length} photos from Strava.`);
         return photos;
     } catch (error) {
         console.error("Error fetching Strava photos:", error);

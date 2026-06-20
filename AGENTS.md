@@ -76,6 +76,14 @@ Use these repo-local skills when the task matches their scope:
 - `.codex/skills/google-maps-environment-apis/SKILL.md` for Google Maps Platform Environment APIs: Air Quality, Pollen, Solar, Weather, environmental heatmap tiles, quota, caching, source labeling, and environmental-data migrations.
 - `.codex/skills/frontend-responsive-design/SKILL.md` for responsive layout, accessibility, CSS architecture, Tailwind utility usage, and visual QA work.
 
+
+### Lessons from Strava Explorer UX/3D Iteration
+
+- Persist browser OAuth state deliberately: cache Strava access/refresh token payloads in `localStorage`, refresh near expiry, clear storage on logout, and never log raw token payloads.
+- For 3D fly-throughs, prefer precomputed route/elevation samples plus look-ahead bearing smoothing; avoid very low LERP defaults that make the camera lag and rubber-band through corners.
+- Keep sidebar controls grouped by task (connect/filter, selected activity, tour player, camera shortcuts, elevation) with compact touch-friendly controls and visible `aria-live` status.
+- Validate visible Strava Explorer changes with `npm run build`; document manual OAuth/Google Maps browser QA when real credentials are required.
+
 ## Pull Request Expectations
 
 - Summarize changed behavior and cite touched files.
