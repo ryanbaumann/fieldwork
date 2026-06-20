@@ -216,6 +216,37 @@ async function buildFollowCameraSamples(routeCoords) {
 }
 
 /**
+ * Loads a new route's coordinates into the follow camera module.
+ * Precomputes the camera samples and calculates path distance.
+ */
+export async function loadTourRoute(routeCoords) {
+    if (!routeCoords || routeCoords.length < 2) return;
+    console.log("Loading new route coordinates for follow tour...");
+    followCameraCoords = routeCoords;
+    followCameraSamples = await buildFollowCameraSamples(routeCoords);
+    
+    // Calculate total path distance
+    followCameraPathDistance = 0;
+    for (let i = 0; i < followCameraSamples.length - 1; i++) {
+        followCameraPathDistance += haversineDistance(followCameraSamples[i], followCameraSamples[i + 1]);
+    }
+    
+    currentProgress = 0;
+    if (onProgressUpdate) onProgressUpdate(0, 0);
+}
+
+/**
+ * Clears the currently loaded route coordinates.
+ */
+export function clearTourRoute() {
+    followCameraCoords = [];
+    followCameraSamples = [];
+    followCameraPathDistance = 0;
+    currentProgress = 0;
+    if (onProgressUpdate) onProgressUpdate(0, 0);
+}
+
+/**
  * Play or resume the tour.
  */
 export async function playFollowCamera(routeCoords) {
@@ -226,20 +257,11 @@ export async function playFollowCamera(routeCoords) {
     
     // If not active, but we need to load new coordinates
     if (routeCoords && (followCameraCoords !== routeCoords || followCameraSamples.length === 0)) {
-        console.log("Loading new route coordinates for follow tour...");
-        followCameraCoords = routeCoords;
-        followCameraSamples = await buildFollowCameraSamples(routeCoords);
-        
-        // Calculate total path distance
-        followCameraPathDistance = 0;
-        for (let i = 0; i < followCameraSamples.length - 1; i++) {
-            followCameraPathDistance += haversineDistance(followCameraSamples[i], followCameraSamples[i + 1]);
-        }
+        await loadTourRoute(routeCoords);
         if (isNaN(followCameraPathDistance) || followCameraPathDistance <= 0) {
             showError("Invalid route distance. Cannot play tour.");
             return;
         }
-        currentProgress = 0; // Reset progress
     }
     
     if (followCameraSamples.length === 0) {

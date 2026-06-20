@@ -11,7 +11,9 @@ import {
     setTourSettings,
     registerTourCallbacks,
     getTourState,
-    updateCameraForProgress
+    updateCameraForProgress,
+    loadTourRoute,
+    clearTourRoute
 } from './followCamera.js';
 
 // --- Module-Level Variables ---
@@ -377,6 +379,7 @@ function clearActivityDisplay() {
     console.log("Clearing previous activity display (map elements, stats)...");
     // Clear map elements using GMP module functions and direct followCamera import
     stopFollowCamera(); // Stop any active animation (Use direct import)
+    clearTourRoute(); // Clear the loaded tour coordinates
     gmp.removePreviousPolyline();
     gmp.clearPhotoMarkers();
     gmp.updateTrackingMarker(null); // Clear tracking marker
@@ -460,6 +463,36 @@ async function displayDetailedActivity(activityData, streams) {
     // --- Polyline and Camera ---
     const decodedPathLatLng = gmp.decodePolyline(activityData.map.polyline);
     if (decodedPathLatLng.length > 0) {
+        // Assign altitude from streams if available to avoid redundant elevation service calls
+        if (altitudeStream?.data && latlngStream?.data) {
+            const altData = altitudeStream.data;
+            const llData = latlngStream.data;
+            const streamLen = Math.min(altData.length, llData.length);
+            
+            if (streamLen > 0) {
+                let streamIdx = 0;
+                for (let i = 0; i < decodedPathLatLng.length; i++) {
+                    const pt = decodedPathLatLng[i];
+                    const lat = pt.lat();
+                    const lng = pt.lng();
+                    
+                    let bestIdx = streamIdx;
+                    let minDiff = Math.abs(llData[streamIdx][0] - lat) + Math.abs(llData[streamIdx][1] - lng);
+                    
+                    const lookAhead = Math.min(streamLen, streamIdx + 50);
+                    for (let j = streamIdx + 1; j < lookAhead; j++) {
+                        const diff = Math.abs(llData[j][0] - lat) + Math.abs(llData[j][1] - lng);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            bestIdx = j;
+                        }
+                    }
+                    streamIdx = bestIdx;
+                    pt.altitude = altData[streamIdx];
+                }
+            }
+        }
+
         gmp.displayPolyline(decodedPathLatLng); // Display on map
 
         await gmp.frameRoute(decodedPathLatLng, {
@@ -489,7 +522,10 @@ async function displayDetailedActivity(activityData, streams) {
     if (tourDistanceTotal) tourDistanceTotal.textContent = `${distanceMiles} mi`;
 
     // --- Configure Elevation Profile Widget ---
-    configureElevationWidget(decodedPathLatLng, streams); // Pass the LatLng array and streams
+    await configureElevationWidget(decodedPathLatLng, streams); // Pass the LatLng array and streams
+
+    // --- Load Tour Route for Follow Camera ---
+    await loadTourRoute(decodedPathLatLng);
 
     // --- Fetch and Display Photos ---
     const token = strava.getStravaToken();
