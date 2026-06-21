@@ -14,3 +14,7 @@ strava-explorer/dist
 .DS_Store
 **/.DS_Store
 
+# Ignore large source images
+strava-explorer/strava-explorer.png
+
+

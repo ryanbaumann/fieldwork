@@ -1,5 +1,7 @@
 # Strava 3D Explorer
 
+![Strava Explorer Preview](strava-explorer.jpg)
+
 A lightweight, browser-based web application to connect your Strava account, retrieve recent activities, and visualize their routes on a Google Maps Platform Photorealistic 3D globe. The app features an interactive follow-camera tour that lets you review routes and activity photos from a scenic 3D perspective.
 
 ## Features
