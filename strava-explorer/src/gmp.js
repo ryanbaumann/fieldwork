@@ -383,21 +383,25 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                 open: false,
             });
 
+            // Let the popover scale wider than default if screen permits
+            popover.style.setProperty('--gmp-popover-max-width', '500px');
+
             // Populate Popover Content
             const popoverImageUrl = photo.urls?.["1000"] || photo.urls?.["600"] || photo.urls?.["100"]; // Fallback
             
             const popoverBody = document.createElement('div');
-            popoverBody.style.width = '200px';
+            popoverBody.style.width = 'clamp(280px, 33vw, 480px)';
             popoverBody.style.display = 'flex';
             popoverBody.style.flexDirection = 'column';
             popoverBody.style.gap = '8px';
 
             const popoverImage = document.createElement('img');
             popoverImage.src = popoverImageUrl;
-            popoverImage.style.width = '200px';
-            popoverImage.style.height = '150px';
-            popoverImage.style.objectFit = 'cover';
+            popoverImage.style.width = '100%';
+            popoverImage.style.maxHeight = '50vh';
+            popoverImage.style.objectFit = 'contain';
             popoverImage.style.display = 'block';
+            popoverImage.style.borderRadius = '4px';
             popoverImage.onerror = () => { popoverImage.alt = 'Image failed to load'; };
 
             const popoverCaption = document.createElement('p');
@@ -409,10 +413,47 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             popoverBody.append(popoverImage);
             popoverBody.append(popoverCaption);
 
+            // Create popover header with a close toggle
+            const popoverHeader = document.createElement('div');
+            popoverHeader.slot = 'header';
+            popoverHeader.style.display = 'flex';
+            popoverHeader.style.justifyContent = 'space-between';
+            popoverHeader.style.alignItems = 'center';
+            popoverHeader.style.width = '100%';
+            popoverHeader.style.paddingRight = '8px';
+
             const popoverHeading = document.createElement('h3');
-            popoverHeading.slot = 'header';
             popoverHeading.textContent = photo.caption || 'Activity photo';
-            popover.append(popoverHeading);
+            popoverHeading.style.margin = '0';
+            popoverHeading.style.fontSize = '14px';
+            popoverHeading.style.fontWeight = '600';
+
+            const closeButton = document.createElement('button');
+            closeButton.innerHTML = '&times;';
+            closeButton.style.border = 'none';
+            closeButton.style.background = 'transparent';
+            closeButton.style.fontSize = '20px';
+            closeButton.style.fontWeight = 'bold';
+            closeButton.style.cursor = 'pointer';
+            closeButton.style.padding = '4px 8px';
+            closeButton.style.lineHeight = '1';
+            closeButton.style.color = '#6b7280';
+            closeButton.style.borderRadius = '4px';
+            closeButton.style.display = 'inline-flex';
+            closeButton.style.alignItems = 'center';
+            closeButton.style.justifyContent = 'center';
+            closeButton.ariaLabel = 'Close popover';
+
+            closeButton.addEventListener('mouseenter', () => { closeButton.style.color = '#111827'; });
+            closeButton.addEventListener('mouseleave', () => { closeButton.style.color = '#6b7280'; });
+            closeButton.addEventListener('click', () => {
+                popover.open = false;
+            });
+
+            popoverHeader.appendChild(popoverHeading);
+            popoverHeader.appendChild(closeButton);
+
+            popover.append(popoverHeader);
             popover.append(popoverBody);
 
             // Create Marker3DInteractiveElement with popover target
@@ -428,10 +469,10 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             const template = document.createElement('template');
             const img = document.createElement('img');
             img.src = getMarkerPhotoUrl(photoThumbUrl);
-            img.setAttribute('width', '48');
-            img.setAttribute('height', '48');
-            img.style.width = '48px';
-            img.style.height = '48px';
+            img.setAttribute('width', '100');
+            img.setAttribute('height', '100');
+            img.style.width = '100px';
+            img.style.height = '100px';
             img.style.borderRadius = '4px';
             img.style.border = '2px solid #ffffff';
             img.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
