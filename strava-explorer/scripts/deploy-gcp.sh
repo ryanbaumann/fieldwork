@@ -8,6 +8,7 @@ LOCATION="${GCS_LOCATION:-US}"
 BUCKET="${GCS_BUCKET:-${PROJECT_ID}-strava-explorer}"
 SERVICE="${CLOUD_RUN_SERVICE:-strava-explorer-broker}"
 PUBLIC="${GCS_PUBLIC:-true}"
+DEPLOY_BACKEND="${DEPLOY_BACKEND:-false}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -19,6 +20,7 @@ while [[ $# -gt 0 ]]; do
     --service) SERVICE="$2"; shift 2 ;;
     --private) PUBLIC="false"; shift ;;
     --public) PUBLIC="true"; shift ;;
+    --deploy-backend) DEPLOY_BACKEND="true"; shift ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -43,26 +45,36 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregi
 export VITE_STRAVA_REDIRECT_URI="${VITE_STRAVA_REDIRECT_URI:-https://storage.googleapis.com/${BUCKET}/index.html}"
 FRONTEND_ORIGIN="$(node -e "console.log(new URL(process.env.VITE_STRAVA_REDIRECT_URI).origin)")"
 
-if ! gcloud secrets describe strava-client-secret --project "$PROJECT_ID" >/dev/null 2>&1; then
-  printf "%s" "$STRAVA_CLIENT_SECRET" | gcloud secrets create strava-client-secret --project "$PROJECT_ID" --replication-policy=automatic --data-file=- >/dev/null
+# Get existing broker URL if it exists
+BROKER_URL="$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)' 2>/dev/null || echo "")"
+
+if [[ -n "$BROKER_URL" && "${DEPLOY_BACKEND:-false}" != "true" ]]; then
+  echo ">>> [SKIP] Cloud Run backend deployment skipped."
+  echo ">>> [INFO] Using existing Cloud Run broker at: $BROKER_URL"
+  echo ">>> [INFO] Pass --deploy-backend or set DEPLOY_BACKEND=true to force a redeployment."
 else
-  printf "%s" "$STRAVA_CLIENT_SECRET" | gcloud secrets versions add strava-client-secret --project "$PROJECT_ID" --data-file=- >/dev/null
+  echo ">>> [DEPLOY] Deploying Cloud Run broker..."
+  if ! gcloud secrets describe strava-client-secret --project "$PROJECT_ID" >/dev/null 2>&1; then
+    printf "%s" "$STRAVA_CLIENT_SECRET" | gcloud secrets create strava-client-secret --project "$PROJECT_ID" --replication-policy=automatic --data-file=- >/dev/null
+  else
+    printf "%s" "$STRAVA_CLIENT_SECRET" | gcloud secrets versions add strava-client-secret --project "$PROJECT_ID" --data-file=- >/dev/null
+  fi
+
+  PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")"
+  gcloud secrets add-iam-policy-binding strava-client-secret \
+    --project "$PROJECT_ID" \
+    --member "serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+    --role roles/secretmanager.secretAccessor >/dev/null
+
+  BROKER_URL="$(gcloud run deploy "$SERVICE" \
+    --source server \
+    --project "$PROJECT_ID" \
+    --region "$REGION" \
+    --allow-unauthenticated \
+    --set-env-vars "STRAVA_CLIENT_ID=${VITE_STRAVA_CLIENT_ID},ALLOWED_ORIGIN=${FRONTEND_ORIGIN}" \
+    --set-secrets "STRAVA_CLIENT_SECRET=strava-client-secret:latest" \
+    --format='value(status.url)')"
 fi
-
-PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")"
-gcloud secrets add-iam-policy-binding strava-client-secret \
-  --project "$PROJECT_ID" \
-  --member "serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-  --role roles/secretmanager.secretAccessor >/dev/null
-
-BROKER_URL="$(gcloud run deploy "$SERVICE" \
-  --source server \
-  --project "$PROJECT_ID" \
-  --region "$REGION" \
-  --allow-unauthenticated \
-  --set-env-vars "STRAVA_CLIENT_ID=${VITE_STRAVA_CLIENT_ID},ALLOWED_ORIGIN=${FRONTEND_ORIGIN}" \
-  --set-secrets "STRAVA_CLIENT_SECRET=strava-client-secret:latest" \
-  --format='value(status.url)')"
 
 export VITE_STRAVA_AUTH_BASE_URL="$BROKER_URL"
 

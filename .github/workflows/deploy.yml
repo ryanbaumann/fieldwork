@@ -7,6 +7,13 @@ on:
     paths:
       - 'strava-explorer/**'
       - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: 'Force redeploy Cloud Run OAuth broker'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -41,6 +48,14 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'strava-explorer/package.json'
 
+    - name: Check for Server Changes
+      id: changes
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          server:
+            - 'strava-explorer/server/**'
+
     - name: Install Frontend Dependencies
       run: |
         cd strava-explorer
@@ -52,6 +67,7 @@ jobs:
         VITE_STRAVA_CLIENT_ID: ${{ secrets.VITE_STRAVA_CLIENT_ID }}
         VITE_STRAVA_CLIENT_SECRET: ${{ secrets.VITE_STRAVA_CLIENT_SECRET }}
         STRAVA_CLIENT_SECRET: ${{ secrets.VITE_STRAVA_CLIENT_SECRET }}
+        DEPLOY_BACKEND: ${{ github.event.inputs.deploy_backend || steps.changes.outputs.server }}
       run: |
         cd strava-explorer
         chmod +x scripts/deploy-gcp.sh scripts/deploy-gcs.sh
