@@ -77,17 +77,18 @@ Use these repo-local skills when the task matches their scope:
 - `.codex/skills/google-maps-environment-apis/SKILL.md` for Google Maps Platform Environment APIs: Air Quality, Pollen, Solar, Weather, environmental heatmap tiles, quota, caching, source labeling, and environmental-data migrations.
 - `.codex/skills/frontend-responsive-design/SKILL.md` for responsive layout, accessibility, CSS architecture, Tailwind utility usage, and visual QA work.
 
+## How to Use AGENTS.md and the Changelog
 
-### Lessons from Strava Explorer UX/3D Iteration
+This document ([AGENTS.md](file:///Users/ryanbaumann/projects/trails.ninja/AGENTS.md)) serves as the source of truth for repository structure, commands, styles, and guidelines.
 
-- Persist browser OAuth state deliberately: cache Strava access/refresh token payloads in `localStorage`, refresh near expiry, clear storage on logout, and never log raw token payloads.
-- For 3D fly-throughs, prefer precomputed route/elevation samples, multi-point look-ahead bearing blending, and frame-rate-aware yaw limiting; avoid very low LERP defaults that make the camera lag and rubber-band through corners.
-- Keep sidebar controls grouped by task (connect/filter, selected activity, tour player, camera shortcuts, elevation) with compact touch-friendly controls and visible `aria-live` status; prefer short numbered flows over dense control panels.
-- Tune 3D fly-through defaults by route length and terrain context rather than one fixed camera duration or altitude offset; sample nearby future terrain to preserve mesh clearance on hills and turns.
-- Validate visible Strava Explorer changes with `npm run build`; when changing 3D marker slots, camera motion, or map rendering, browser-check the console for Maps 3D warnings when credentials are available and document any credential limitation.
+### Developer & Agent Guidelines
+1. **Always Read first:** Read this file at the start of any task or session.
+2. **Keep the Changelog updated:** Document all features, bug fixes, deprecations, and critical lessons learned in the root [CHANGELOG.md](file:///Users/ryanbaumann/projects/trails.ninja/CHANGELOG.md).
+3. **Reference historical learnings:** When working with Maps JavaScript API 3D, refer to the [CHANGELOG.md](file:///Users/ryanbaumann/projects/trails.ninja/CHANGELOG.md) for solutions to common pitfalls (such as the `PinElement` call stack overflow or `glyph` deprecations).
 
 ## Pull Request Expectations
 
 - Summarize changed behavior and cite touched files.
 - List every validation command run and whether it passed, failed, or was limited by environment.
 - Call out any untested browser/API behavior, required environment variables, or migration follow-ups.
+

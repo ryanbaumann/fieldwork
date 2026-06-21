@@ -275,14 +275,20 @@ function addRouteEndpointMarkers(path) {
         { label: 'Finish', point: path[path.length - 1], color: '#ef4444' },
     ];
     endpoints.forEach(({ label, point, color }) => {
-        const marker = new Marker3DElement({
+        const marker = new Marker3DInteractiveElement({
             position: { lat: point.lat(), lng: point.lng(), altitude: 24 },
             altitudeMode: AltitudeMode.RELATIVE_TO_GROUND,
             title: `${label} of activity route`,
             extruded: true,
             label,
         });
-        marker.style.setProperty('--gmp-marker-color', color);
+        const pin = new PinElement({
+            background: color,
+            borderColor: color === '#ffffff' ? '#e5e7eb' : '#ffffff',
+            glyphColor: '#ffffff',
+            scale: 1.0,
+        });
+        marker.append(pin.element);
         map3d.append(marker);
         routeMarkers.push(marker);
     });
@@ -532,13 +538,19 @@ export function updateTrackingMarker(position, color = '#3b82f6') {
     if (trackingMarker) {
         trackingMarker.position = { lat, lng, altitude };
     } else {
-        trackingMarker = new Marker3DElement({
+        trackingMarker = new Marker3DInteractiveElement({
             position: { lat, lng, altitude },
             altitudeMode: AltitudeMode.RELATIVE_TO_GROUND,
             title: 'Tour Position',
             extruded: true,
         });
-        trackingMarker.style.setProperty('--gmp-marker-color', color);
+        const pin = new PinElement({
+            background: color,
+            borderColor: '#ffffff',
+            glyphColor: color, // hides the dot inside
+            scale: 1.2,
+        });
+        trackingMarker.append(pin.element);
         map3d.append(trackingMarker);
     }
 }

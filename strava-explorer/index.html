@@ -12,14 +12,14 @@
       #map3d-host { height: 100%; width: 100%; background-color: #333; }
       /* Target the 3D map element itself */
       gmp-map-3d { display: block; height: 100%; width: 100%; }
-      .glass-panel { background: rgba(255,255,255,.94); backdrop-filter: blur(18px); }
+      .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
       .map-hud { pointer-events: none; }
       .map-hud > * { pointer-events: auto; }
       .focus-ring:focus-visible { outline: 3px solid rgba(79,70,229,.45); outline-offset: 2px; }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
       /* Basic scrollbar styling */
       .sidebar-content::-webkit-scrollbar { width: 6px; }
-      .sidebar-content::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 3px; }
+      .sidebar-content::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 3px; }
       /* Style Autocomplete dropdown */
       .pac-container { z-index: 1051 !important; }
     </style>
@@ -35,18 +35,18 @@
         <!-- <canvas id='snapshot' class='absolute top-0 left-0 w-full h-full pointer-events-none' style="visibility:hidden"></canvas> -->
 
         <!-- Sidebar Container - Added top-16, responsive classes -->
-        <aside class="absolute top-[clamp(0.75rem,2vw,1.25rem)] left-3 z-10 w-[min(28rem,calc(100%-1.5rem))] flex flex-col glass-panel rounded-2xl shadow-2xl ring-1 ring-black/10 overflow-hidden md:bottom-auto md:max-h-[calc(100vh-2.5rem)] max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto max-md:w-full max-md:max-w-full max-md:max-h-[58vh] max-md:rounded-none max-md:rounded-t-2xl max-md:border-t" aria-label="Strava activity controls">
+        <aside class="absolute top-[clamp(0.75rem,2vw,1.25rem)] left-3 z-10 w-[min(28rem,calc(100%-1.5rem))] flex flex-col glass-panel rounded-2xl shadow-2xl ring-1 ring-white/10 text-white overflow-hidden md:bottom-auto md:max-h-[calc(100vh-2.5rem)] max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto max-md:w-full max-md:max-w-full max-md:max-h-[58vh] max-md:rounded-none max-md:rounded-t-2xl max-md:border-t max-md:border-white/10" aria-label="Strava activity controls">
             <!-- Sidebar Header -->
-            <div class='p-4 border-b border-gray-200 flex-shrink-0'>
-                 <p class='text-xs font-semibold uppercase tracking-[0.22em] text-indigo-600'>Trails Ninja</p>
-                 <h1 class='text-xl font-bold text-gray-900'>3D Strava Explorer</h1>
-                 <p id='camera-status' class='mt-1 text-xs text-gray-500' aria-live='polite'>1) Pick a route. 2) Press play. 3) Tune the view if needed.</p> <!-- Updated Title -->
+            <div class='p-4 border-b border-white/10 flex-shrink-0'>
+                 <p class='text-xs font-semibold uppercase tracking-[0.22em] text-indigo-400'>Trails Ninja</p>
+                 <h1 class='text-xl font-bold text-white'>3D Strava Explorer</h1>
+                 <p id='camera-status' class='mt-1 text-xs text-gray-400' aria-live='polite'>1) Pick a route. 2) Press play. 3) Tune the view if needed.</p> <!-- Updated Title -->
             </div>
             <!-- Sidebar Scrollable Content -->
             <div class='p-4 flex-grow overflow-y-auto sidebar-content space-y-4'> <!-- Added space-y-4 for vertical spacing -->
                 <!-- Strava Auth Section -->
                 <div id="strava_auth" class="flex flex-col items-center">
-                    <p class="text-sm text-gray-700 mb-3 text-center">Connect to your Strava activities and explore them in 3D.</p>
+                    <p class="text-sm text-gray-300 mb-3 text-center">Connect to your Strava activities and explore them in 3D.</p>
                     <!-- Strava Connect Button -->
                     <button id="strava-connect-button" class="mx-auto"> <!-- Added mx-auto for explicit centering -->
                         <img src="./static/btn_strava_connectwith_orange@2x.png" alt="Connect to Strava" class="h-10 hover:opacity-80 transition-opacity">
@@ -54,82 +54,82 @@
                 </div>
                 <!-- Athlete Profile Section (Initially Hidden) -->
                 <div id="athlete-info" class="flex items-center hidden"> <!-- Removed mb-4 -->
-                     <img id="strava_profile" src="" class="w-10 h-10 rounded-full mr-3 border border-gray-300">
-                     <p id="strava-username" class="text-gray-800 font-medium"></p>
+                     <img id="strava_profile" src="" class="w-10 h-10 rounded-full mr-3 border border-gray-600">
+                     <p id="strava-username" class="text-gray-200 font-medium"></p>
                 </div>
                 <!-- Place Search Input (REMOVED) -->
 
                  <!-- Activity Filtering Section (Initially Hidden until Auth) -->
-                 <div id="activity-filter" class="border-t pt-4 hidden"> <!-- Removed mb-4, mt-4 -->
-                     <p class="text-sm font-semibold text-gray-800 mb-2">1. Pick a route</p>
+                 <div id="activity-filter" class="border-t border-white/10 pt-4 hidden"> <!-- Removed mb-4, mt-4 -->
+                     <p class="text-sm font-semibold text-gray-200 mb-2">1. Pick a route</p>
                      <div class="grid grid-cols-2 gap-3 mb-2">
                         <div>
-                            <label for="start-date" class="block text-xs font-medium text-gray-600 mb-1">Start Date:</label>
-                            <input type="date" id="start-date" class="w-full text-xs p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <label for="start-date" class="block text-xs font-medium text-gray-400 mb-1">Start Date:</label>
+                            <input type="date" id="start-date" class="w-full bg-white/5 text-white text-xs p-1.5 border border-white/10 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                         <div>
-                            <label for="end-date" class="block text-xs font-medium text-gray-600 mb-1">End Date:</label>
-                            <input type="date" id="end-date" class="w-full text-xs p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <label for="end-date" class="block text-xs font-medium text-gray-400 mb-1">End Date:</label>
+                            <input type="date" id="end-date" class="w-full bg-white/5 text-white text-xs p-1.5 border border-white/10 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="activity-count" class="block text-xs font-medium text-gray-600 mb-1">Activities to load:</label>
-                        <input type="number" id="activity-count" value="30" min="1" max="100" class="w-24 text-xs p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <label for="activity-count" class="block text-xs font-medium text-gray-400 mb-1">Activities to load:</label>
+                        <input type="number" id="activity-count" value="30" min="1" max="100" class="w-24 bg-white/5 text-white text-xs p-1.5 border border-white/10 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
-                    <button id="fetch-filtered-activities" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button id="fetch-filtered-activities" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-indigo-500">
                         Refresh routes
                     </button>
                 </div>
 
                 <!-- Activity Selection Dropdown (Initially Hidden) -->
                 <div id="act_select" class='relative hidden'> <!-- Removed mb-4 -->
-                    <label for="select_lst" class="block text-sm font-semibold text-gray-800 mb-1">Route</label>
-                    <select id="select_lst" class='block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md appearance-none bg-white'>
+                    <label for="select_lst" class="block text-sm font-semibold text-gray-200 mb-1">Route</label>
+                    <select id="select_lst" class='block w-full pl-3 pr-10 py-2 text-base border border-white/10 bg-slate-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md appearance-none'>
                         <!-- Options populated by JS -->
                     </select>
-                    <div class='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700'>
+                    <div class='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400'>
                          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                     </div>
                 </div>
                 <!-- Activity Stats Section (Initially Hidden) -->
-                <div id="activity-stats" class="pt-4 border-t border-gray-200 hidden"> <!-- Removed mt-4 -->
-                    <h4 id="activity-name" class="text-base font-semibold mb-3 text-gray-800 truncate">Activity Name</h4>
+                <div id="activity-stats" class="pt-4 border-t border-white/10 hidden"> <!-- Removed mt-4 -->
+                    <h4 id="activity-name" class="text-base font-semibold mb-3 text-white truncate">Activity Name</h4>
                     <div class="grid grid-cols-3 gap-x-3 gap-y-2 text-xs mb-4">
                         <div>
-                            <p class="text-gray-500 uppercase tracking-wider">Distance</p>
-                            <p id="activity-distance" class="font-medium text-gray-800 text-sm">-- mi</p> <!-- Changed unit -->
+                            <p class="text-gray-400 uppercase tracking-wider">Distance</p>
+                            <p id="activity-distance" class="font-medium text-gray-200 text-sm">-- mi</p> <!-- Changed unit -->
                         </div>
                         <div>
-                            <p class="text-gray-500 uppercase tracking-wider">Time</p>
-                            <p id="activity-time" class="font-medium text-gray-800 text-sm">--:--:--</p>
+                            <p class="text-gray-400 uppercase tracking-wider">Time</p>
+                            <p id="activity-time" class="font-medium text-gray-200 text-sm">--:--:--</p>
                         </div>
                         <div>
-                            <p class="text-gray-500 uppercase tracking-wider">Gain</p>
-                            <p id="activity-elevation" class="font-medium text-gray-800 text-sm">-- ft</p> <!-- Changed unit -->
+                            <p class="text-gray-400 uppercase tracking-wider">Gain</p>
+                            <p id="activity-elevation" class="font-medium text-gray-200 text-sm">-- ft</p> <!-- Changed unit -->
                         </div>
                          <div>
-                            <p class="text-gray-500 uppercase tracking-wider">Avg Speed</p>
-                            <p id="activity-avg-speed" class="font-medium text-gray-800 text-sm">-- mph</p> <!-- Changed unit -->
+                            <p class="text-gray-400 uppercase tracking-wider">Avg Speed</p>
+                            <p id="activity-avg-speed" class="font-medium text-gray-200 text-sm">-- mph</p> <!-- Changed unit -->
                         </div>
                          <div>
-                            <p class="text-gray-500 uppercase tracking-wider">Max Speed</p>
-                            <p id="activity-max-speed" class="font-medium text-gray-800 text-sm">-- mph</p> <!-- Changed unit -->
+                            <p class="text-gray-400 uppercase tracking-wider">Max Speed</p>
+                            <p id="activity-max-speed" class="font-medium text-gray-200 text-sm">-- mph</p> <!-- Changed unit -->
                         </div>
                         <div>
-                            <p class="text-gray-500 uppercase tracking-wider">Loss</p>
-                            <p id="activity-total-loss" class="font-medium text-gray-800 text-sm">-- ft</p>
+                            <p class="text-gray-400 uppercase tracking-wider">Loss</p>
+                            <p id="activity-total-loss" class="font-medium text-gray-200 text-sm">-- ft</p>
                         </div>
                     </div>
                     <!-- Follow Camera Tour Controls -->
-                    <div class="border-t pt-3 space-y-3">
-                        <span class="block text-sm font-semibold text-gray-800">2. Play the 3D tour</span>
+                    <div class="border-t border-white/10 pt-3 space-y-3">
+                        <span class="block text-sm font-semibold text-gray-200">2. Play the 3D tour</span>
                         
                         <!-- Scrubber and Time/Distance -->
                         <div class="space-y-1">
                             <div class="flex items-center space-x-2">
-                                <input type="range" id="tour-scrubber" min="0" max="1000" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 disabled:opacity-50" disabled>
+                                <input type="range" id="tour-scrubber" min="0" max="1000" value="0" class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-500 disabled:opacity-50" disabled>
                             </div>
-                            <div class="flex justify-between text-[10px] text-gray-500 font-mono">
+                            <div class="flex justify-between text-[10px] text-gray-400 font-mono">
                                 <span id="tour-distance-elapsed">0.00 / 0.00 mi</span>
                                 <span id="tour-distance-total">route total</span>
                             </div>
@@ -137,10 +137,10 @@
 
                         <!-- Player Buttons -->
                         <div class="flex items-center justify-center space-x-3">
-                            <button id="tour-stop-btn" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none" title="Stop & Reset" disabled>
+                            <button id="tour-stop-btn" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none" title="Stop & Reset" disabled>
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>
                             </button>
-                            <button id="tour-play-btn" class="p-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1" title="Play Tour" disabled>
+                            <button id="tour-play-btn" class="p-3 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900" title="Play Tour" disabled>
                                 <!-- Play Icon -->
                                 <svg id="play-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 <!-- Pause Icon (Hidden) -->
@@ -150,57 +150,57 @@
 
                         <!-- 3D Camera Shortcuts -->
                         <div class="grid grid-cols-2 gap-2 pt-1" role="group" aria-label="3D camera shortcuts">
-                            <button id="fit-route-button" class="focus-ring rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white shadow hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50" disabled>Fit route</button>
-                            <button id="fly-start-button" class="focus-ring rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50" disabled>Fly start</button>
-                            <button id="fly-finish-button" class="focus-ring rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-800 ring-1 ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50" disabled>Fly finish</button>
-                            <button id="orbit-route-button" class="focus-ring rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50" disabled>Orbit 3D</button>
+                            <button id="fit-route-button" class="focus-ring rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white shadow hover:bg-white/20 ring-1 ring-white/10 disabled:cursor-not-allowed disabled:opacity-50 transition-colors" disabled>Fit route</button>
+                            <button id="fly-start-button" class="focus-ring rounded-lg bg-white/5 px-3 py-2 text-xs font-semibold text-gray-200 ring-1 ring-white/10 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 transition-colors" disabled>Fly start</button>
+                            <button id="fly-finish-button" class="focus-ring rounded-lg bg-white/5 px-3 py-2 text-xs font-semibold text-gray-200 ring-1 ring-white/10 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 transition-colors" disabled>Fly finish</button>
+                            <button id="orbit-route-button" class="focus-ring rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors" disabled>Orbit 3D</button>
                         </div>
 
                         <!-- Collapsible Settings Panel -->
-                        <details class="group border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
-                            <summary class="flex justify-between items-center p-2 text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 select-none">
+                        <details class="group border border-white/10 rounded-lg bg-white/5 overflow-hidden">
+                            <summary class="flex justify-between items-center p-2 text-xs font-medium text-gray-300 cursor-pointer hover:bg-white/10 select-none">
                                 <span>3. Tune camera view</span>
                                 <svg class="w-3.5 h-3.5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </summary>
-                            <div class="p-3 space-y-3 border-t bg-white text-xs">
+                            <div class="p-3 space-y-3 border-t border-white/10 bg-slate-900/50 text-xs">
                                 <!-- Speed Slider -->
                                 <div class="flex items-center justify-between">
-                                    <label for="follow-camera-speed-slider" class="font-medium text-gray-600">Pace:</label>
+                                    <label for="follow-camera-speed-slider" class="font-medium text-gray-300">Pace:</label>
                                     <div class="flex items-center space-x-2">
-                                        <input type="range" id="follow-camera-speed-slider" min="0.25" max="2" step="0.05" value="1" class="w-24 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                                        <span id="follow-camera-speed-value" class="font-mono text-gray-600 w-10 text-right">1.00x</span>
+                                        <input type="range" id="follow-camera-speed-slider" min="0.25" max="2" step="0.05" value="1" class="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                                        <span id="follow-camera-speed-value" class="font-mono text-gray-400 w-10 text-right">1.00x</span>
                                     </div>
                                 </div>
                                 <!-- Altitude (Height Offset) Slider -->
                                 <div class="flex items-center justify-between">
-                                    <label for="tour-height-slider" class="font-medium text-gray-600">Mesh clearance:</label>
+                                    <label for="tour-height-slider" class="font-medium text-gray-300">Mesh clearance:</label>
                                     <div class="flex items-center space-x-2">
-                                        <input type="range" id="tour-height-slider" min="25" max="300" step="5" value="120" class="w-24 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                                        <span id="tour-height-value" class="font-mono text-gray-600 w-10 text-right">120m</span>
+                                        <input type="range" id="tour-height-slider" min="25" max="300" step="5" value="120" class="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                                        <span id="tour-height-value" class="font-mono text-gray-400 w-10 text-right">120m</span>
                                     </div>
                                 </div>
                                 <!-- Range (Zoom Offset) Slider -->
                                 <div class="flex items-center justify-between">
-                                    <label for="tour-range-slider" class="font-medium text-gray-600">Camera Distance:</label>
+                                    <label for="tour-range-slider" class="font-medium text-gray-300">Camera Distance:</label>
                                     <div class="flex items-center space-x-2">
-                                        <input type="range" id="tour-range-slider" min="150" max="2200" step="50" value="760" class="w-24 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                                        <span id="tour-range-value" class="font-mono text-gray-600 w-10 text-right">760m</span>
+                                        <input type="range" id="tour-range-slider" min="150" max="2200" step="50" value="760" class="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                                        <span id="tour-range-value" class="font-mono text-gray-400 w-10 text-right">760m</span>
                                     </div>
                                 </div>
                                 <!-- Tilt Slider -->
                                 <div class="flex items-center justify-between">
-                                    <label for="tour-tilt-slider" class="font-medium text-gray-600">View angle:</label>
+                                    <label for="tour-tilt-slider" class="font-medium text-gray-300">View angle:</label>
                                     <div class="flex items-center space-x-2">
-                                        <input type="range" id="tour-tilt-slider" min="40" max="82" step="1" value="64" class="w-24 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                                        <span id="tour-tilt-value" class="font-mono text-gray-600 w-10 text-right">64°</span>
+                                        <input type="range" id="tour-tilt-slider" min="40" max="82" step="1" value="64" class="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                                        <span id="tour-tilt-value" class="font-mono text-gray-400 w-10 text-right">64°</span>
                                     </div>
                                 </div>
                                 <!-- Smoothness (LERP) Slider -->
                                 <div class="flex items-center justify-between">
-                                    <label for="tour-smoothness-slider" class="font-medium text-gray-600">Smoothness:</label>
+                                    <label for="tour-smoothness-slider" class="font-medium text-gray-300">Smoothness:</label>
                                     <div class="flex items-center space-x-2">
-                                        <input type="range" id="tour-smoothness-slider" min="0.01" max="0.45" step="0.01" value="0.18" class="w-24 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                                        <span id="tour-smoothness-value" class="font-mono text-gray-600 w-8 text-right">0.18</span>
+                                        <input type="range" id="tour-smoothness-slider" min="0.01" max="0.45" step="0.01" value="0.18" class="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                                        <span id="tour-smoothness-value" class="font-mono text-gray-400 w-8 text-right">0.18</span>
                                     </div>
                                 </div>
                             </div>
@@ -208,9 +208,9 @@
                     </div>
 
                     <!-- Elevation Profile SVG Widget -->
-                    <div class="border-t pt-3">
-                         <label class="block text-sm font-semibold text-gray-800 mb-1.5">Elevation Profile</label>
-                         <div id="elevation-profile-container" class="relative w-full h-24 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden select-none cursor-crosshair">
+                    <div class="border-t border-white/10 pt-3">
+                         <label class="block text-sm font-semibold text-gray-200 mb-1.5">Elevation Profile</label>
+                         <div id="elevation-profile-container" class="relative w-full h-24 bg-slate-900/50 rounded-lg border border-white/10 overflow-hidden select-none cursor-crosshair">
                               <div id="elevation-placeholder" class="absolute inset-0 flex items-center justify-center text-xs text-gray-400">
                                   No activity loaded
                               </div>
@@ -239,33 +239,33 @@
                     </div>
                 </div>
                 <!-- Photo Display Section (Initially Hidden) -->
-                <div id="photo-display" class="border-t pt-4 hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Selected Photo:</label>
-                    <img id="selected-photo-img" src="" alt="Selected activity photo" class="w-full h-auto rounded-md mb-2 border">
-                    <p id="selected-photo-caption" class="text-xs text-gray-600 italic"></p>
+                <div id="photo-display" class="border-t border-white/10 pt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Selected Photo:</label>
+                    <img id="selected-photo-img" src="" alt="Selected activity photo" class="w-full h-auto rounded-md mb-2 border border-white/10">
+                    <p id="selected-photo-caption" class="text-xs text-gray-400 italic"></p>
                 </div>
                  <!-- Loading/Error Indicators -->
-                 <div id="loading-indicator" class="text-xs text-blue-600 italic hidden items-center gap-2"> <!-- Removed mt-4 -->
-                    <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle> <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path> </svg>
+                 <div id="loading-indicator" class="text-xs text-indigo-400 italic hidden items-center gap-2"> <!-- Removed mt-4 -->
+                    <svg class="animate-spin h-4 w-4 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle> <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path> </svg>
                     <span id="loading-text">Loading...</span>
                 </div>
-                <div id="error-message" class="mt-2 text-xs text-red-600 font-medium"></div>
+                <div id="error-message" class="mt-2 text-xs text-red-400 font-medium"></div>
             </div>
             <!-- Sidebar Footer -->
-            <footer class='p-3 border-t border-gray-200 bg-gray-50 flex-shrink-0 flex items-center justify-between'>
+            <footer class='p-3 border-t border-white/10 bg-white/5 flex-shrink-0 flex items-center justify-between'>
                  <!-- Footer Athlete Info (Initially Hidden) -->
                  <div id="footer-athlete-info" class="flex items-center hidden text-xs">
-                     <img id="footer-strava_profile" src="" class="w-6 h-6 rounded-full mr-2 border border-gray-300">
-                     <span id="footer-strava-username" class="text-gray-700 font-medium"></span>
+                     <img id="footer-strava_profile" src="" class="w-6 h-6 rounded-full mr-2 border border-white/20">
+                     <span id="footer-strava-username" class="text-gray-300 font-medium"></span>
                  </div>
                  <!-- Logout Button (Initially Hidden) -->
-                 <button id="logout-button" class="hidden text-xs bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-3 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500"> 
+                 <button id="logout-button" class="hidden text-xs bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-3 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-slate-900 focus:ring-red-500"> 
                     Logout
                  </button>
             </footer>
         </aside>
         <div class="map-hud absolute right-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-2 max-md:hidden">
-            <div class="glass-panel rounded-full px-4 py-2 text-xs font-semibold text-gray-700 shadow-lg ring-1 ring-black/10">Photorealistic 3D · Google Maps weekly channel</div>
+            <div class="glass-panel rounded-full px-4 py-2 text-xs font-semibold text-gray-200 shadow-lg ring-1 ring-white/10">Photorealistic 3D · Google Maps weekly channel</div>
         </div>
     </div>
 

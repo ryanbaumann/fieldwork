@@ -141,6 +141,38 @@ Use the marker type based on interaction and scale:
 - `Marker3DInteractiveElement`: required when markers should emit `gmp-click`, own focus behavior, or anchor popovers.
 - HTML/custom marker elements provide more customization but can cost more performance; avoid them for very large sets.
 
+### Custom Markers using `PinElement`
+
+To style interactive markers with custom backgrounds, border colors, or glyphs (e.g. text/image overlays):
+1. Load `"marker"` library dynamically: `const { PinElement } = await google.maps.importLibrary("marker");`
+2. Instantiate `PinElement` with your styles or modern `glyphSrc` image URL.
+3. **CRITICAL:** Append `pin.element` (the HTML custom element) to the interactive marker, NOT the `pin` helper object. Appending the class wrapper itself will trigger infinite observer loops and a `RangeError: Maximum call stack size exceeded` crash.
+4. **CRITICAL:** Use `glyphSrc` for remote/dynamic image URLs; do not use the deprecated `glyph` property with URLs.
+
+PinElement pattern:
+
+```js
+const { PinElement } = await google.maps.importLibrary("marker");
+const { Marker3DInteractiveElement, AltitudeMode } = await google.maps.importLibrary("maps3d");
+
+const pin = new PinElement({
+  background: "#4CAF50", // green for start, etc.
+  borderColor: "#ffffff",
+  glyphSrc: "https://example.com/marker-icon.png", // Use glyphSrc for custom URL images!
+  scale: 1.2
+});
+
+const marker = new Marker3DInteractiveElement({
+  position: { lat: 37.7749, lng: -122.4194, altitude: 0 },
+  altitudeMode: AltitudeMode.RELATIVE_TO_GROUND,
+  title: "Start Point"
+});
+
+// CRITICAL: Must append pin.element, not pin
+marker.append(pin.element);
+map3d.append(marker);
+```
+
 Clickable marker pattern:
 
 ```js
