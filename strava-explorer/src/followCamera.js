@@ -35,6 +35,8 @@ let onProgressUpdate = null; // function(progress, distanceElapsedKm)
 let onPlaybackStateChange = null; // function(state) -> 'playing' | 'paused' | 'stopped'
 
 let updateTrackingMarkerCb = null; // Placeholder
+let photoTriggers = []; // Array of { id, distanceKm, triggered, openUntil }
+let onPhotoTriggerCb = null; // function(photoId, shouldOpen)
 
 /**
  * Initializes the follow camera module with necessary dependencies.
@@ -179,7 +181,7 @@ function lerpAngle(start, end, amt) {
 }
 
 /** Haversine distance in km */
-function haversineDistance(p1, p2) {
+export function haversineDistance(p1, p2) {
     if (!p1 || !p2) return 0;
     const R = 6371;
     const lat1 = typeof p1.lat === 'function' ? p1.lat() : (p1.lat ?? 0);
@@ -357,6 +359,9 @@ export async function loadTourRoute(routeCoords) {
     }
     followCameraPathDistance = totalD;
     followCameraBaseDuration = calculateTourDuration(followCameraPathDistance);
+    
+    // Reset photo triggers list
+    photoTriggers = [];
     console.log(`Follow camera duration set to ${(followCameraBaseDuration / 1000).toFixed(0)}s for ${followCameraPathDistance.toFixed(1)} km (Exact snap array built: ${followCameraCumulativeDistances.length} points).`);
     
     // Smart profile defaults assessment based on terrain and elevation gain
@@ -404,6 +409,8 @@ export function clearTourRoute() {
     currentProgress = 0;
     filteredHeading = null;
     lastCameraUpdateTime = null;
+    lastTargetAltitude = null;
+    photoTriggers = [];
     if (onProgressUpdate) onProgressUpdate(0, 0);
 }
 
@@ -435,6 +442,10 @@ export async function playFollowCamera(routeCoords) {
     console.log("Playing follow camera tour.");
     followCameraActive = true;
     lastFrameTime = null; // Reset frame timestamp
+    
+    // Reset triggers based on current play start distance
+    const startDistanceKm = followCameraPathDistance * currentProgress;
+    resetPhotoTriggers(startDistanceKm);
     
     // Stop any pending delays
     if (followCameraTimeoutId) {
@@ -487,6 +498,8 @@ export function stopFollowCamera() {
         updateCameraForProgress(0, true);
     }
     
+    resetPhotoTriggers(0);
+    
     if (onProgressUpdate) onProgressUpdate(0, 0);
     if (onPlaybackStateChange) onPlaybackStateChange('stopped');
     if (typeof updateTrackingMarkerCb === 'function') {
@@ -505,6 +518,7 @@ export function setFollowCameraProgress(progress) {
     updateCameraForProgress(currentProgress, true);
     
     const distanceElapsedKm = followCameraPathDistance * currentProgress;
+    resetPhotoTriggers(distanceElapsedKm);
     if (onProgressUpdate) onProgressUpdate(currentProgress, distanceElapsedKm);
 }
 
@@ -661,6 +675,85 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
             altitude: 10
         });
     }
+
+    // Auto popup photo triggers as we fly past them
+    const nowMs = performance.now();
+    photoTriggers.forEach(t => {
+        // If camera has passed the photo location
+        if (!t.triggered && distanceAlongPath >= t.distanceKm) {
+            t.triggered = true;
+            t.openUntil = nowMs + 3000; // Open for exactly 3 seconds
+            if (typeof onPhotoTriggerCb === 'function') {
+                onPhotoTriggerCb(t.id, true);
+            }
+        }
+        
+        // If photo should close
+        if (t.triggered && t.openUntil > 0 && nowMs >= t.openUntil) {
+            t.openUntil = 0;
+            if (typeof onPhotoTriggerCb === 'function') {
+                onPhotoTriggerCb(t.id, false);
+            }
+        }
+    });
+}
+
+/**
+ * Register the callback for auto photo popups
+ */
+export function setPhotoTriggerCallback(cb) {
+    onPhotoTriggerCb = cb;
+}
+
+/**
+ * Register photo distances along the path to set up the triggers
+ */
+export function registerPhotoTriggers(photoGroups) {
+    if (!followCameraCoords || followCameraCoords.length === 0) return;
+    photoTriggers = photoGroups.map(group => {
+        const lat = group.lat;
+        const lng = group.lng;
+        
+        let minD = Infinity;
+        let closestIdx = 0;
+        for (let i = 0; i < followCameraCoords.length; i++) {
+            const pt = followCameraCoords[i];
+            const d = haversineDistance({ lat, lng }, pt);
+            if (d < minD) {
+                minD = d;
+                closestIdx = i;
+            }
+        }
+        
+        return {
+            id: group.photos[0].unique_id, // Trigger is identified by the first photo's ID
+            distanceKm: followCameraCumulativeDistances[closestIdx],
+            triggered: false,
+            openUntil: 0
+        };
+    });
+    console.log(`[registerPhotoTriggers] Registered ${photoTriggers.length} auto-pop triggers.`);
+}
+
+/**
+ * Resets photo triggers when progress changes backward/forward via scrubs or play/stops
+ */
+export function resetPhotoTriggers(currentDistKm) {
+    const nowMs = performance.now();
+    photoTriggers.forEach(t => {
+        if (t.distanceKm > currentDistKm) {
+            // Re-arm triggers that are ahead of our new position
+            t.triggered = false;
+            t.openUntil = 0;
+            if (typeof onPhotoTriggerCb === 'function') {
+                onPhotoTriggerCb(t.id, false);
+            }
+        } else {
+            // Already passed - mark as triggered but do not pop it up retrospectively
+            t.triggered = true;
+            t.openUntil = 0;
+        }
+    });
 }
 
 /**

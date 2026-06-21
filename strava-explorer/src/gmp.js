@@ -1,5 +1,4 @@
-// strava-explorer/gmp.js
-import { initializeFollowCamera } from './followCamera.js'; // Import initializer
+import { initializeFollowCamera, registerPhotoTriggers, setPhotoTriggerCallback, haversineDistance } from './followCamera.js'; // Import initializer
 
 // --- Module-Level Variables ---
 let map3d = null;
@@ -87,6 +86,21 @@ export async function initMap(mapHostElement, apiKey) {
         // Initialize Follow Camera module after map and dependencies are ready
         // Pass the module-level showError and updateTrackingMarker
         initializeFollowCamera(map3d, LatLng, getClientElevation, showError, updateTrackingMarker);
+
+        setPhotoTriggerCallback((photoId, shouldOpen) => {
+            if (shouldOpen) {
+                // Close all other popovers to prevent visual clutter
+                photoMarkers.forEach(({ popover: otherPopover }, key) => {
+                    if (key !== photoId) {
+                        otherPopover.open = false;
+                    }
+                });
+            }
+            const refs = photoMarkers.get(photoId);
+            if (refs && refs.popover) {
+                refs.popover.open = shouldOpen;
+            }
+        });
 
         showLoading(false);
         return map3d; // Return the map instance
@@ -339,11 +353,20 @@ function getMarkerPhotoUrl(imageUrl) {
     return imageUrl;
 }
 
-function resizeImageToDataUrl(imageUrl, targetWidth, targetHeight) {
+function resizeImageToDataUrl(imageUrl, maxDim = 100, photoCount = 1) {
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
+            let targetWidth, targetHeight;
+            if (img.width > img.height) {
+                targetWidth = maxDim;
+                targetHeight = Math.round(maxDim * (img.height / img.width));
+            } else {
+                targetHeight = maxDim;
+                targetWidth = Math.round(maxDim * (img.width / img.height));
+            }
+
             const canvas = document.createElement('canvas');
             canvas.width = targetWidth;
             canvas.height = targetHeight;
@@ -357,21 +380,42 @@ function resizeImageToDataUrl(imageUrl, targetWidth, targetHeight) {
             const border = 4;
             ctx.drawImage(img, border, border, targetWidth - border * 2, targetHeight - border * 2);
             
+            if (photoCount > 1) {
+                // Draw a badge in the bottom-right corner
+                ctx.fillStyle = '#ff4d2e';
+                ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                ctx.shadowBlur = 4;
+                ctx.beginPath();
+                ctx.arc(targetWidth - 18, targetHeight - 18, 12, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Clear shadow for text
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${photoCount}`, targetWidth - 18, targetHeight - 18);
+            }
+            
             try {
-                resolve(canvas.toDataURL('image/jpeg', 0.8));
+                resolve({
+                    dataUrl: canvas.toDataURL('image/jpeg', 0.8),
+                    width: targetWidth,
+                    height: targetHeight
+                });
             } catch (e) {
                 console.warn("Canvas resize failed (CORS):", e);
-                resolve(imageUrl); // Fallback
+                resolve({ dataUrl: imageUrl, width: maxDim, height: maxDim }); // Fallback
             }
         };
         img.onerror = () => {
-            resolve(imageUrl);
+            resolve({ dataUrl: imageUrl, width: maxDim, height: maxDim });
         };
         img.src = imageUrl;
     });
 }
 
-// --- Photo Marker Handling ---
 export async function displayPhotoMarkers(photosData) { // photosData = array from Strava API
     if (!map3d || !Marker3DInteractiveElement || !PopoverElement || !AltitudeMode) {
         showError("Map or necessary 3D components not ready for photo markers.");
@@ -400,22 +444,49 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             return;
         }
 
-        locatedPhotos.forEach(async (photo) => {
-            if (!photo.location || photo.location.length !== 2 || !photo.unique_id) return; // Skip if no location or ID
-
+        // Group photos that are close to each other (within 10 meters / 0.01 km) to prevent overlaps and flicker
+        const photoGroups = [];
+        locatedPhotos.forEach(photo => {
             const lat = photo.location[0];
             const lng = photo.location[1];
-
-            if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
             
-            // Prefer the high-res 1000 or 600 url for resizing to ensure quality, fallback to 100
-            const photoUrlToResize = photo.urls?.["600"] || photo.urls?.["1000"] || photo.urls?.["100"];
+            let foundGroup = null;
+            for (const group of photoGroups) {
+                const dist = haversineDistance({ lat, lng }, { lat: group.lat, lng: group.lng });
+                if (dist < 0.01) { // 10 meters
+                    foundGroup = group;
+                    break;
+                }
+            }
+            if (foundGroup) {
+                foundGroup.photos.push(photo);
+            } else {
+                photoGroups.push({
+                    lat,
+                    lng,
+                    photos: [photo]
+                });
+            }
+        });
+
+        console.log(`[displayPhotoMarkers] Grouped ${locatedPhotos.length} photos into ${photoGroups.length} spatial clusters.`);
+
+        // Register trigger positions in the follow camera module
+        registerPhotoTriggers(photoGroups);
+
+        photoGroups.forEach(async (group) => {
+            const lat = group.lat;
+            const lng = group.lng;
+            const primePhoto = group.photos[0];
+            const primePhotoId = primePhoto.unique_id;
+
+            const photoUrlToResize = primePhoto.urls?.["600"] || primePhoto.urls?.["1000"] || primePhoto.urls?.["100"];
             if (!photoUrlToResize) return;
 
             const proxiedUrl = getMarkerPhotoUrl(photoUrlToResize);
             
-            // Resize image to exactly 100x100 pixels
-            const resizedDataUrl = await resizeImageToDataUrl(proxiedUrl, 100, 100);
+            // Resize image and draw a photo count badge if group contains multiple overlapping photos
+            const resized = await resizeImageToDataUrl(proxiedUrl, 100, group.photos.length);
 
             // Guard against race conditions (e.g. route changed while loading)
             if (currentSession !== photoLoadSessionId) {
@@ -432,8 +503,6 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             popover.style.setProperty('--gmp-popover-max-width', '500px');
 
             // Populate Popover Content
-            const popoverImageUrl = photo.urls?.["1000"] || photo.urls?.["600"] || photo.urls?.["100"]; // Fallback
-            
             const popoverBody = document.createElement('div');
             popoverBody.style.width = 'clamp(280px, 33vw, 480px)';
             popoverBody.style.display = 'flex';
@@ -441,7 +510,6 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             popoverBody.style.gap = '8px';
 
             const popoverImage = document.createElement('img');
-            popoverImage.src = popoverImageUrl;
             popoverImage.style.width = '100%';
             popoverImage.style.maxHeight = '50vh';
             popoverImage.style.objectFit = 'contain';
@@ -450,7 +518,6 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             popoverImage.onerror = () => { popoverImage.alt = 'Image failed to load'; };
 
             const popoverCaption = document.createElement('p');
-            popoverCaption.textContent = photo.caption || 'No caption';
             popoverCaption.style.fontSize = '12px';
             popoverCaption.style.color = '#555';
             popoverCaption.style.margin = '0';
@@ -468,7 +535,7 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             popoverHeader.style.paddingRight = '8px';
 
             const popoverHeading = document.createElement('h3');
-            popoverHeading.textContent = photo.caption || 'Activity photo';
+            popoverHeading.textContent = primePhoto.caption || 'Activity photo';
             popoverHeading.style.margin = '0';
             popoverHeading.style.fontSize = '14px';
             popoverHeading.style.fontWeight = '600';
@@ -501,24 +568,87 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             popover.append(popoverHeader);
             popover.append(popoverBody);
 
+            // Setup pagination controls if multiple overlapping photos exist
+            if (group.photos.length > 1) {
+                const controlsRow = document.createElement('div');
+                controlsRow.style.display = 'flex';
+                controlsRow.style.justifyContent = 'space-between';
+                controlsRow.style.alignItems = 'center';
+                controlsRow.style.marginTop = '4px';
+                
+                const prevButton = document.createElement('button');
+                prevButton.textContent = '← Prev';
+                prevButton.style.padding = '4px 8px';
+                prevButton.style.fontSize = '12px';
+                prevButton.style.cursor = 'pointer';
+                prevButton.style.borderRadius = '4px';
+                prevButton.style.border = '1px solid #ccc';
+                prevButton.style.background = '#fff';
+                
+                const nextButton = document.createElement('button');
+                nextButton.textContent = 'Next →';
+                nextButton.style.padding = '4px 8px';
+                nextButton.style.fontSize = '12px';
+                nextButton.style.cursor = 'pointer';
+                nextButton.style.borderRadius = '4px';
+                nextButton.style.border = '1px solid #ccc';
+                nextButton.style.background = '#fff';
+                
+                const counter = document.createElement('span');
+                counter.style.fontSize = '12px';
+                counter.style.fontWeight = '500';
+                
+                let activeIdx = 0;
+                const updateView = (idx) => {
+                    activeIdx = idx;
+                    const activePhoto = group.photos[idx];
+                    popoverImage.src = activePhoto.urls?.["1000"] || activePhoto.urls?.["600"] || activePhoto.urls?.["100"];
+                    popoverCaption.textContent = activePhoto.caption || 'No caption';
+                    popoverHeading.textContent = activePhoto.caption || `Photo ${idx + 1} of ${group.photos.length}`;
+                    counter.textContent = `${activeIdx + 1} / ${group.photos.length}`;
+                    
+                    prevButton.disabled = activeIdx === 0;
+                    nextButton.disabled = activeIdx === group.photos.length - 1;
+                    prevButton.style.opacity = prevButton.disabled ? '0.5' : '1.0';
+                    nextButton.style.opacity = nextButton.disabled ? '0.5' : '1.0';
+                };
+                
+                prevButton.addEventListener('click', () => {
+                    if (activeIdx > 0) updateView(activeIdx - 1);
+                });
+                nextButton.addEventListener('click', () => {
+                    if (activeIdx < group.photos.length - 1) updateView(activeIdx + 1);
+                });
+                
+                controlsRow.appendChild(prevButton);
+                controlsRow.appendChild(counter);
+                controlsRow.appendChild(nextButton);
+                popoverBody.appendChild(controlsRow);
+                
+                updateView(0);
+            } else {
+                popoverImage.src = primePhoto.urls?.["1000"] || primePhoto.urls?.["600"] || primePhoto.urls?.["100"];
+                popoverCaption.textContent = primePhoto.caption || 'No caption';
+            }
+
             // Create Marker3DInteractiveElement with popover target
             const marker = new Marker3DInteractiveElement({
                 position: { lat, lng },
                 altitudeMode: AltitudeMode.CLAMP_TO_GROUND,
-                title: photo.caption || `Activity photo ${photo.unique_id}`,
+                title: primePhoto.caption || `Activity photo at this spot`,
                 drawsWhenOccluded: true,
                 gmpPopoverTargetElement: popover,
                 sizePreserved: true,
             });
 
-            // Create custom photo thumbnail using HTMLTemplateElement
+            // Create custom photo thumbnail with preserved aspect ratio
             const template = document.createElement('template');
             const img = document.createElement('img');
-            img.src = resizedDataUrl;
-            img.setAttribute('width', '100');
-            img.setAttribute('height', '100');
-            img.style.width = '100px';
-            img.style.height = '100px';
+            img.src = resized.dataUrl;
+            img.setAttribute('width', resized.width.toString());
+            img.setAttribute('height', resized.height.toString());
+            img.style.width = `${resized.width}px`;
+            img.style.height = `${resized.height}px`;
             img.style.borderRadius = '4px';
             img.style.border = '2px solid #ffffff';
             img.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
@@ -527,10 +657,10 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
 
             // Add Click Listener to Marker for camera fly-to
             marker.addEventListener('gmp-click', async () => {
-                console.log("Clicked Photo Marker:", photo.unique_id);
+                console.log("Clicked Photo Marker:", primePhotoId);
                 // Close other open popovers
                 photoMarkers.forEach(({ popover: otherPopover }, key) => {
-                    if (key !== photo.unique_id) {
+                    if (key !== primePhotoId) {
                         otherPopover.open = false;
                     }
                 });
@@ -543,9 +673,9 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             map3d.append(marker);
             map3d.append(popover);
 
-            // Store Marker and Popover References
-            photoMarkers.set(photo.unique_id, { marker, popover });
-            console.log(`[displayPhotoMarkers] Appended marker/popover for photo ${photo.unique_id}`);
+            // Store Marker and Popover References (keyed by first photo's ID)
+            photoMarkers.set(primePhotoId, { marker, popover });
+            console.log(`[displayPhotoMarkers] Appended marker/popover for photo ${primePhotoId}`);
         });
 
     } catch (error) {
@@ -555,6 +685,7 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
         showLoading(false);
     }
 }
+
 
 export function clearPhotoMarkers() {
     if (photoMarkers.size > 0 && map3d) {
