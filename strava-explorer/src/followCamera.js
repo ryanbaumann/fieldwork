@@ -573,8 +573,8 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
     // Aggressive Spatial Elevation Anti-Clipping (Part 1)
     const varianceFactor = clamp(varianceMeters / 150, 0, 1);
     const dynamicHeightBoost = varianceFactor * 150; // Push up to 150m above for steep climbs
-    const dynamicRangeBoost = varianceMeters * 25; // Inflate range aggressively by 25x variance
-    const dynamicTiltDrop = varianceFactor * 45; // Slam tilt from horizontal down toorbital drop
+    const dynamicRangeBoost = varianceMeters * 12; // Inflate range less aggressively (12x variance instead of 25x)
+    const dynamicTiltBoost = varianceFactor * 21; // Lift tilt towards the horizon (up to 85) instead of dropping it to go vertical
 
     const baseClearance = calculateTerrainClearanceAltitude(distanceAlongPath, alongCoords.point.altitude ?? 10);
     const rawTargetAltitude = Math.max(baseClearance, upcomingTerrain.maxAlt + cameraHeightOffset + dynamicHeightBoost);
@@ -620,21 +620,12 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
     const targetCameraPosition = {
         center: { lat: exactPoint.lat(), lng: exactPoint.lng(), altitude: targetCameraAltitude },
         heading: smoothedBearing,
-        range: clamp(cameraRangeOffset + dynamicRangeBoost, 200, 3500),
-        tilt: clamp(cameraTiltOffset - dynamicTiltDrop, 20, 85),
+        range: clamp(cameraRangeOffset + dynamicRangeBoost, 200, 3000), // Max range 3000 instead of 3500
+        tilt: clamp(cameraTiltOffset + dynamicTiltBoost, 20, 85), // Boost tilt towards horizon
     };
 
-    // Synchronize the marker EXACTLY to the calculated path point
-    if (typeof updateTrackingMarkerCb === 'function') {
-        updateTrackingMarkerCb({
-            lat: exactPoint.lat(),
-            lng: exactPoint.lng(),
-            altitude: exactPoint.altitude ?? 10
-        });
-    }
-
-    // Force the physical camera center to perfectly track the mathematical coordinate
-    // We only interpolate heading, tilt, range, and altitude to provide the drone inertia.
+    // Force the physical camera center to chase the mathematical coordinate using LERP.
+    // This provides beautiful "rubber banding" drone inertia even at high playback speeds.
     const factor = snapDirectly ? 1.0 : Math.max(cameraSmoothness, 0.14);
 
     const currentCamera = {
@@ -646,8 +637,8 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
 
     const interpolatedCamera = {
         center: {
-            lat: targetCameraPosition.center.lat, // Locked to marker
-            lng: targetCameraPosition.center.lng, // Locked to marker
+            lat: lerp(currentCamera.center.lat, targetCameraPosition.center.lat, factor),
+            lng: lerp(currentCamera.center.lng, targetCameraPosition.center.lng, factor),
             altitude: lerp(currentCamera.center.altitude, targetCameraPosition.center.altitude, factor)
         },
         heading: lerpAngle(currentCamera.heading, targetCameraPosition.heading, factor),
@@ -660,6 +651,15 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
         map3d.heading = interpolatedCamera.heading;
         map3d.range = Math.max(10, interpolatedCamera.range);
         map3d.tilt = clamp(interpolatedCamera.tilt, 0, 85);
+    }
+
+    // Synchronize the marker EXACTLY to the final camera center
+    if (typeof updateTrackingMarkerCb === 'function') {
+        updateTrackingMarkerCb({
+            lat: interpolatedCamera.center.lat,
+            lng: interpolatedCamera.center.lng,
+            altitude: 10
+        });
     }
 }
 
