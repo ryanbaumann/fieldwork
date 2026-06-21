@@ -303,49 +303,56 @@ function samplePointAlongLineExact(coords, cumDists, distance) {
     return pt;
 }
 
-/** Precompute samples along the route */
-async function buildFollowCameraSamples(routeCoords) {
-    const maxSamples = 160;
-    const keepEvery = Math.max(1, Math.ceil(routeCoords.length / maxSamples));
-    const samples = [];
 
-    for (let i = 0; i < routeCoords.length; i += keepEvery) {
-        samples.push(routeCoords[i]);
-    }
-    const last = routeCoords[routeCoords.length - 1];
-    if (samples[samples.length - 1] !== last) samples.push(last);
-
-    const enriched = [];
-    for (const point of samples) {
-        const lat = typeof point.lat === 'function' ? point.lat() : (point.lat ?? 0);
-        const lng = typeof point.lng === 'function' ? point.lng() : (point.lng ?? 0);
-        let altitude = point.altitude;
-        if (altitude == null) {
-            altitude = await getClientElevation({ lat, lng });
-        }
-        const pt = new LatLng(lat, lng);
-        pt.altitude = altitude;
-        enriched.push(pt);
-    }
-    return enriched;
-}
 
 /**
  * Loads a new route's coordinates into the follow camera module.
- * Precomputes the camera samples and calculates path distance.
+ * Precomputes the camera samples via a rolling average and calculates path distance.
  */
 export async function loadTourRoute(routeCoords) {
     if (!routeCoords || routeCoords.length < 2) return;
     console.log("Loading new route coordinates for follow tour...");
-    followCameraCoords = routeCoords;
-    followCameraSamples = await buildFollowCameraSamples(routeCoords);
     
-    // Calculate high-fidelity cumulative distances for exact polyline snapping
-    followCameraCumulativeDistances = new Float64Array(routeCoords.length);
+    // 1. Evaluate coordinates down to absolute primitives to avoid call stack loops
+    const baseCoords = routeCoords.map(p => {
+        const lat = typeof p.lat === 'function' ? p.lat() : p.lat;
+        const lng = typeof p.lng === 'function' ? p.lng() : p.lng;
+        const alt = p.altitude ?? 10;
+        return { lat, lng, altitude: alt };
+    });
+
+    // 2. Apply a simple rolling average across a window of 15 points (75-meter strike)
+    // This organically rounds harsh geometric edges into swooping cinematic curves.
+    const windowSize = 15;
+    const halfWindow = Math.floor(windowSize / 2);
+    const smoothedRouteCoords = [];
+    
+    for (let i = 0; i < baseCoords.length; i++) {
+        let latSum = 0, lngSum = 0, altSum = 0;
+        let count = 0;
+        for (let j = i - halfWindow; j <= i + halfWindow; j++) {
+            if (j >= 0 && j < baseCoords.length) {
+                latSum += baseCoords[j].lat;
+                lngSum += baseCoords[j].lng;
+                altSum += baseCoords[j].altitude;
+                count++;
+            }
+        }
+        const pt = new LatLng(latSum / count, lngSum / count);
+        pt.altitude = altSum / count;
+        smoothedRouteCoords.push(pt);
+    }
+    
+    // 3. Bind the definitive smoothed path to the engine
+    followCameraCoords = smoothedRouteCoords;
+    followCameraSamples = smoothedRouteCoords; // Use high-res smoothed array entirely
+    
+    // 4. Calculate high-fidelity cumulative distances for exact polyline snapping
+    followCameraCumulativeDistances = new Float64Array(smoothedRouteCoords.length);
     followCameraCumulativeDistances[0] = 0;
     let totalD = 0;
-    for (let i = 0; i < routeCoords.length - 1; i++) {
-        totalD += haversineDistance(routeCoords[i], routeCoords[i + 1]);
+    for (let i = 0; i < smoothedRouteCoords.length - 1; i++) {
+        totalD += haversineDistance(smoothedRouteCoords[i], smoothedRouteCoords[i + 1]);
         followCameraCumulativeDistances[i + 1] = totalD;
     }
     followCameraPathDistance = totalD;
@@ -606,27 +613,28 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
     }
     lastCameraUpdateTime = now;
 
+    // 4. Exact spatial lookup using the Integer Scan on the smoothed points
+    const exactPoint = samplePointAlongLineExact(followCameraCoords, followCameraCumulativeDistances, distanceAlongPath);
+    if (!exactPoint) return;
+
     const targetCameraPosition = {
-        center: { lat: alongCoords.point.lat(), lng: alongCoords.point.lng(), altitude: targetCameraAltitude },
+        center: { lat: exactPoint.lat(), lng: exactPoint.lng(), altitude: targetCameraAltitude },
         heading: smoothedBearing,
         range: clamp(cameraRangeOffset + dynamicRangeBoost, 200, 3500),
         tilt: clamp(cameraTiltOffset - dynamicTiltDrop, 20, 85),
     };
 
+    // Synchronize the marker EXACTLY to the calculated path point
     if (typeof updateTrackingMarkerCb === 'function') {
-        const exactPoint = samplePointAlongLineExact(followCameraCoords, followCameraCumulativeDistances, distanceAlongPath);
-        if (exactPoint) {
-            updateTrackingMarkerCb({
-                lat: typeof exactPoint.lat === 'function' ? exactPoint.lat() : exactPoint.lat,
-                lng: typeof exactPoint.lng === 'function' ? exactPoint.lng() : exactPoint.lng,
-                altitude: exactPoint.altitude ?? 10
-            });
-        }
+        updateTrackingMarkerCb({
+            lat: exactPoint.lat(),
+            lng: exactPoint.lng(),
+            altitude: exactPoint.altitude ?? 10
+        });
     }
 
-    // If scrubbing or snapping directly, set the camera directly without LERP interpolation.
-    // During playback, bias the user-facing smoothness upward so the camera tracks the
-    // route without the old over-smoothed lag that made corners feel rubber-banded.
+    // Force the physical camera center to perfectly track the mathematical coordinate
+    // We only interpolate heading, tilt, range, and altitude to provide the drone inertia.
     const factor = snapDirectly ? 1.0 : Math.max(cameraSmoothness, 0.14);
 
     const currentCamera = {
@@ -638,8 +646,8 @@ export function updateCameraForProgress(progress, snapDirectly = false) {
 
     const interpolatedCamera = {
         center: {
-            lat: lerp(currentCamera.center.lat, targetCameraPosition.center.lat, factor),
-            lng: lerp(currentCamera.center.lng, targetCameraPosition.center.lng, factor),
+            lat: targetCameraPosition.center.lat, // Locked to marker
+            lng: targetCameraPosition.center.lng, // Locked to marker
             altitude: lerp(currentCamera.center.altitude, targetCameraPosition.center.altitude, factor)
         },
         heading: lerpAngle(currentCamera.heading, targetCameraPosition.heading, factor),
