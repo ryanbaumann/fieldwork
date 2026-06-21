@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - **Compact UI Optimization**: Removed static debug HUD badge and tightened vertical padding between the sidebar title and the "Pick a route" section.
 
 ### Fixed
+- **3D Photo Marker Stack Overflow & Rendering**: Fixed another `RangeError: Maximum call stack size exceeded` crash by refactoring `displayPhotoMarkers` in [gmp.js](file:///Users/ryanbaumann/projects/trails.ninja/strava-explorer/src/gmp.js) to use `HTMLTemplateElement` wrapping a direct `HTMLImageElement` instead of using the custom `<gmp-pin>` element, which has dynamic rendering/observing loops when combined with remote images and popover bindings. Connected the popover to the marker using `gmpPopoverTargetElement` instead of setting `positionAnchor: marker` on the popover element.
 - **Call Stack Overflow & Deprecation Errors**: Fixed a `RangeError: Maximum call stack size exceeded` recursion loop and `<gmp-pin>` deprecation warnings by updating Google Maps loader to `alpha` and directly appending the `PinElement` object (`marker.append(pin)`) instead of the deprecated, recursive `pin.element` property.
 - **Reference Errors**: Fixed ReferenceErrors where `temp_token` and `getTourSettings` were undefined during URL state parsing and authentication flow.
 - **Custom Pin Image Deprecation**: Swapped deprecated `glyph` to `glyphSrc` for loading photo URLs onto custom `PinElement` markers, preventing WebGL/Maps 3D serialization failures.

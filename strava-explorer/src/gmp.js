@@ -370,7 +370,6 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             const lng = photo.location[1];
 
             if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
-            const position = { lat, lng, altitude: 42 };
             let photoWidth = 600;
             let photoThumbUrl = photo.urls?.["600"];
             if (!photoThumbUrl) {
@@ -382,26 +381,8 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                 photoWidth = 100;
             }
 
-            // Create an interactive 3D marker for the photo. The altitude is relative to
-            // terrain so it floats consistently above the photorealistic mesh.
-            const marker = new Marker3DInteractiveElement({
-                position: { lat, lng }, // Strip altitude for CLAMP_TO_GROUND
-                altitudeMode: AltitudeMode.CLAMP_TO_GROUND,
-                title: photo.caption || `Activity photo ${photo.unique_id}`,
-                drawsWhenOccluded: true
-            });
-
-            const pin = new PinElement({
-                scale: 1.5,
-                background: '#ffffff',
-                borderColor: '#e5e7eb',
-                glyphSrc: getMarkerPhotoUrl(photoThumbUrl)
-            });
-            marker.append(pin);
-
             // Create Popover
             const popover = new PopoverElement({
-                positionAnchor: marker,
                 open: false,
             });
 
@@ -427,7 +408,28 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             popover.append(popoverImage);
             popover.append(popoverCaption);
 
-            // Add Click Listener to Toggle Popover
+            // Create Marker3DInteractiveElement with popover target
+            const marker = new Marker3DInteractiveElement({
+                position: { lat, lng },
+                altitudeMode: AltitudeMode.CLAMP_TO_GROUND,
+                title: photo.caption || `Activity photo ${photo.unique_id}`,
+                drawsWhenOccluded: true,
+                gmpPopoverTargetElement: popover,
+            });
+
+            // Create custom photo thumbnail using HTMLTemplateElement
+            const template = document.createElement('template');
+            const img = document.createElement('img');
+            img.src = getMarkerPhotoUrl(photoThumbUrl);
+            img.style.width = '48px';
+            img.style.height = '48px';
+            img.style.borderRadius = '4px';
+            img.style.border = '2px solid #ffffff';
+            img.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+            template.content.appendChild(img);
+            marker.append(template);
+
+            // Add Click Listener to Marker for camera fly-to
             marker.addEventListener('gmp-click', async () => {
                 console.log("Clicked Photo Marker:", photo.unique_id);
                 // Close other open popovers
@@ -436,9 +438,7 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                         otherPopover.open = false;
                     }
                 });
-                // Toggle this popover
-                popover.open = !popover.open;
-                // Fly closer with API ground elevation + overhead clearance
+                // Fly closer
                 const trueElevation = await getClientElevation({ lat, lng });
                 flyToLocation({ lat, lng, altitude: trueElevation + 72 }, 850, 66, map3d.heading, 900);
             });
