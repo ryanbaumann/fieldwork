@@ -235,6 +235,9 @@ async function initApp() {
         await gmp.initMap(mapHost, import.meta.env.VITE_GMP_API_KEY);
 
         // --- Strava Auth Flow ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const temp_token = urlParams.get('code');
+
         if (temp_token) {
             // Clear the code from the URL while preserving application state params
             const params = new URLSearchParams(window.location.search);
