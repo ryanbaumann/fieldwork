@@ -32,7 +32,7 @@ async function loadGoogleMapsApi(apiKey, libraries) {
     const loaderModule = GoogleMapsLoader.default ?? GoogleMapsLoader;
 
     if (typeof GoogleMapsLoader.setOptions === 'function' && typeof GoogleMapsLoader.importLibrary === 'function') {
-        GoogleMapsLoader.setOptions({ key: apiKey, v: 'alpha', libraries });
+        GoogleMapsLoader.setOptions({ key: apiKey, v: 'weekly', libraries });
         return GoogleMapsLoader.importLibrary;
     }
 
@@ -41,7 +41,7 @@ async function loadGoogleMapsApi(apiKey, libraries) {
     const LoaderClass = GoogleMapsLoader.Loader ?? loaderModule.Loader;
     const loader = new LoaderClass({
         apiKey,
-        version: 'alpha',
+        version: 'weekly',
         libraries,
     });
     await loader.load();
