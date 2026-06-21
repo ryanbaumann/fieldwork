@@ -370,15 +370,12 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             const lng = photo.location[1];
 
             if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
-            let photoWidth = 600;
-            let photoThumbUrl = photo.urls?.["600"];
+            let photoThumbUrl = photo.urls?.["100"];
             if (!photoThumbUrl) {
-                photoThumbUrl = photo.urls?.["1000"];
-                photoWidth = 1000;
+                photoThumbUrl = photo.urls?.["600"];
             }
             if (!photoThumbUrl) {
-                photoThumbUrl = photo.urls?.["100"];
-                photoWidth = 100;
+                photoThumbUrl = photo.urls?.["1000"];
             }
 
             // Create Popover
@@ -388,25 +385,35 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
 
             // Populate Popover Content
             const popoverImageUrl = photo.urls?.["1000"] || photo.urls?.["600"] || photo.urls?.["100"]; // Fallback
+            
+            const popoverBody = document.createElement('div');
+            popoverBody.style.width = '200px';
+            popoverBody.style.display = 'flex';
+            popoverBody.style.flexDirection = 'column';
+            popoverBody.style.gap = '8px';
+
             const popoverImage = document.createElement('img');
             popoverImage.src = popoverImageUrl;
-            popoverImage.style.maxWidth = '200px';
-            popoverImage.style.maxHeight = '200px';
+            popoverImage.style.width = '200px';
+            popoverImage.style.height = '150px';
+            popoverImage.style.objectFit = 'cover';
             popoverImage.style.display = 'block';
-            popoverImage.style.marginBottom = '8px';
             popoverImage.onerror = () => { popoverImage.alt = 'Image failed to load'; };
 
             const popoverCaption = document.createElement('p');
             popoverCaption.textContent = photo.caption || 'No caption';
             popoverCaption.style.fontSize = '12px';
             popoverCaption.style.color = '#555';
+            popoverCaption.style.margin = '0';
+
+            popoverBody.append(popoverImage);
+            popoverBody.append(popoverCaption);
 
             const popoverHeading = document.createElement('h3');
             popoverHeading.slot = 'header';
             popoverHeading.textContent = photo.caption || 'Activity photo';
             popover.append(popoverHeading);
-            popover.append(popoverImage);
-            popover.append(popoverCaption);
+            popover.append(popoverBody);
 
             // Create Marker3DInteractiveElement with popover target
             const marker = new Marker3DInteractiveElement({
@@ -421,6 +428,8 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             const template = document.createElement('template');
             const img = document.createElement('img');
             img.src = getMarkerPhotoUrl(photoThumbUrl);
+            img.setAttribute('width', '48');
+            img.setAttribute('height', '48');
             img.style.width = '48px';
             img.style.height = '48px';
             img.style.borderRadius = '4px';
