@@ -295,7 +295,7 @@ function addRouteEndpointMarkers(path) {
             glyphColor: '#ffffff',
             scale: 1.0,
         });
-        marker.append(pin);
+        marker.append(pin.element);
         map3d.append(marker);
         routeMarkers.push(marker);
     });

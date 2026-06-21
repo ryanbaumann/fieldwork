@@ -9,6 +9,7 @@ import {
     setFollowCameraProgress,
     setFollowCameraSpeed,
     setTourSettings,
+    getTourSettings,
     registerTourCallbacks,
     getTourState,
     updateCameraForProgress,

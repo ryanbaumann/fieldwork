@@ -18,7 +18,8 @@ All notable changes to this project will be documented in this file.
 - **Compact UI Optimization**: Removed static debug HUD badge and tightened vertical padding between the sidebar title and the "Pick a route" section.
 
 ### Fixed
-- **Call Stack Overflow Crash**: Resolved a severe `RangeError: Maximum call stack size exceeded` crash in the Maps 3D custom element observer by appending the native `PinElement` directly (`marker.append(pin)`) instead of the deprecated, recursive `.element` property. In modern Maps JS API libraries, `PinElement` directly extends `HTMLElement`. Also updated Google Maps loader to use the `alpha` channel to ensure all latest 3D Maps bug fixes are applied.
+- **Call Stack Overflow Crash**: Resolved a severe `RangeError: Maximum call stack size exceeded` crash in the Maps 3D custom element observer by appending the underlying DOM element `pin.element` (`marker.append(pin.element)`) instead of the wrapper object (`marker.append(pin)`), which causes infinite recursion.
+- **Reference Errors**: Fixed ReferenceErrors where `temp_token` and `getTourSettings` were undefined during URL state parsing and authentication flow.
 - **Custom Pin Image Deprecation**: Swapped deprecated `glyph` to `glyphSrc` for loading photo URLs onto custom `PinElement` markers, preventing WebGL/Maps 3D serialization failures.
 - **3D Photo Marker Sizing**: Replaced custom unscalable `HTMLTemplateElement` image billboards with properly proportioned, natively scalable `PinElement` structures.
 
