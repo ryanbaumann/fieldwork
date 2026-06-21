@@ -390,8 +390,8 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
             const popoverImageUrl = photo.urls?.["1000"] || photo.urls?.["600"] || photo.urls?.["100"]; // Fallback
             const popoverImage = document.createElement('img');
             popoverImage.src = popoverImageUrl;
-            popoverImage.style.maxWidth = '300px';
-            popoverImage.style.maxHeight = '300px';
+            popoverImage.style.maxWidth = '200px';
+            popoverImage.style.maxHeight = '200px';
             popoverImage.style.display = 'block';
             popoverImage.style.marginBottom = '8px';
             popoverImage.onerror = () => { popoverImage.alt = 'Image failed to load'; };
