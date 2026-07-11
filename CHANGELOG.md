@@ -28,7 +28,7 @@ All notable changes to this project will be documented in this file.
   new demo app").
 - **Root `Dockerfile`**: multi-stage build, one `node:20-slim` builder
   stage per app, a slim non-root runtime stage carrying only `gateway/` +
-  each app's static output + `apps.json`. Plus `.dockerignore`.
+  each app's static output + `apps.json`. Plus `.dockerignore`. Updated to accept `VITE_GMP_API_KEY` and `VITE_STRAVA_CLIENT_ID` build arguments.
 - **`scripts/build-local.mjs`**: builds every app from `apps.json` and
   stages output under `apps/<name>/` exactly like the Dockerfile's runtime
   stage — the one code path both CI and humans use to answer "does it
@@ -45,7 +45,8 @@ All notable changes to this project will be documented in this file.
   (single Cloud Build + Cloud Run deploy via Workload Identity Federation,
   replacing the old GCS-bucket + separate-broker deploy). Added
   `.github/dependabot.yml` for weekly npm updates per app dir plus
-  GitHub Actions.
+  GitHub Actions. Passing `VITE_GMP_API_KEY` and `VITE_STRAVA_CLIENT_ID` build arguments to `gcloud builds submit`.
+- **Real screenshots**: Generated and added high-resolution visual previews for `aqi-map` and `isochrones` landing cards, wired up via `apps.json` as `/previews/aqi-map.jpg` and `/previews/isochrones.jpg`.
 
 ### Changed
 - `strava-explorer` and `isochrones` Vite configs now read `BASE_PATH` (env)
@@ -59,6 +60,7 @@ All notable changes to this project will be documented in this file.
   `window.AQI_MAP_CONFIG` for local `npm start`) and calls
   `/api/purpleair/sensors` instead of PurpleAir directly.
 - Added an accessible "&larr; trails.ninja" home link to each app's UI.
+
 
 ### Fixed (found via the new smoke test / gateway code review)
 - A keyless `strava-explorer` build was dead-code-eliminating the entire
