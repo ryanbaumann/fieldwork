@@ -52,7 +52,7 @@
     "@turf/clean-coords": "^7.3.5",
     "@turf/helpers": "^7.3.5",
     "@turf/truncate": "^7.3.5",
-    "browserify": "^17.0.0",
+    "browserify": "^17.0.1",
     "budo": "^11.8.4",
     "d3": "^7.9.0",
     "d3-delaunay": "^6.0.4",
