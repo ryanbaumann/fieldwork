@@ -34,17 +34,23 @@ export function mimeTypeFor(filePath) {
 }
 
 // Vite/Rollup and most bundlers embed a content hash directly in the
-// filename, e.g. `index-D3xK9f2a.js`, `app.4f9b1c2e.css`, or nest hashed
-// files under an `assets/` directory. Anything matching gets a
-// far-future immutable cache; everything else gets a conservative default.
-const HASHED_FILENAME_PATTERN = /[.-][A-Za-z0-9_-]{8,}\.[a-z0-9]+$/i;
+// filename, e.g. `index-D3xK9f2a.js`, `strava-explorer-gMKfxHCm.jpg`,
+// `dist-D-g5X-d9.js` (real filenames Vite produced for this repo's apps).
+// The segment right before the extension is treated as a hash if it's
+// 6-14 chars from the filename-safe alphabet AND contains an uppercase
+// letter: Vite/Rollup hashes are case-sensitive pseudo-random output, so an
+// uppercase letter shows up in all but a vanishingly small fraction of real
+// hashes, while ordinary hand-written lowercase names (`strava-explorer.jpg`,
+// `not-found.html`, `bundle.js`) never trip it.
+const HASHED_SEGMENT_PATTERN = /[.-]([A-Za-z0-9_-]{6,14})\.[a-z0-9]+$/i;
 
 export function cacheControlFor(filePath) {
   const ext = extname(filePath).toLowerCase();
   if (ext === '.html') {
     return 'no-cache';
   }
-  if (HASHED_FILENAME_PATTERN.test(filePath)) {
+  const match = HASHED_SEGMENT_PATTERN.exec(filePath);
+  if (match && /[A-Z]/.test(match[1])) {
     return 'public, max-age=31536000, immutable';
   }
   return 'public, max-age=3600';
