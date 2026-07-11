@@ -7,6 +7,10 @@
 
 const PURPLEAIR_ENDPOINT = 'https://map.purpleair.com/v1/sensors';
 const CACHE_TTL_MS = 60_000;
+// Distinct query-param combos are rare in practice (aqi-map issues one
+// fixed query), but bound the cache anyway so an unbounded set of
+// `max_age`/bounding-box combos can't grow memory forever.
+const CACHE_MAX_ENTRIES = 50;
 
 // Only pass through params the client actually needs (aqi-map/index.js uses
 // `fields` + `max_age` today; the bounding-box params are accepted too in
@@ -14,6 +18,19 @@ const CACHE_TTL_MS = 60_000;
 const ALLOWED_PARAMS = new Set(['fields', 'max_age', 'nwlng', 'nwlat', 'selng', 'selat', 'location_type']);
 
 const cache = new Map();
+
+function pruneCache() {
+  const now = Date.now();
+  for (const [key, entry] of cache.entries()) {
+    if (now - entry.storedAt >= CACHE_TTL_MS) cache.delete(key);
+  }
+  while (cache.size >= CACHE_MAX_ENTRIES) {
+    // Map preserves insertion order, so the first key is the oldest.
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey === undefined) break;
+    cache.delete(oldestKey);
+  }
+}
 
 export function isPurpleAirConfigured(env = process.env) {
   return Boolean(env.PURPLEAIR_API_KEY);
@@ -67,6 +84,7 @@ export async function handlePurpleAirApi(searchParams, { fetch = globalThis.fetc
     return { statusCode: upstream.status === 429 ? 429 : 502, json: { error: 'PurpleAir request failed.' } };
   }
 
+  pruneCache();
   cache.set(key, { data, storedAt: Date.now() });
   return { statusCode: 200, json: data, cached: false };
 }

@@ -24,7 +24,13 @@ const JSON_BODY_LIMIT_BYTES = 16 * 1024;
 const { apps } = loadApps(process.env);
 const publicApps = apps.map(toPublicApp);
 
+// Token/refresh/deauthorize, isochrones, and purpleair are all low-volume,
+// one-request-per-user-action calls, so a shared conservative bucket is
+// fine. The photo proxy is different: a single Strava tour can render
+// dozens of photo billboards, each firing its own GET, so it gets its own
+// more generous limiter to avoid 429s on ordinary page loads.
 const proxyRateLimiter = createRateLimiter({ windowMs: 60_000, max: 30 });
+const photoRateLimiter = createRateLimiter({ windowMs: 60_000, max: 120 });
 
 function sendJson(response, statusCode, payload) {
   applySecurityHeaders(response);
@@ -96,9 +102,11 @@ async function handleApi(request, response, pathname, searchParams) {
   // strava-explorer client (and its standalone Cloud Run broker in
   // strava-explorer/server/) both speak /api/photo-proxy, so the gateway
   // accepts both without requiring a client change.
-  const isStravaRoute = pathname.startsWith('/api/strava/') || pathname === '/api/photo-proxy';
+  const isPhotoRoute = pathname === '/api/strava/photo' || pathname === '/api/photo-proxy';
+  const isStravaRoute = pathname.startsWith('/api/strava/') || isPhotoRoute;
   const isProxyRoute = isStravaRoute || pathname === '/api/isochrones' || pathname === '/api/purpleair/sensors';
-  if (isProxyRoute && !proxyRateLimiter.check(ip)) {
+  const limiter = isPhotoRoute ? photoRateLimiter : proxyRateLimiter;
+  if (isProxyRoute && !limiter.check(ip)) {
     sendJson(response, 429, { error: 'Too many requests. Please try again later.' });
     return;
   }
@@ -194,6 +202,18 @@ const server = createServer(async (request, response) => {
 
     const app = findAppForPath(pathname);
     if (app) {
+      // Redirect the trailing-slash-less form (`/aqi-map`) to the canonical
+      // directory URL (`/aqi-map/`). Apps use root-relative or
+      // directory-relative asset URLs that assume they're served from
+      // their own "directory"; without the slash the browser resolves
+      // `./bundle.js` against `/` instead of `/aqi-map/` and 404s.
+      if (pathname === app.path.slice(0, -1)) {
+        applySecurityHeaders(response);
+        response.writeHead(308, { Location: app.path + requestUrl.search });
+        response.end();
+        return;
+      }
+
       if (!app.available) {
         applySecurityHeaders(response);
         response.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' });

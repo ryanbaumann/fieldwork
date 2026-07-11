@@ -32,14 +32,18 @@ export function isIsochronesConfigured(env = process.env) {
 }
 
 export async function handleIsochronesApi(body, { fetch = globalThis.fetch, env = process.env } = {}) {
-  const apiKey = env.GMP_SERVER_API_KEY || env.VITE_GMP_API_KEY;
-  if (!apiKey) {
-    return { statusCode: 503, json: { error: 'Isochrones proxy is not configured on this server (set GMP_SERVER_API_KEY).' } };
-  }
-
+  // Validate before checking configuration: a malformed request should
+  // always come back as 400 regardless of whether the server happens to
+  // have a key configured, so callers (and the smoke test) can rely on 400
+  // meaning "fix your request" and 503 meaning "server isn't configured".
   const validationError = validateIsochroneBody(body);
   if (validationError) {
     return { statusCode: 400, json: { error: validationError } };
+  }
+
+  const apiKey = env.GMP_SERVER_API_KEY || env.VITE_GMP_API_KEY;
+  if (!apiKey) {
+    return { statusCode: 503, json: { error: 'Isochrones proxy is not configured on this server (set GMP_SERVER_API_KEY).' } };
   }
 
   let upstream;

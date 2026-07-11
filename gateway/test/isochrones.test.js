@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateIsochroneBody } from '../lib/isochrones.js';
+import { validateIsochroneBody, handleIsochronesApi } from '../lib/isochrones.js';
 
 const validBody = {
   location: { latitude: 37.7749, longitude: -122.4194 },
@@ -29,4 +29,14 @@ test('validateIsochroneBody caps DRIVE duration at 3600 seconds', () => {
 
 test('validateIsochroneBody rejects missing body fields', () => {
   assert.ok(validateIsochroneBody({}));
+});
+
+test('handleIsochronesApi returns 400 for an invalid body even with no key configured', async () => {
+  const result = await handleIsochronesApi({}, { env: {} });
+  assert.equal(result.statusCode, 400);
+});
+
+test('handleIsochronesApi returns 503 for a valid body when no key is configured', async () => {
+  const result = await handleIsochronesApi(validBody, { env: {} });
+  assert.equal(result.statusCode, 503);
 });

@@ -60,6 +60,10 @@ export const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'SAMEORIGIN',
+  // The service only ever runs behind Cloud Run's TLS termination (and
+  // local dev is plain HTTP on localhost, which browsers exempt from HSTS
+  // upgrade-loop issues), so this is safe to send unconditionally.
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
 };
 
 export function applySecurityHeaders(response) {
@@ -70,9 +74,12 @@ export function applySecurityHeaders(response) {
 
 /**
  * Resolve `subPath` inside `baseDir`, refusing anything that would escape
- * `baseDir` (path traversal via `..`, absolute paths, symlink-free check
- * happens implicitly because we only ever `readFile`/`stat` the resolved
- * path). Returns null if the resolved path escapes baseDir.
+ * `baseDir` (path traversal via `..` or an absolute path). Note this is a
+ * lexical check on the resolved path string, not a symlink-safe jail:
+ * `resolve()` does not follow or validate symlinks. That's an accepted
+ * tradeoff here because `baseDir` only ever contains our own build output
+ * (never user-uploaded content), so no symlink can point outside it.
+ * Returns null if the resolved path escapes baseDir.
  */
 export function safeResolve(baseDir, subPath) {
   const base = resolve(baseDir);
