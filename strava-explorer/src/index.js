@@ -567,7 +567,7 @@ function setupBottomSheet() {
 
     const getHeights = () => {
         const vh = window.visualViewport?.height || window.innerHeight;
-        const safeBottom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-bottom')) || 0;
+        const safeBottom = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--safe-area-bottom')) || 0;
         return {
             peek: Math.max(112, vh * 0.18),
             half: Math.max(320, vh * 0.56),

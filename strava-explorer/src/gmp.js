@@ -715,7 +715,7 @@ export function clearPhotoMarkers() {
 
 export { downsamplePath };
 
-export function updateTrackingMarker(position, color = '#3b82f6') {
+export function updateTrackingMarker(position) {
     if (!map3d || !Marker3DInteractiveElement || !AltitudeMode) return;
     
     if (!trackingMarker) {
