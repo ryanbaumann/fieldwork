@@ -32,6 +32,22 @@ Three sections, in order, each 1–2 short paragraphs:
 - Evidence from real work — link the artifact every time.
 - End with what to do about it, not a summary.
 
+## Syndicating a post to Substack
+
+Posts live here first. This site owns the canonical URL, has an RSS feed at
+`/feed.xml`, and lets Google credit the original. Substack has no reliable
+RSS auto-import, so mirroring is a manual copy either way. When cross-posting:
+
+1. Publish here first: `npm run new:post -- "Title"`, write it, `node portfolio/build.mjs`.
+2. Paste the body into a new Substack post.
+3. In Substack, set the canonical URL to the post's URL on this site
+   (`https://www.ryanbaumann-portfolio.com/writing/<slug>/`) so search
+   engines credit the original, not the mirror.
+4. For a post that started on Substack, do the reverse: add a hosted-here
+   entry with `canonical` pointing at the Substack URL (see
+   `content/writing/vibing-with-maps.md`), or leave it as an `external`
+   link-out. Never let two live URLs claim the same canonical.
+
 ## Things Ryan never writes
 
 - Passive voice for his own work.

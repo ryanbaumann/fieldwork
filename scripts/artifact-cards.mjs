@@ -125,6 +125,10 @@ const CARDS = [
 
 const escape = (t) => String(t).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
+// Cards are referenced via <img>, and an SVG loaded that way still honors an
+// internal prefers-color-scheme media query. Colors are driven by CSS custom
+// properties so one stylesheet flips the whole card between light and dark to
+// match the page it sits on.
 function card({ eyebrow, title, lines, footer, mono }) {
   const W = 960;
   const H = 600;
@@ -132,20 +136,38 @@ function card({ eyebrow, title, lines, footer, mono }) {
   const monoStack = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
   const lineCount = lines.length;
   const blockStart = 300 - ((lineCount - 1) * 26);
+  const bodyFont = mono ? monoStack : sans;
   const body = lines
-    .map((line, i) => `<text x="480" y="${blockStart + 92 + i * 52}" text-anchor="middle" font-family="${mono ? monoStack : sans}" font-size="30" fill="#c7d2e4">${escape(line)}</text>`)
+    .map((line, i) => `<text class="body" x="480" y="${blockStart + 92 + i * 52}" text-anchor="middle" font-family="${bodyFont}" font-size="30">${escape(line)}</text>`)
     .join('\n  ');
+  const styles = `
+    :root {
+      --bg: #0b1220; --border: #1f2b3f; --dot: #26334a;
+      --eyebrow: #2563eb; --title: #f3f6fb; --body: #c7d2e4; --footer: #7e8aa0;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f7f8fb; --border: #dfe4ee; --dot: #c7cede;
+        --eyebrow: #2563eb; --title: #111827; --body: #384156; --footer: #6b7280;
+      }
+    }
+  `.trim();
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escape(`${eyebrow}: ${title}`)}">
-  <rect width="${W}" height="${H}" fill="#0b1220"/>
-  <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" fill="none" stroke="#1f2b3f" stroke-width="3" rx="14"/>
-  <circle cx="46" cy="46" r="7" fill="#26334a"/>
-  <circle cx="72" cy="46" r="7" fill="#26334a"/>
-  <circle cx="98" cy="46" r="7" fill="#26334a"/>
-  <text x="480" y="${blockStart - 34}" text-anchor="middle" font-family="${monoStack}" font-size="19" letter-spacing="4" fill="#60a5fa">${escape(eyebrow)}</text>
-  <text x="480" y="${blockStart + 30}" text-anchor="middle" font-family="${sans}" font-size="52" font-weight="700" fill="#f3f6fb">${escape(title)}</text>
+  <style>${styles}
+    .card-bg { fill: var(--bg); } .card-border { stroke: var(--border); } .dot { fill: var(--dot); }
+    .rule { stroke: var(--border); } .eyebrow { fill: var(--eyebrow); }
+    .title { fill: var(--title); } .body { fill: var(--body); } .footer { fill: var(--footer); }
+  </style>
+  <rect class="card-bg" width="${W}" height="${H}"/>
+  <rect class="card-border" x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" fill="none" stroke-width="3" rx="14"/>
+  <circle class="dot" cx="46" cy="46" r="7"/>
+  <circle class="dot" cx="72" cy="46" r="7"/>
+  <circle class="dot" cx="98" cy="46" r="7"/>
+  <text class="eyebrow" x="480" y="${blockStart - 34}" text-anchor="middle" font-family="${monoStack}" font-size="19" letter-spacing="4">${escape(eyebrow)}</text>
+  <text class="title" x="480" y="${blockStart + 30}" text-anchor="middle" font-family="${sans}" font-size="52" font-weight="700">${escape(title)}</text>
   ${body}
-  <line x1="120" y1="${H - 96}" x2="${W - 120}" y2="${H - 96}" stroke="#1f2b3f" stroke-width="2"/>
-  <text x="480" y="${H - 56}" text-anchor="middle" font-family="${monoStack}" font-size="19" fill="#7e8aa0">${escape(footer)}</text>
+  <line class="rule" x1="120" y1="${H - 96}" x2="${W - 120}" y2="${H - 96}" stroke-width="2"/>
+  <text class="footer" x="480" y="${H - 56}" text-anchor="middle" font-family="${monoStack}" font-size="19">${escape(footer)}</text>
 </svg>
 `;
 }
