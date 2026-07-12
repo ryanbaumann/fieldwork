@@ -1,0 +1,468 @@
+#!/usr/bin/env node
+// build.mjs — the entire CMS.
+//
+// Zero dependencies. Reads flat files from content/ (markdown with a small
+// front-matter block, plus site.json), renders static HTML into dist/, and
+// copies static/ verbatim. Adding content is adding a file; adding a content
+// type is adding an entry to COLLECTIONS below.
+//
+// Usage:
+//   node build.mjs                 # build into dist/
+//   BASE_PATH=/portfolio/ node build.mjs   # build for a subpath mount
+
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
+const CONTENT_DIR = join(ROOT, 'content');
+const STATIC_DIR = join(ROOT, 'static');
+const DIST_DIR = join(ROOT, 'dist');
+const BASE = (process.env.BASE_PATH || '/').endsWith('/')
+  ? (process.env.BASE_PATH || '/')
+  : `${process.env.BASE_PATH}/`;
+
+// Each collection is a folder of markdown files. Files starting with "_"
+// (templates, drafts) are skipped. `listPage` controls whether the
+// collection gets its own index page; `detailPages` controls whether
+// entries with a body get their own page at /<name>/<slug>/.
+const COLLECTIONS = [
+  { name: 'work', label: 'Work', listPage: true, detailPages: true },
+  { name: 'writing', label: 'Writing', listPage: true, detailPages: true },
+  { name: 'talks', label: 'Talks', listPage: true, detailPages: true },
+];
+
+const site = JSON.parse(readFileSync(join(CONTENT_DIR, 'site.json'), 'utf8'));
+
+// ---------------------------------------------------------------------------
+// Front matter: a leading block delimited by --- lines, one `key: value` per
+// line. Values that parse as JSON (arrays, objects, booleans, numbers) are
+// used as-is; everything else is a string.
+// ---------------------------------------------------------------------------
+
+function parseFrontMatter(raw) {
+  const meta = {};
+  if (!raw.startsWith('---')) return { meta, body: raw.trim() };
+  const end = raw.indexOf('\n---', 3);
+  if (end === -1) return { meta, body: raw.trim() };
+  const block = raw.slice(raw.indexOf('\n') + 1, end);
+  for (const line of block.split('\n')) {
+    const separator = line.indexOf(':');
+    if (separator === -1) continue;
+    const key = line.slice(0, separator).trim();
+    const value = line.slice(separator + 1).trim();
+    if (!key) continue;
+    try {
+      meta[key] = JSON.parse(value);
+    } catch {
+      meta[key] = value;
+    }
+  }
+  return { meta, body: raw.slice(end + 4).trim() };
+}
+
+// ---------------------------------------------------------------------------
+// Markdown: the small subset the content actually uses — headings, bold,
+// italic, inline code, links, images, lists, blockquotes, fenced code, hr.
+// ---------------------------------------------------------------------------
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+// Content authors write site-internal links root-relative (`/work/`,
+// `/decks/foo.pdf`); rebase them onto BASE_PATH so the same content works
+// at the domain root and mounted under a subpath.
+function rebase(href) {
+  if (href.startsWith('/') && !href.startsWith('//')) return BASE + href.slice(1);
+  return href;
+}
+
+function inlineMd(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => `<img src="${rebase(src)}" alt="${alt}" loading="lazy" />`);
+  html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => {
+    const external = /^https?:\/\//.test(href);
+    return `<a href="${rebase(href)}"${external ? ' rel="noopener"' : ''}>${label}</a>`;
+  });
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  return html;
+}
+
+function markdownToHtml(markdown) {
+  const lines = markdown.split('\n');
+  const out = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+
+    if (line.startsWith('```')) {
+      const code = [];
+      index += 1;
+      while (index < lines.length && !lines[index].startsWith('```')) {
+        code.push(lines[index]);
+        index += 1;
+      }
+      index += 1;
+      out.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,4})\s+(.*)$/);
+    if (heading) {
+      const level = Math.min(heading[1].length + 1, 5); // page h1 is the title
+      out.push(`<h${level}>${inlineMd(heading[2])}</h${level}>`);
+      index += 1;
+      continue;
+    }
+
+    if (/^(-{3,}|\*{3,})$/.test(line.trim())) {
+      out.push('<hr />');
+      index += 1;
+      continue;
+    }
+
+    if (/^\s*[-*]\s+/.test(line)) {
+      const items = [];
+      while (index < lines.length && /^\s*[-*]\s+/.test(lines[index])) {
+        items.push(`<li>${inlineMd(lines[index].replace(/^\s*[-*]\s+/, ''))}</li>`);
+        index += 1;
+      }
+      out.push(`<ul>${items.join('')}</ul>`);
+      continue;
+    }
+
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items = [];
+      while (index < lines.length && /^\s*\d+\.\s+/.test(lines[index])) {
+        items.push(`<li>${inlineMd(lines[index].replace(/^\s*\d+\.\s+/, ''))}</li>`);
+        index += 1;
+      }
+      out.push(`<ol>${items.join('')}</ol>`);
+      continue;
+    }
+
+    if (line.startsWith('> ')) {
+      const quote = [];
+      while (index < lines.length && lines[index].startsWith('> ')) {
+        quote.push(inlineMd(lines[index].slice(2)));
+        index += 1;
+      }
+      out.push(`<blockquote><p>${quote.join('<br />')}</p></blockquote>`);
+      continue;
+    }
+
+    if (line.trim() === '') {
+      index += 1;
+      continue;
+    }
+
+    const paragraph = [];
+    while (index < lines.length && lines[index].trim() !== '' && !/^(#{1,4}\s|```|>\s|\s*[-*]\s|\s*\d+\.\s)/.test(lines[index])) {
+      paragraph.push(lines[index]);
+      index += 1;
+    }
+    out.push(`<p>${inlineMd(paragraph.join(' '))}</p>`);
+  }
+
+  return out.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Content loading
+// ---------------------------------------------------------------------------
+
+function loadCollection(name) {
+  const dir = join(CONTENT_DIR, name);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((file) => file.endsWith('.md') && !file.startsWith('_'))
+    .map((file) => {
+      const slug = file.replace(/\.md$/, '');
+      const { meta, body } = parseFrontMatter(readFileSync(join(dir, file), 'utf8'));
+      return { slug, meta, body };
+    })
+    .sort((a, b) => {
+      const orderA = a.meta.order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.meta.order ?? Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) return orderA - orderB;
+      return String(b.meta.date || '').localeCompare(String(a.meta.date || ''));
+    });
+}
+
+function entryUrl(collection, entry) {
+  if (entry.meta.external) return entry.meta.external;
+  return `${BASE}${collection}/${entry.slug}/`;
+}
+
+function hasDetailPage(entry) {
+  return !entry.meta.external && entry.body.length > 0;
+}
+
+// ---------------------------------------------------------------------------
+// Layout
+// ---------------------------------------------------------------------------
+
+const CSS = readFileSync(join(ROOT, 'style.css'), 'utf8');
+
+function layout({ title, description, content, active = '' }) {
+  const navItems = [
+    { href: `${BASE}work/`, label: 'Work', key: 'work' },
+    { href: `${BASE}writing/`, label: 'Writing', key: 'writing' },
+    { href: `${BASE}talks/`, label: 'Talks', key: 'talks' },
+    { href: `${BASE}about/`, label: 'About', key: 'about' },
+  ];
+  const nav = navItems
+    .map((item) => `<a href="${item.href}"${item.key === active ? ' aria-current="page"' : ''}>${item.label}</a>`)
+    .join('');
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${escapeHtml(title)}</title>
+<meta name="description" content="${escapeHtml(description)}" />
+<meta property="og:title" content="${escapeHtml(title)}" />
+<meta property="og:description" content="${escapeHtml(description)}" />
+<meta property="og:type" content="website" />
+<link rel="icon" href="${BASE}favicon.svg" type="image/svg+xml" />
+<style>${CSS}</style>
+</head>
+<body>
+<header class="site-header">
+  <a class="site-name" href="${BASE}">${escapeHtml(site.name)}</a>
+  <nav aria-label="Site">${nav}</nav>
+</header>
+<main id="main">
+${content}
+</main>
+<footer class="site-footer">
+  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.name)}</p>
+  <p class="footer-links">
+    <a href="${site.links.github}" rel="noopener">GitHub</a>
+    <a href="${site.links.linkedin}" rel="noopener">LinkedIn</a>
+    <a href="mailto:${site.links.email}">Email</a>
+  </p>
+</footer>
+</body>
+</html>
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Components
+// ---------------------------------------------------------------------------
+
+function metaLine(parts) {
+  return parts.filter(Boolean).map((part) => escapeHtml(part)).join(' · ');
+}
+
+function linkChips(links = []) {
+  if (!links.length) return '';
+  const chips = links
+    .map((link) => `<a class="chip" href="${rebase(link.url)}" rel="noopener">${escapeHtml(link.label)} ↗</a>`)
+    .join('');
+  return `<p class="chips">${chips}</p>`;
+}
+
+function workCard(entry) {
+  const { meta } = entry;
+  const url = hasDetailPage(entry) ? entryUrl('work', entry) : rebase(meta.links?.[0]?.url || `${BASE}work/`);
+  const external = !hasDetailPage(entry) && /^https?:/.test(url);
+  return `<a class="card" href="${url}"${external ? ' rel="noopener"' : ''}>
+  <p class="card-meta">${metaLine([meta.org, meta.period])}</p>
+  <h3>${escapeHtml(meta.title)}</h3>
+  <p>${escapeHtml(meta.summary || '')}</p>
+  ${meta.tags ? `<p class="card-tags">${meta.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</p>` : ''}
+</a>`;
+}
+
+function listRow(collection, entry) {
+  const { meta } = entry;
+  const url = entryUrl(collection, entry);
+  const external = Boolean(meta.external);
+  const clickable = external || hasDetailPage(entry);
+  const title = clickable
+    ? `<a href="${url}"${external ? ' rel="noopener"' : ''}>${escapeHtml(meta.title)}${external ? ' ↗' : ''}</a>`
+    : escapeHtml(meta.title);
+  return `<li class="row">
+  <div>
+    <p class="row-title">${title}</p>
+    <p class="row-summary">${escapeHtml(meta.summary || '')}</p>
+    ${linkChips(clickable ? [] : meta.links)}
+  </div>
+  <p class="row-meta">${metaLine([meta.venue || meta.org, meta.type, meta.date || meta.period])}</p>
+</li>`;
+}
+
+function sectionHeader(eyebrow, title, moreHref, moreLabel) {
+  return `<div class="section-header">
+  <div><p class="eyebrow">${escapeHtml(eyebrow)}</p>${title ? `<h2>${escapeHtml(title)}</h2>` : ''}</div>
+  ${moreHref ? `<a class="more" href="${moreHref}">${escapeHtml(moreLabel)} →</a>` : ''}
+</div>`;
+}
+
+// ---------------------------------------------------------------------------
+// Pages
+// ---------------------------------------------------------------------------
+
+function writePage(outPath, html) {
+  const target = join(DIST_DIR, outPath);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, html);
+}
+
+function detailPage(collection, entry, activeKey) {
+  const { meta } = entry;
+  const content = `<article class="prose">
+  <p class="eyebrow">${escapeHtml(collection.label)}</p>
+  <h1>${escapeHtml(meta.title)}</h1>
+  <p class="article-meta">${metaLine([meta.org || meta.venue, meta.role, meta.period || meta.date])}</p>
+  ${linkChips(meta.links)}
+  ${markdownToHtml(entry.body)}
+  <p class="back"><a href="${BASE}${collection.name}/">← All ${collection.label.toLowerCase()}</a></p>
+</article>`;
+  writePage(join(collection.name, entry.slug, 'index.html'), layout({
+    title: `${meta.title} — ${site.name}`,
+    description: meta.summary || site.description,
+    content,
+    active: activeKey,
+  }));
+}
+
+function buildHome(collections) {
+  const featuredWork = collections.work.filter((entry) => entry.meta.featured);
+  const writingEntries = collections.writing.slice(0, 3);
+  const talkEntries = collections.talks.slice(0, 3);
+
+  const content = `
+<section class="hero">
+  <p class="eyebrow">${escapeHtml(site.tagline)}</p>
+  <h1>${escapeHtml(site.headline)}</h1>
+  <p class="lede">${escapeHtml(site.thesis)}</p>
+  <p class="hero-meta">${escapeHtml(site.role)} · ${escapeHtml(site.location)}</p>
+</section>
+
+<section>
+  ${sectionHeader('Selected work', '', `${BASE}work/`, 'All work')}
+  <div class="grid">
+    ${featuredWork.map(workCard).join('\n')}
+  </div>
+</section>
+
+<section>
+  ${sectionHeader('Writing', '', `${BASE}writing/`, 'All writing')}
+  <ul class="rows">
+    ${writingEntries.map((entry) => listRow('writing', entry)).join('\n')}
+  </ul>
+  <p class="placeholder-note">Long-form writing lands here soon — the blog section of this site is built and waiting for posts.</p>
+</section>
+
+<section>
+  ${sectionHeader('Talks', '', `${BASE}talks/`, 'All talks')}
+  <ul class="rows">
+    ${talkEntries.map((entry) => listRow('talks', entry)).join('\n')}
+  </ul>
+</section>
+
+<section class="about-teaser">
+  ${sectionHeader('Background', '')}
+  <p class="lede">${escapeHtml(site.aboutTeaser)}</p>
+  <p><a class="more" href="${BASE}about/">The full story →</a></p>
+</section>
+`;
+
+  writePage('index.html', layout({
+    title: `${site.name} — ${site.role}`,
+    description: site.description,
+    content,
+  }));
+}
+
+function buildCollectionIndex(collection, entries) {
+  const isEmpty = entries.length === 0;
+  const emptyState = `<div class="empty-state">
+  <h2>Coming soon</h2>
+  <p>This section is designed, built, and waiting for its first entry. Drop a markdown file into <code>content/${collection.name}/</code> and rebuild.</p>
+</div>`;
+
+  const body = collection.name === 'work'
+    ? `<div class="grid">${entries.map(workCard).join('\n')}</div>`
+    : `<ul class="rows">${entries.map((entry) => listRow(collection.name, entry)).join('\n')}</ul>`;
+
+  const intro = site.sectionIntros?.[collection.name]
+    ? `<p class="lede">${escapeHtml(site.sectionIntros[collection.name])}</p>`
+    : '';
+
+  const content = `<section>
+  <p class="eyebrow">${escapeHtml(collection.label)}</p>
+  <h1>${escapeHtml(collection.label)}</h1>
+  ${intro}
+  ${isEmpty ? emptyState : body}
+</section>`;
+
+  writePage(join(collection.name, 'index.html'), layout({
+    title: `${collection.label} — ${site.name}`,
+    description: site.sectionIntros?.[collection.name] || site.description,
+    content,
+    active: collection.name,
+  }));
+}
+
+function buildStandalonePages() {
+  const dir = join(CONTENT_DIR, 'pages');
+  if (!existsSync(dir)) return;
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith('.md') || file.startsWith('_')) continue;
+    const slug = file.replace(/\.md$/, '');
+    const { meta, body } = parseFrontMatter(readFileSync(join(dir, file), 'utf8'));
+    const content = `<article class="prose">
+  <p class="eyebrow">${escapeHtml(meta.eyebrow || site.name)}</p>
+  <h1>${escapeHtml(meta.title)}</h1>
+  ${markdownToHtml(body)}
+</article>`;
+    writePage(join(slug, 'index.html'), layout({
+      title: `${meta.title} — ${site.name}`,
+      description: meta.summary || site.description,
+      content,
+      active: slug,
+    }));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Build
+// ---------------------------------------------------------------------------
+
+rmSync(DIST_DIR, { recursive: true, force: true });
+mkdirSync(DIST_DIR, { recursive: true });
+
+const collections = {};
+for (const collection of COLLECTIONS) {
+  const entries = loadCollection(collection.name);
+  collections[collection.name] = entries;
+  buildCollectionIndex(collection, entries);
+  if (collection.detailPages) {
+    for (const entry of entries) {
+      if (hasDetailPage(entry)) detailPage(collection, entry, collection.name);
+    }
+  }
+}
+
+buildHome(collections);
+buildStandalonePages();
+
+if (existsSync(STATIC_DIR)) {
+  cpSync(STATIC_DIR, DIST_DIR, { recursive: true });
+}
+
+const pageCount = readdirSync(DIST_DIR, { recursive: true }).filter((file) => String(file).endsWith('index.html')).length;
+console.log(`[portfolio] built ${pageCount} pages into dist/ (base: ${BASE})`);
