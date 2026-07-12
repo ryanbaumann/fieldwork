@@ -1,5 +1,5 @@
 ---
-name: design
+name: portfolio-design
 description: How Ryan designs. Use before changing style.css, page layouts in build.mjs, or adding any visual element to the site.
 ---
 

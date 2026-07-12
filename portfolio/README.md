@@ -44,13 +44,13 @@ schema. Underscore-prefixed files are drafts — the build skips them.
 ## Updating the site
 
 Adding anything is: copy the template, write markdown, `node build.mjs`.
-The repo ships agent skills that encode the standards, so an AI coding
-agent maintains the site in the same voice and style:
+The repo ships generic agent skills that encode the standards, so any AI coding
+agent can maintain the site in the same voice and style:
 
-- `.claude/skills/content/` — the CMS how-to (schemas, where things go, new content types)
-- `.claude/skills/writing/` — how Ryan writes (voice, structure, banned words)
-- `.claude/skills/design/` — how Ryan designs (principles, tokens, performance budget)
-- `.claude/skills/presenting/` — how Ryan presents (demo-first format, adding decks)
+- `../.agents/skills/portfolio-content/` — the CMS how-to (schemas, where things go, new content types)
+- `../.agents/skills/portfolio-writing/` — how Ryan writes (voice, structure, banned words)
+- `../.agents/skills/portfolio-design/` — how Ryan designs (principles, tokens, performance budget)
+- `../.agents/skills/portfolio-presenting/` — how Ryan presents (demo-first format, adding decks)
 
 ## Deploying
 

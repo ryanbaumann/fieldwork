@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file.
 ### Changed — Brand direction
 - Re-centered public docs, package metadata, gateway logs, demo home links, and portfolio site metadata on the Ryan Baumann Portfolio brand and canonical `https://www.ryanbaumann-portfolio.com/` URL while preserving legacy `trails-ninja` service/repo references where renaming could affect deployment.
 
+### Changed — Agent workflows
+- Moved canonical local skills from tool-specific `.claude/` and `.codex/` directories into generic `.agents/skills/`, including portfolio content/writing/design/presenting guidance and Google Maps Platform skill references.
+
 ## [Unreleased] - 2026-07-12 — One site, one design
 
 ### Changed — The portfolio is now the site
@@ -57,8 +60,8 @@ All notable changes to this project will be documented in this file.
   built as a zero-dependency static site generator (`build.mjs`) over a
   flat-file markdown CMS (`content/` + front matter). Zero client-side
   JavaScript, single-request pages, light/dark themes. Self-contained with
-  its own README, `.gitignore`, and `.claude/skills/` (content, writing,
-  design, presenting) so it can be lifted into a standalone `portfolio`
+  its own README, `.gitignore`, and portable agent guidance now under
+  `.agents/skills/portfolio-*` (content, writing, design, presenting) so it can be lifted into a standalone `portfolio`
   GitHub repo unchanged. Mounted at `/portfolio/` via `apps.json` and a new
   Dockerfile stage; the landing page hero now links to it.
 

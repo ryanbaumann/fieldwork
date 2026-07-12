@@ -1,6 +1,6 @@
 /* style.css — the entire design system. Inlined into every page at build
    time so each page is a single request. Tokens first, then primitives,
-   then components. See .claude/skills/design/SKILL.md before changing. */
+   then components. See ../.agents/skills/portfolio-design/SKILL.md before changing. */
 
 :root {
   --bg: #faf9f6;

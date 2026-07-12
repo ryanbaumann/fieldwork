@@ -1,5 +1,5 @@
 ---
-name: writing
+name: portfolio-writing
 description: How Ryan writes. Use whenever drafting or editing any prose for this site — work case studies, blog posts, page copy, talk abstracts, even link summaries.
 ---
 

@@ -16,7 +16,7 @@ The site should stay fast, boring, and easy to operate: static portfolio, flat-f
 - The root package and several docs still use `trails-ninja` / `trails.ninja` as the container/site name, while the portfolio content already uses Ryan Baumann as the visible site name.
 - The portfolio is a zero-dependency static site generator over `portfolio/content/**`; `site.json` drives global identity/copy, collection markdown drives work/writing/talks, and `../apps.json` feeds demos.
 - The portfolio `layout()` emits only basic title, description, and Open Graph fields. There is no canonical URL, `og:url`, `og:image`, Twitter card metadata, JSON-LD, sitemap, robots file, or RSS/Atom feed.
-- Portfolio agent guidance is split across tool-specific `.claude/skills/` and `.codex/skills/` paths, even though the requested direction is generic `AGENTS.md` / `.agents/` workflows.
+- Initial research found portfolio agent guidance split across tool-specific skill paths; Task 2 migrates canonical guidance to generic `AGENTS.md` / `.agents/` workflows.
 - The blog CMS is intentionally small but too quiet for scaled editing: unvalidated front matter, filename-only drafts, loose dates, no slug/canonical model, and no broken-link/static-asset validation.
 - The gateway already centralizes static serving and secret-bearing API calls. It has body limits, keyless `503`s, timeouts, security headers, path traversal protection, and per-route in-memory limiters, but it has no manifest-level private demo model or shared rate-limit backend.
 - The Strava photo proxy exists but production gateway image responses diverge from the standalone broker: the gateway does not emit CORS/CORP headers, and popover images still use raw Strava CloudFront URLs instead of the proxy path.
@@ -67,13 +67,13 @@ Acceptance criteria:
 Owner: agent-instructions subagent.
 
 Scope:
-- Move portable skills/guidance from `portfolio/.claude/skills/*` and repo `.codex/skills/*` into `.agents/skills/*` where practical.
+- Keep portable skills/guidance under `.agents/skills/*`, including the `portfolio-*` skills and Google Maps Platform skills.
 - Update `AGENTS.md`, `portfolio/README.md`, `scripts/new-post.mjs`, `portfolio/static/decks/README.md`, and content templates to point to generic `.agents` guidance.
 - Preserve compatibility if any tool-specific path is required by current automation, but make `.agents` canonical.
 - Keep the changelog and learning log concise, operational, and loop-friendly.
 
 Acceptance criteria:
-- A search for `.claude` and `.codex` finds no canonical instruction references except compatibility notes or archived migration notes.
+- A search for tool-specific skill directories finds no canonical instruction references except archived migration notes.
 - `.agents/skills/portfolio-content`, `.agents/skills/portfolio-writing`, `.agents/skills/portfolio-design`, and `.agents/skills/portfolio-presenting` exist or equivalent generic names exist.
 - `AGENTS.md` points future agents to generic paths and still includes Google Maps skill guidance.
 - `npm run build` passes.

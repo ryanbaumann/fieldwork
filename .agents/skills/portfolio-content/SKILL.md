@@ -1,5 +1,5 @@
 ---
-name: content
+name: portfolio-content
 description: How to add or update content on this site — work entries, blog posts, talks, pages, static assets, or a whole new content type. The CMS is the filesystem.
 ---
 

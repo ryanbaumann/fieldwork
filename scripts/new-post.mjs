@@ -10,7 +10,7 @@
 //   npm run new:post -- "Launch post" --external https://example.com/launch
 //   npm run new:post -- "My post" --summary "One-line summary for lists."
 //
-// Voice and structure guidance: portfolio/.claude/skills/writing/SKILL.md
+// Voice and structure guidance: .agents/skills/portfolio-writing/SKILL.md
 
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -68,4 +68,4 @@ ${external ? `external: ${external}\n` : ''}---${body}`);
 
 console.log(`[new-post] created portfolio/content/writing/${slug}.md`);
 console.log('[new-post] preview:  cd portfolio && node build.mjs && node serve.mjs');
-console.log('[new-post] voice:    portfolio/.claude/skills/writing/SKILL.md');
+console.log('[new-post] voice:    .agents/skills/portfolio-writing/SKILL.md');
