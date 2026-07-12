@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - Made the portfolio nav sticky and horizontally resilient on small screens so the site sections stay available while scrolling.
 - Added LinkedIn, X, and Substack as explicit social/content sources in homepage chips, footer links, and Person JSON-LD `sameAs`.
 - Added a local profile image slot with dimensions and alt text so Ryan's LinkedIn headshot can be dropped in without layout shift; the current checked-in asset is an honest placeholder because LinkedIn image fetches are blocked in this environment.
+- Replaced the placeholder SVG with Ryan's actual GitHub profile photo and updated the CSS to render it as a perfect circle.
 
 ## 2026-07-12: Copy, trust, and answer-engine pass
 
@@ -18,6 +19,8 @@ All notable changes to this project will be documented in this file.
 ## 2026-07-12: UI/UX + copy refresh, CI hang fix, agentic loop
 
 - Fixed Cloud Run auto-deployment workflow (skipped status) by correcting the repository filter in `.github/workflows/deploy.yml` to check for `ryanbaumann/Portfolio` instead of the legacy `ryanbaumann/trails.ninja` repository.
+- Fixed Cloud Run auto-deployment workflow (`unauthorized_client` error) by updating the Google Cloud Workload Identity Federation provider's attribute condition from `assertion.repository == 'ryanbaumann/trails.ninja'` to `assertion.repository == 'ryanbaumann/Portfolio'`.
+- Fixed Cloud Run auto-deployment workflow (`iam.serviceAccounts.getAccessToken` permission denied) by granting `roles/iam.workloadIdentityUser` on the deployment service account to the new GitHub Actions WIF principal `attribute.repository/ryanbaumann/Portfolio`.
 - Fixed image aspect ratio and layout distortion for the homepage hero image (`/previews/strava-explorer.jpg`) by correcting its HTML template attributes to match its physical `1200x687` dimensions and adding `height: auto` in CSS.
 - Added a zero-dependency image dimension parser helper `getImageDimensions` in `build.mjs` that automatically reads and parses SVG (from viewBox/width/height) and JPEG (from SOF marker headers) image files at build time.
 - Integrated dynamic `width` and `height` attributes on page detail and standalone article hero images (`.article-hero`) to prevent Cumulative Layout Shift (CLS).

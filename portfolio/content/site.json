@@ -41,6 +41,6 @@
     }
   ],
   "answerEngineSummary": "Ryan Baumann leads Developer Experience for Google Maps Platform. He focuses on maps, developer experience, agent-ready documentation, evals, MCP tools, agent skills, and AI-native distribution. His portfolio is a zero-client-JavaScript static site plus live demo apps served from one Cloud Run container.",
-  "profileImage": "/img/ryan-baumann-profile.svg",
+  "profileImage": "/img/ryan-baumann-profile.jpg",
   "profileImageAlt": "Ryan Baumann profile image"
 }

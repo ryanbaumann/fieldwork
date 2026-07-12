@@ -56,4 +56,16 @@ Learning: When a repository is moved or renamed, GitHub Actions workflows that f
 Evidence: Changing the condition to `if: github.repository == 'ryanbaumann/Portfolio' || github.repository == 'ryanbaumann/portfolio'` allowed the deployment workflow to execute.
 Use next time: Always check and update workflow files for stale `github.repository` checks when renaming, moving, or cloning a repository.
 
+## 2026-07-12: Stale Workload Identity Federation attribute conditions block CI deployments
 
+Context: After fixing the workflow skip condition, the `google-github-actions/auth` step failed with an `unauthorized_client` error stating "The given credential is rejected by the attribute condition."
+Learning: Google Cloud Workload Identity Federation (WIF) providers validate inbound OIDC tokens against an attribute condition. If the GitHub repository is renamed, the `assertion.repository` claim changes, causing the token to be rejected if the WIF provider condition still strictly expects the old repository name.
+Evidence: The WIF provider `github-actions-provider` had the condition `assertion.repository == 'ryanbaumann/trails.ninja'`. Updating it via `gcloud iam workload-identity-pools providers update-oidc` to match `ryanbaumann/Portfolio` resolved the auth failure.
+Use next time: When renaming a repository that uses GCP Workload Identity Federation, remember to update the provider's attribute condition in the Google Cloud Console or via `gcloud`, in addition to updating the workflow files.
+
+## 2026-07-12: Stale Workload Identity Federation IAM bindings block CI impersonation
+
+Context: After fixing the WIF attribute condition, the GitHub Actions token was accepted, but the subsequent `gcloud builds submit` step failed with `Permission 'iam.serviceAccounts.getAccessToken' denied on resource`.
+Learning: In Google Cloud Workload Identity Federation, authenticating as a WIF principal is only half the battle. That principal must also have the `roles/iam.workloadIdentityUser` role bound on the Service Account it needs to impersonate. If the repository is renamed, the mapped principal (e.g., `principalSet://.../attribute.repository/NEW_REPO`) changes, and the old IAM binding on the service account will no longer grant access.
+Evidence: The service account `github-actions-deployer` only allowed impersonation from `attribute.repository/ryanbaumann/trails.ninja`. Adding a new IAM policy binding for `attribute.repository/ryanbaumann/Portfolio` via `gcloud iam service-accounts add-iam-policy-binding` restored the GitHub Action's ability to impersonate the service account.
+Use next time: When renaming a repository that uses GCP WIF with Service Account Impersonation, you must update BOTH the WIF provider's attribute condition AND the Service Account's IAM policy bindings to allow the new mapped principal.
