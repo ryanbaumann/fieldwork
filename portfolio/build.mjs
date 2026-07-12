@@ -34,6 +34,84 @@ const COLLECTIONS = [
 
 const site = JSON.parse(readFileSync(join(CONTENT_DIR, 'site.json'), 'utf8'));
 
+const validationErrors = [];
+
+function failValidation(message) {
+  validationErrors.push(message);
+}
+
+function isValidIsoDate(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+}
+
+function isValidUrl(value) {
+  if (typeof value !== 'string') return false;
+  if (value.startsWith('/') && !value.startsWith('//')) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'mailto:';
+  } catch {
+    return false;
+  }
+}
+
+function pagePathForInternalHref(href) {
+  const clean = href.split('#')[0].split('?')[0];
+  if (demos.some((demo) => demo.path === clean || demo.path === `${clean}/`)) return null;
+  if (!clean || !clean.startsWith('/') || clean.startsWith('//')) return null;
+  if (/\.[a-z0-9]+$/i.test(clean)) return join(STATIC_DIR, clean.slice(1));
+  return join(DIST_DIR, clean.slice(1), 'index.html');
+}
+
+function collectMarkdownLinks(markdown) {
+  const links = [];
+  const pattern = /!?\[[^\]]*\]\(([^)\s]+)\)/g;
+  let match;
+  while ((match = pattern.exec(markdown))) links.push(match[1]);
+  return links;
+}
+
+function validateEntry(collection, entry, seenSlugs) {
+  const id = `${collection.name}/${entry.slug}`;
+  if (seenSlugs.has(id)) failValidation(`${id}: duplicate slug`);
+  seenSlugs.add(id);
+  const { meta } = entry;
+  if (meta.draft === true) return;
+  for (const field of ['title', 'summary']) {
+    if (!meta[field] || typeof meta[field] !== 'string') failValidation(`${id}: missing required ${field}`);
+  }
+  if (meta.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(meta.slug)) failValidation(`${id}: slug must be lowercase kebab-case`);
+  if (meta.noindex === true && meta.canonical) failValidation(`${id}: noindex entries should not also set canonical`);
+  if (collection.name === 'writing' && !isValidIsoDate(meta.date)) failValidation(`${id}: writing date must be YYYY-MM-DD`);
+  for (const field of ['external', 'canonical']) {
+    if (meta[field] && !isValidUrl(meta[field])) failValidation(`${id}: ${field} must be an https, mailto, or root-relative URL`);
+  }
+  if (meta.image) {
+    if (!meta.imageAlt) failValidation(`${id}: imageAlt is required when image is set`);
+    const imagePath = meta.image.startsWith('/') ? join(STATIC_DIR, meta.image.slice(1)) : join(CONTENT_DIR, collection.name, meta.image);
+    if (!existsSync(imagePath)) failValidation(`${id}: image asset not found: ${meta.image}`);
+  }
+  if (meta.tags && !Array.isArray(meta.tags)) failValidation(`${id}: tags must be a JSON array`);
+  if (meta.updated && !isValidIsoDate(meta.updated)) failValidation(`${id}: updated must be YYYY-MM-DD`);
+  for (const link of meta.links || []) {
+    if (!link.label || !isValidUrl(link.url)) failValidation(`${id}: links entries require label and valid url`);
+  }
+  for (const href of collectMarkdownLinks(entry.body)) {
+    if (href.startsWith('/')) {
+      const path = pagePathForInternalHref(href);
+      if (path && !existsSync(path)) failValidation(`${id}: broken internal link ${href}`);
+    }
+  }
+}
+
+function assertValidBuild() {
+  if (!validationErrors.length) return;
+  console.error('[portfolio] content validation failed:');
+  for (const error of validationErrors) console.error(`- ${error}`);
+  process.exit(1);
+}
+
+
 // Live demo apps. The manifest is the repo-root apps.json (the same file the
 // gateway routes from), so a demo added there shows up here on the next
 // build with zero portfolio changes. When this site is extracted into its
@@ -205,10 +283,12 @@ function loadCollection(name) {
   return readdirSync(dir)
     .filter((file) => file.endsWith('.md') && !file.startsWith('_'))
     .map((file) => {
-      const slug = file.replace(/\.md$/, '');
+      const fileSlug = file.replace(/\.md$/, '');
       const { meta, body } = parseFrontMatter(readFileSync(join(dir, file), 'utf8'));
-      return { slug, meta, body };
+      const slug = meta.slug || fileSlug;
+      return { slug, sourceSlug: fileSlug, meta, body };
     })
+    .filter((entry) => entry.meta.draft !== true)
     .sort((a, b) => {
       const orderA = a.meta.order ?? Number.MAX_SAFE_INTEGER;
       const orderB = b.meta.order ?? Number.MAX_SAFE_INTEGER;
@@ -232,7 +312,7 @@ function hasDetailPage(entry) {
 
 const CSS = readFileSync(join(ROOT, 'style.css'), 'utf8');
 
-function layout({ title, description, content, active = '' }) {
+function layout({ title, description, content, active = '', canonical, ogImage, ogImageAlt, ogType, articleDate, articleUpdated, robots, jsonLd }) {
   const navItems = [
     { href: `${BASE}work/`, label: 'Work', key: 'work' },
     { href: `${BASE}writing/`, label: 'Writing', key: 'writing' },
@@ -244,6 +324,38 @@ function layout({ title, description, content, active = '' }) {
     .map((item) => `<a href="${item.href}"${item.key === active ? ' aria-current="page"' : ''}>${item.label}</a>`)
     .join('');
 
+  const resolvedCanonical = canonical || absoluteUrl('/');
+  const resolvedImage = absoluteUrl(ogImage || site.defaultShareImage);
+  const resolvedImageAlt = escapeHtml(ogImageAlt || `${site.name} — ${site.role}`);
+  const resolvedOgType = ogType || 'website';
+  const socialHandle = site.socialHandle || '';
+  const twitterCardType = ogImage ? 'summary_large_image' : 'summary';
+
+  const canonicalTag = `<link rel="canonical" href="${escapeHtml(resolvedCanonical)}" />`;
+  const ogUrlTag = `<meta property="og:url" content="${escapeHtml(resolvedCanonical)}" />`;
+  const ogImageTag = `<meta property="og:image" content="${escapeHtml(resolvedImage)}" />`;
+  const ogImageAltTag = `<meta property="og:image:alt" content="${resolvedImageAlt}" />`;
+
+  const twitterTags = [
+    `<meta name="twitter:card" content="${twitterCardType}" />`,
+    socialHandle ? `<meta name="twitter:site" content="${escapeHtml(socialHandle)}" />` : '',
+    `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
+    `<meta name="twitter:description" content="${escapeHtml(description)}" />`,
+    `<meta name="twitter:image" content="${escapeHtml(resolvedImage)}" />`,
+  ].filter(Boolean).join('\n');
+
+  const articleTags = resolvedOgType === 'article'
+    ? [
+        articleDate ? `<meta property="article:published_time" content="${escapeHtml(articleDate)}T00:00:00Z" />` : '',
+        articleUpdated ? `<meta property="article:modified_time" content="${escapeHtml(articleUpdated)}T00:00:00Z" />` : '',
+        `<meta property="article:author" content="${escapeHtml(site.name)}" />`,
+      ].filter(Boolean).join('\n')
+    : '';
+
+  const robotsTag = robots ? `<meta name="robots" content="${escapeHtml(robots)}" />` : '';
+
+  const jsonLdTag = jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : '';
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -251,11 +363,17 @@ function layout({ title, description, content, active = '' }) {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${escapeHtml(title)}</title>
 <meta name="description" content="${escapeHtml(description)}" />
+${canonicalTag}
 <meta property="og:title" content="${escapeHtml(title)}" />
 <meta property="og:description" content="${escapeHtml(description)}" />
-<meta property="og:type" content="website" />
-<link rel="icon" href="${BASE}favicon.svg" type="image/svg+xml" />
-<style>${CSS}</style>
+<meta property="og:type" content="${escapeHtml(resolvedOgType)}" />
+${ogUrlTag}
+${ogImageTag}
+${ogImageAltTag}
+${twitterTags}
+${articleTags ? articleTags + '\n' : ''}<link rel="icon" href="${BASE}favicon.svg" type="image/svg+xml" />
+<link rel="alternate" type="application/rss+xml" title="${escapeHtml(site.name)} Writing" href="${absoluteUrl('/feed.xml')}" />
+${robotsTag ? robotsTag + '\n' : ''}${jsonLdTag ? jsonLdTag + '\n' : ''}<style>${CSS}</style>
 </head>
 <body>
 <header class="site-header">
@@ -348,6 +466,89 @@ function sectionHeader(eyebrow, title, moreHref, moreLabel) {
 </div>`;
 }
 
+function shareLinks(pageUrl, title) {
+  const encodedUrl = encodeURIComponent(pageUrl);
+  const encodedTitle = encodeURIComponent(title);
+  const linkedIn = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+  const email = `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
+  return `<p class="share-links">
+  <span class="share-label">Share</span>
+  <a class="chip" href="${linkedIn}" rel="noopener" aria-label="Share on LinkedIn">LinkedIn</a>
+  <a class="chip" href="${email}" aria-label="Share via email">Email</a>
+</p>`;
+}
+
+function jsonLdPerson() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: site.name,
+    jobTitle: site.role,
+    url: absoluteUrl('/'),
+    sameAs: [
+      site.links.github,
+      site.links.linkedin,
+    ].filter(Boolean),
+    image: absoluteUrl(site.defaultShareImage),
+  };
+}
+
+function jsonLdWebSite() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: site.name,
+    url: absoluteUrl('/'),
+    description: site.description,
+    author: { '@type': 'Person', name: site.name },
+  };
+}
+
+function jsonLdBlogPosting(entry, pageUrl) {
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: entry.meta.title,
+    description: entry.meta.summary || '',
+    url: pageUrl,
+    author: { '@type': 'Person', name: site.name, url: absoluteUrl('/') },
+    publisher: { '@type': 'Person', name: site.name },
+  };
+  if (entry.meta.date) ld.datePublished = `${entry.meta.date}T00:00:00Z`;
+  if (entry.meta.updated) ld.dateModified = `${entry.meta.updated}T00:00:00Z`;
+  if (entry.meta.image) ld.image = absoluteUrl(entry.meta.image);
+  return ld;
+}
+
+function jsonLdCreativeWork(entry, pageUrl) {
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: entry.meta.title,
+    description: entry.meta.summary || '',
+    url: pageUrl,
+    author: { '@type': 'Person', name: site.name, url: absoluteUrl('/') },
+  };
+  if (entry.meta.org) ld.sourceOrganization = { '@type': 'Organization', name: entry.meta.org };
+  if (entry.meta.image) ld.image = absoluteUrl(entry.meta.image);
+  return ld;
+}
+
+function jsonLdArticle(entry, pageUrl) {
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: entry.meta.title,
+    description: entry.meta.summary || '',
+    url: pageUrl,
+    author: { '@type': 'Person', name: site.name, url: absoluteUrl('/') },
+  };
+  if (entry.meta.date) ld.datePublished = `${entry.meta.date}T00:00:00Z`;
+  if (entry.meta.venue) ld.publisher = { '@type': 'Organization', name: entry.meta.venue };
+  if (entry.meta.image) ld.image = absoluteUrl(entry.meta.image);
+  return ld;
+}
+
 // ---------------------------------------------------------------------------
 // Pages
 // ---------------------------------------------------------------------------
@@ -360,6 +561,16 @@ function writePage(outPath, html) {
 
 function detailPage(collection, entry, activeKey) {
   const { meta } = entry;
+  const pageUrl = meta.canonical || absoluteUrl(entryUrl(collection.name, entry));
+  const isWriting = collection.name === 'writing';
+  const isTalk = collection.name === 'talks';
+  const isWork = collection.name === 'work';
+
+  let jsonLd;
+  if (isWriting) jsonLd = jsonLdBlogPosting(entry, pageUrl);
+  else if (isWork) jsonLd = jsonLdCreativeWork(entry, pageUrl);
+  else if (isTalk) jsonLd = jsonLdArticle(entry, pageUrl);
+
   const content = `<article class="prose">
   <p class="eyebrow">${escapeHtml(collection.label)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
@@ -367,6 +578,7 @@ function detailPage(collection, entry, activeKey) {
   ${linkChips(meta.links)}
   ${meta.image ? `<img class="article-hero" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" />` : ''}
   ${markdownToHtml(entry.body)}
+  ${shareLinks(pageUrl, meta.title)}
   <p class="back"><a href="${BASE}${collection.name}/">← All ${collection.label.toLowerCase()}</a></p>
 </article>`;
   writePage(join(collection.name, entry.slug, 'index.html'), layout({
@@ -374,6 +586,14 @@ function detailPage(collection, entry, activeKey) {
     description: meta.summary || site.description,
     content,
     active: activeKey,
+    canonical: pageUrl,
+    ogImage: meta.image || null,
+    ogImageAlt: meta.imageAlt || meta.title,
+    ogType: (isWriting || isTalk) ? 'article' : 'website',
+    articleDate: meta.date || null,
+    articleUpdated: meta.updated || null,
+    robots: meta.noindex ? 'noindex, follow' : null,
+    jsonLd,
   }));
 }
 
@@ -404,7 +624,8 @@ function buildHome(collections) {
     : '';
 
   const content = `
-<section class="hero">
+<section class="hero hero-split">
+  <div>
   <p class="eyebrow">${escapeHtml(site.tagline)}</p>
   <h1>${escapeHtml(site.name)}</h1>
   <p class="lede">${escapeHtml(site.intro)}</p>
@@ -412,6 +633,8 @@ function buildHome(collections) {
   <p class="chips hero-links">${heroLinks
     .map((link) => `<a class="chip" href="${link.href}"${link.external ? ' rel="noopener"' : ''}>${escapeHtml(link.label)}${link.external ? ' ↗' : ''}</a>`)
     .join('')}</p>
+  </div>
+  <img class="hero-image" src="${rebase(site.defaultShareImage)}" alt="Ryan Baumann Portfolio preview card" width="960" height="600" loading="eager" />
 </section>
 
 <section>
@@ -447,6 +670,10 @@ ${demosSection}
     title: `${site.name} — ${site.role}`,
     description: site.description,
     content,
+    canonical: absoluteUrl('/'),
+    ogImage: site.defaultShareImage,
+    ogImageAlt: `${site.name} — ${site.role}`,
+    jsonLd: [jsonLdPerson(), jsonLdWebSite()],
   }));
 }
 
@@ -459,7 +686,7 @@ function buildDemosPage() {
   <div class="grid demo-grid">
     ${demos.map(demoCard).join('\n')}
   </div>
-  <p class="section-note">Every demo is open source — <a href="${site.links.github}/trails.ninja" rel="noopener">read the code</a>. One container, one Cloud Run service, no secrets in the browser.</p>
+  <p class="section-note">Every demo is open source — <a href="${site.links.github}/trails.ninja" rel="noopener">read the code</a>. One Ryan Baumann portfolio container, one Cloud Run service, no secrets in the browser.</p>
 </section>`;
 
   writePage(join('demos', 'index.html'), layout({
@@ -467,6 +694,7 @@ function buildDemosPage() {
     description: site.sectionIntros?.demos || site.description,
     content,
     active: 'demos',
+    canonical: absoluteUrl('/demos/'),
   }));
 }
 
@@ -497,6 +725,7 @@ function buildCollectionIndex(collection, entries) {
     description: site.sectionIntros?.[collection.name] || site.description,
     content,
     active: collection.name,
+    canonical: absoluteUrl(`/${collection.name}/`),
   }));
 }
 
@@ -510,6 +739,7 @@ function buildStandalonePages() {
     const content = `<article class="prose">
   <p class="eyebrow">${escapeHtml(meta.eyebrow || site.name)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
+  ${meta.image ? `<img class="article-hero" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" />` : ''}
   ${markdownToHtml(body)}
 </article>`;
     writePage(join(slug, 'index.html'), layout({
@@ -517,8 +747,116 @@ function buildStandalonePages() {
       description: meta.summary || site.description,
       content,
       active: slug,
+      canonical: absoluteUrl(`/${slug}/`),
+      ogImage: meta.image || null,
+      ogImageAlt: meta.imageAlt || meta.title,
     }));
   }
+}
+
+
+function absoluteUrl(pathOrUrl) {
+  if (/^https?:\/\//.test(pathOrUrl)) return pathOrUrl;
+  return new URL(pathOrUrl.replace(/^\//, ''), site.siteUrl || BASE).toString();
+}
+
+function rssFeed(entries) {
+  const items = entries
+    .filter((entry) => !entry.meta.noindex)
+    .map((entry) => `<item>
+      <title>${escapeHtml(entry.meta.title)}</title>
+      <link>${escapeHtml(absoluteUrl(entryUrl('writing', entry)))}</link>
+      <guid>${escapeHtml(absoluteUrl(entry.meta.canonical || entryUrl('writing', entry)))}</guid>
+      <pubDate>${new Date(`${entry.meta.date}T00:00:00Z`).toUTCString()}</pubDate>
+      <description>${escapeHtml(entry.meta.summary || '')}</description>
+    </item>`)
+    .join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+<title>${escapeHtml(site.name)} Writing</title>
+<link>${escapeHtml(absoluteUrl('/writing/'))}</link>
+<description>${escapeHtml(site.sectionIntros?.writing || site.description)}</description>
+${items}
+</channel></rss>`;
+}
+
+function sitemapXml(collections) {
+  const urls = [];
+
+  // Homepage
+  urls.push({ loc: absoluteUrl('/'), priority: '1.0' });
+
+  // Collection index pages
+  for (const col of COLLECTIONS) {
+    urls.push({ loc: absoluteUrl(`/${col.name}/`), priority: '0.8' });
+  }
+
+  // Demos index
+  if (demos.length) {
+    urls.push({ loc: absoluteUrl('/demos/'), priority: '0.7' });
+  }
+
+  // Detail pages
+  for (const col of COLLECTIONS) {
+    for (const entry of collections[col.name]) {
+      if (!hasDetailPage(entry)) continue;
+      if (entry.meta.noindex) continue;
+      const loc = absoluteUrl(entryUrl(col.name, entry));
+      const lastmod = entry.meta.updated || entry.meta.date || null;
+      urls.push({ loc, lastmod, priority: '0.6' });
+    }
+  }
+
+  // Standalone pages
+  const pagesDir = join(CONTENT_DIR, 'pages');
+  if (existsSync(pagesDir)) {
+    for (const file of readdirSync(pagesDir)) {
+      if (!file.endsWith('.md') || file.startsWith('_')) continue;
+      const slug = file.replace(/\.md$/, '');
+      urls.push({ loc: absoluteUrl(`/${slug}/`), priority: '0.5' });
+    }
+  }
+
+  const entries = urls.map((u) => {
+    const lastmod = u.lastmod ? `\n  <lastmod>${u.lastmod}</lastmod>` : '';
+    return `<url>\n  <loc>${escapeHtml(u.loc)}</loc>${lastmod}\n  <priority>${u.priority}</priority>\n</url>`;
+  }).join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>`;
+}
+
+function robotsTxt() {
+  return `User-agent: *\nAllow: /\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`;
+}
+
+function validateMetadata() {
+  const htmlFiles = readdirSync(DIST_DIR, { recursive: true })
+    .filter((file) => String(file).endsWith('.html'));
+  const errors = [];
+
+  for (const file of htmlFiles) {
+    const filePath = join(DIST_DIR, String(file));
+    const html = readFileSync(filePath, 'utf8');
+    const id = String(file);
+
+    if (!html.includes('<link rel="canonical"')) errors.push(`${id}: missing canonical link`);
+    if (!html.includes('og:url')) errors.push(`${id}: missing og:url`);
+    if (!html.includes('og:image')) errors.push(`${id}: missing og:image`);
+    if (!html.includes('twitter:card')) errors.push(`${id}: missing twitter:card`);
+    if (!html.includes('name="description"')) errors.push(`${id}: missing meta description`);
+    if (!html.includes('og:title')) errors.push(`${id}: missing og:title`);
+    if (!html.includes('og:description')) errors.push(`${id}: missing og:description`);
+    if (!html.includes('twitter:title')) errors.push(`${id}: missing twitter:title`);
+    if (!html.includes('twitter:description')) errors.push(`${id}: missing twitter:description`);
+    if (!html.includes('twitter:image')) errors.push(`${id}: missing twitter:image`);
+  }
+
+  if (errors.length) {
+    console.error('[portfolio] metadata validation failed:');
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+  console.log(`[portfolio] metadata validation passed for ${htmlFiles.length} pages`);
 }
 
 // ---------------------------------------------------------------------------
@@ -544,9 +882,20 @@ buildHome(collections);
 buildDemosPage();
 buildStandalonePages();
 
+const seenSlugs = new Set();
+for (const collection of COLLECTIONS) {
+  for (const entry of collections[collection.name]) validateEntry(collection, entry, seenSlugs);
+}
+assertValidBuild();
+writePage('feed.xml', rssFeed(collections.writing));
+writePage('sitemap.xml', sitemapXml(collections));
+writePage('robots.txt', robotsTxt());
+
 if (existsSync(STATIC_DIR)) {
   cpSync(STATIC_DIR, DIST_DIR, { recursive: true });
 }
 
 const pageCount = readdirSync(DIST_DIR, { recursive: true }).filter((file) => String(file).endsWith('index.html')).length;
 console.log(`[portfolio] built ${pageCount} pages into dist/ (base: ${BASE})`);
+
+validateMetadata();

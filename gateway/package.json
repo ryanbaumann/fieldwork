@@ -1,13 +1,13 @@
 {
-  "name": "trails-ninja-gateway",
+  "name": "ryan-baumann-portfolio-gateway",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Zero-dependency Node gateway: static app hosting + secret-bearing API proxy for trails.ninja.",
+  "description": "Zero-dependency Node gateway: Ryan Baumann portfolio hosting + secret-bearing API proxy.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "NODE_ENV=test node --test"
   },
   "dependencies": {},
   "devDependencies": {},

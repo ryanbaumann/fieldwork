@@ -92,7 +92,7 @@ export async function handlePhotoProxy(photoUrl, { fetch, maxPhotoBytes, hosts =
   try {
     upstream = await fetch(photoUrl, {
       headers: {
-        'User-Agent': 'trails.ninja-photo-proxy/1.0',
+        'User-Agent': 'ryan-baumann-portfolio-photo-proxy/1.0',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
       signal: AbortSignal.timeout(10000),

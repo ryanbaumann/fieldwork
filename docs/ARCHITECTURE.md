@@ -1,30 +1,32 @@
-# trails.ninja — Single-Container Architecture
+# Ryan Baumann Portfolio — Single-Container Architecture
 
-One container, one Cloud Run service: Ryan's site (the static-built
-portfolio) at the root path, every demo app as static assets under its own
-path, and a tiny zero-dependency Node gateway that routes between them and
-brokers all secret-bearing API calls. No access tokens or API secrets ever
-reach the browser.
+One container, one Cloud Run service: Ryan Baumann's personal site (the
+static-built portfolio) at the root path, every demo app as static assets
+under its own path, and a tiny zero-dependency Node gateway that routes
+between them and brokers all secret-bearing API calls. The canonical public
+URL is `https://www.ryanbaumann-portfolio.com/`. No access tokens or API
+secrets ever reach the browser.
 
-```
-                        ┌─────────────────────────────────────────────┐
-                        │  Cloud Run service: trails-ninja            │
-                        │                                             │
- https://trails.ninja ─►│  gateway/server.js (node:20-slim, no deps)  │
-                        │   ├── /                → site (portfolio    │
-                        │   │    /work/ /writing/ /talks/ /demos/ …   │
-                        │   │    built static by portfolio/build.mjs) │
-                        │   ├── /strava-explorer/→ static dist        │
-                        │   ├── /aqi-map/        → static dist        │
-                        │   ├── /isochrones/     → static dist        │
-                        │   ├── /portfolio/*     → 308 redirect to /* │
-                        │   └── /api/*           → secret proxy layer │
-                        │        ├── /api/strava/*      (OAuth broker)│
-                        │        └── /api/isochrones    (GMP server)  │
-                        └─────────────────────────────────────────────┘
-                                    ▲
-                secrets via Cloud Run env / Secret Manager:
-                STRAVA_CLIENT_SECRET, GMP_SERVER_API_KEY
+```text
+┌────────────────────────────────────────────────────────────────────┐
+│ Cloud Run service: trails-ninja (legacy service name)              │
+│                                                                    │
+│ https://www.ryanbaumann-portfolio.com/                             │
+│   └── gateway/server.js (node:20-slim, no deps)                    │
+│       ├── /                → site (portfolio)                      │
+│       │    /work/ /writing/ /talks/ /demos/ …                      │
+│       │    built static by portfolio/build.mjs                     │
+│       ├── /strava-explorer/→ static dist                           │
+│       ├── /aqi-map/        → static dist                           │
+│       ├── /isochrones/     → static dist                           │
+│       ├── /portfolio/*     → 308 redirect to /*                    │
+│       └── /api/*           → secret proxy layer                    │
+│            ├── /api/strava/*      (OAuth broker + photo proxy)     │
+│            └── /api/isochrones    (GMP server)                     │
+└────────────────────────────────────────────────────────────────────┘
+                  ▲
+  secrets via Cloud Run env / Secret Manager:
+  STRAVA_CLIENT_SECRET, GMP_SERVER_API_KEY
 ```
 
 Routing is manifest-driven: `apps.json` at the repo root lists every app
@@ -99,5 +101,5 @@ repo.
 | Add a demo app | `npm run new:demo -- my-demo --title "My Demo"` |
 | Add a blog post | `npm run new:post -- "Post title"` |
 | Add a work entry / talk | copy the `_TEMPLATE.md` in `portfolio/content/<collection>/` |
-| Regenerate demo screenshots | `npm run previews` (or `BASE_URL=https://trails.ninja npm run previews`) |
+| Regenerate demo screenshots | `npm run previews` (or `BASE_URL=https://www.ryanbaumann-portfolio.com npm run previews`) |
 | Verify everything | `npm run build && npm run smoke` |

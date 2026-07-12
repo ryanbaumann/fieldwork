@@ -10,8 +10,8 @@ picture.
 - `portfolio/`: zero-dependency static site generator over a flat-file
   markdown CMS (`content/`). This is the site at the root path — home, work,
   writing (the blog), talks, demos, about. Staged for extraction into its own
-  repo; it has its own `.claude/skills/` for content, writing, design, and
-  presenting. Its build reads the root `apps.json` (when present) to render
+  repo; portable portfolio workflows live under `.agents/skills/portfolio-*`
+  for content, writing, design, and presenting. Its build reads the root `apps.json` (when present) to render
   the homepage Demos section and nav.
 - `strava-explorer/`: Vite app for exploring Strava activities on Google Maps Platform 3D Maps.
 - `aqi-map/`: Vite app rendering Air Quality API heatmap tiles and point conditions on a 2D Google map.
@@ -31,10 +31,10 @@ picture.
   coverage all follow from the apps.json entry.
 - **Add a blog post:** `npm run new:post -- "Post title"` (add
   `--external <url>` for a link-out entry). Voice guidance:
-  `portfolio/.claude/skills/writing/SKILL.md`.
+  `.agents/skills/portfolio-writing/SKILL.md`.
 - **Regenerate demo screenshots:** `npm run previews` (uses
-  strava-explorer's Playwright; `BASE_URL=https://trails.ninja` to shoot
-  production).
+  strava-explorer's Playwright; `BASE_URL=https://www.ryanbaumann-portfolio.com`
+  to shoot production).
 
 Prefer small, reviewable changes. Keep app-specific code, commands, and dependencies inside the app directory you are modifying. Only use npm for dependency management (do not use yarn or other package managers).
 
@@ -42,7 +42,7 @@ Prefer small, reviewable changes. Keep app-specific code, commands, and dependen
 
 1. Start by reading the relevant `package.json`, README, and the files you plan to change.
 2. Use `rg`/`find` for discovery; do not use `ls -R` or `grep -R`.
-3. Keep implementation details in source files and durable task workflows in local skills under `.codex/skills/`.
+3. Keep implementation details in source files and durable task workflows in local skills under `.agents/skills/`.
 4. Before editing secrets, auth flows, map API usage, or build config, identify the affected runtime and required environment variables.
 5. After changes, run the narrowest relevant validation command first, then a full app build when practical.
 
@@ -72,7 +72,7 @@ Run commands from the app directory unless noted.
   root, so the default `BASE_PATH=/` is also the production value.
 - Preview: `node serve.mjs` (after building).
 - New blog post: `npm run new:post -- "Title"` from the repo root.
-- Content, voice, design, and presentation standards live in `portfolio/.claude/skills/`.
+- Content, voice, design, and presentation standards live in `.agents/skills/portfolio-*`.
 
 ### `isochrones/`
 
@@ -116,7 +116,7 @@ Run commands from the app directory unless noted.
 ## Code Style
 
 - Use modern JavaScript modules in `strava-explorer/src/`, `aqi-map/src/`, and `isochrones/src/`; preserve the existing no-framework Vite architecture unless explicitly asked to migrate.
-- Keep `portfolio/` dependency-free: its build is `node build.mjs` and its pages ship zero client-side JavaScript (see `portfolio/.claude/skills/design/SKILL.md`).
+- Keep `portfolio/` dependency-free: its build is `node build.mjs` and its pages ship zero client-side JavaScript (see `.agents/skills/portfolio-design/SKILL.md`).
 - Use descriptive names for geospatial values: `lat`, `lng`, `altitude`, `bounds`, `coordinates`, `polyline`, `featureCollection`.
 - Avoid broad rewrites, hidden formatting churn, and unrelated dependency upgrades.
 - Do not add `try`/`catch` blocks around imports.
@@ -189,11 +189,11 @@ just adding a folder plus a manifest entry. No gateway code changes needed.
 
 Use these repo-local skills when the task matches their scope:
 
-- `.codex/skills/google-maps-platform/SKILL.md` for broad Google Maps Platform, key-security, quota, Places, Routes, and general Maps JavaScript API work.
-- `.codex/skills/google-maps-js-3d/SKILL.md` for focused Maps JavaScript API 3D Maps work: `Map3DElement`, `maps3d`, 3D markers, popovers, altitude, drawing, and camera behavior.
-- `.codex/skills/google-maps-js-2d/SKILL.md` for focused Maps JavaScript API 2D Maps work: loader/imports, vector maps, Advanced Markers, overlays, deck.gl, WebGLOverlayView, Places widgets, and Mapbox-to-Google migration work.
-- `.codex/skills/google-maps-environment-apis/SKILL.md` for Google Maps Platform Environment APIs: Air Quality, Pollen, Solar, Weather, environmental heatmap tiles, quota, caching, source labeling, and environmental-data migrations.
-- `.codex/skills/frontend-responsive-design/SKILL.md` for responsive layout, accessibility, CSS architecture, Tailwind utility usage, and visual QA work.
+- `.agents/skills/google-maps-platform/SKILL.md` for broad Google Maps Platform, key-security, quota, Places, Routes, and general Maps JavaScript API work.
+- `.agents/skills/google-maps-js-3d/SKILL.md` for focused Maps JavaScript API 3D Maps work: `Map3DElement`, `maps3d`, 3D markers, popovers, altitude, drawing, and camera behavior.
+- `.agents/skills/google-maps-js-2d/SKILL.md` for focused Maps JavaScript API 2D Maps work: loader/imports, vector maps, Advanced Markers, overlays, deck.gl, WebGLOverlayView, Places widgets, and Mapbox-to-Google migration work.
+- `.agents/skills/google-maps-environment-apis/SKILL.md` for Google Maps Platform Environment APIs: Air Quality, Pollen, Solar, Weather, environmental heatmap tiles, quota, caching, source labeling, and environmental-data migrations.
+- `.agents/skills/frontend-responsive-design/SKILL.md` for responsive layout, accessibility, CSS architecture, Tailwind utility usage, and visual QA work.
 
 ## How to Use AGENTS.md and the Changelog
 

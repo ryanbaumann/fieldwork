@@ -80,8 +80,25 @@ export function loadApps(env = process.env) {
   return { apps, manifestPath, appsRoot };
 }
 
-/** Public-safe projection used by the landing page / /api/apps. */
+/**
+ * Returns the normalised visibility for an app manifest entry.
+ * Defaults to 'public' when the field is absent.
+ */
+export function appVisibility(app) {
+  const v = (app.visibility || 'public').toLowerCase();
+  if (v === 'public' || v === 'unlisted' || v === 'private') return v;
+  return 'public';
+}
+
+/**
+ * Public-safe projection used by the landing page / /api/apps.
+ *
+ * Only apps with visibility 'public' (the default when the field is absent)
+ * are included.  Unlisted and private apps are excluded from the public API
+ * response — returns `null` so the caller can filter them out.
+ */
 export function toPublicApp(app) {
+  if (appVisibility(app) !== 'public') return null;
   return {
     name: app.name,
     title: app.title,

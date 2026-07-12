@@ -3,7 +3,7 @@
 //
 // Boots the gateway against the staged apps/ directory (run
 // scripts/build-local.mjs with real VITE_ keys first, or set BASE_URL to a
-// running instance — including https://trails.ninja) and captures one real
+// running instance — including https://www.ryanbaumann-portfolio.com) and captures one real
 // screenshot per demo into portfolio/static/previews/<name>.jpg. Honest
 // previews only: this replaces hand-made mockups with what the app actually
 // looks like.
@@ -14,7 +14,7 @@
 //
 // Usage:
 //   node scripts/previews.mjs                       # boot local gateway from ./apps
-//   BASE_URL=https://trails.ninja node scripts/previews.mjs   # shoot production
+//   BASE_URL=https://www.ryanbaumann-portfolio.com node scripts/previews.mjs   # shoot production
 
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';

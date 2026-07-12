@@ -2,6 +2,8 @@
 title: About
 eyebrow: Background
 summary: Ryan Baumann — product and engineering leader with 15+ years scaling developer platforms at Google, Mapbox, and Instabase.
+image: /previews/portfolio.jpg
+imageAlt: Ryan Baumann Portfolio preview card
 ---
 
 Engineer, builder, tinkerer — and a product and engineering leader who has spent 15+ years scaling developer platforms at Google, Mapbox, and Instabase. I set strategy, and I stay in the work: I dogfood the products, review traces, write evals, ship reference apps, read the transcripts, and show up where developers are. The proof lives on this site — [the lab](/demos/) is a set of live apps I build and operate myself.
@@ -40,7 +42,7 @@ Joined as the first customer-facing engineer at Series B; grew the team from 1 t
 
 ## What I work with
 
-- **AI & agents:** agentic evals · context engineering · Agent Engine Optimization · MCP servers & clients · agent skills · RAG · Claude Code · Codex · Antigravity · transcript analysis
+- **AI & agents:** agentic evals · context engineering · Agent Engine Optimization · MCP servers & clients · agent skills · RAG · AI coding agents · agent harnesses · transcript analysis
 - **Engineering:** TypeScript/JavaScript · Python · SQL · GCP · CI/CD · Maps APIs · cross-platform SDKs (React, Compose, SwiftUI)
 - **Product & leadership:** growth strategy for AI-natives · 0→1 product incubation · DevRel & ecosystem strategy · Voice of Developer programs · global team leadership
 

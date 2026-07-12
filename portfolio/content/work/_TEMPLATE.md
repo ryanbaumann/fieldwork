@@ -6,7 +6,10 @@ period: 2025 – present
 summary: One sentence, outcome first — what shipped and what it moved.
 tags: ["two", "or three", "tags"]
 links: [{"label": "Docs", "url": "https://example.com"}]
+image: /previews/portfolio.jpg
+imageAlt: Ryan Baumann Portfolio preview card
 featured: false
+draft: true
 order: 99
 ---
 

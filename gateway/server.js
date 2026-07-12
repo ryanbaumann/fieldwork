@@ -2,16 +2,21 @@
 // gateway/server.js
 //
 // Zero-npm-dependency Node ES-module server that is the single entry point
-// for the trails.ninja container: it serves the portfolio site at the root
+// for the Ryan Baumann portfolio container: it serves the site at the root
 // path, every demo app's static build under its own path, and brokers all
 // secret-bearing API calls same-origin under /api/*. See
 // docs/ARCHITECTURE.md for the full picture.
 
 import { createServer } from 'node:http';
 
-import { loadApps, toPublicApp } from './lib/apps.js';
+import { loadApps, toPublicApp, appVisibility } from './lib/apps.js';
 import { applySecurityHeaders, serveFromDir } from './lib/staticFiles.js';
 import { createRateLimiter, clientIp } from './lib/rateLimit.js';
+import {
+  verifyAuthCookie,
+  loginPageHtml,
+  handleAuthRequest,
+} from './lib/auth.js';
 import { handleStravaApi } from './lib/strava.js';
 import { handleIsochronesApi } from './lib/isochrones.js';
 
@@ -19,7 +24,9 @@ const PORT = Number(process.env.PORT || 8080);
 const JSON_BODY_LIMIT_BYTES = 16 * 1024;
 
 const { apps } = loadApps(process.env);
-const publicApps = apps.map(toPublicApp);
+// Only public-visibility apps appear in /api/apps and /healthz.
+// toPublicApp returns null for unlisted/private apps.
+const publicApps = apps.map(toPublicApp).filter(Boolean);
 
 // Most-specific path first, so the root-mounted portfolio ("/") acts as the
 // catch-all only after every demo app path has had its chance to match.
@@ -32,6 +39,21 @@ const appsByPathLength = [...apps].sort((a, b) => b.path.length - a.path.length)
 // more generous limiter to avoid 429s on ordinary page loads.
 const proxyRateLimiter = createRateLimiter({ windowMs: 60_000, max: 30 });
 const photoRateLimiter = createRateLimiter({ windowMs: 60_000, max: 120 });
+
+// Route-aware rate limiter for private-demo auth attempts.
+// Deliberately tight (5 attempts/min per IP) to discourage brute-force.
+//
+// CLOUD RUN SINGLE-INSTANCE TRADEOFF:
+// These in-memory rate limiters only track counts within the current process.
+// On Cloud Run with max-instances=1 (the default for this portfolio) that's
+// fine — every request hits the same process.  If the service ever scales to
+// multiple instances, rate limits become per-instance and an attacker can
+// round-robin across them.  For shared/distributed rate limiting consider:
+//   - Google Cloud Armor rate-limiting policies (Layer 7, no code change)
+//   - Redis or Memorystore counters (requires a dependency)
+//   - Firestore increment-based counters (serverless, but adds latency)
+// For a portfolio site the single-instance limiter is the right trade-off.
+const authRateLimiter = createRateLimiter({ windowMs: 60_000, max: 5 });
 
 function sendJson(response, statusCode, payload) {
   applySecurityHeaders(response);
@@ -131,6 +153,8 @@ async function handleApi(request, response, pathname, searchParams) {
         'Content-Length': result.binary.body.byteLength,
         'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
         'Content-Security-Policy': 'sandbox',
+        'Access-Control-Allow-Origin': '*',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
       });
       response.end(Buffer.from(result.binary.body));
       return;
@@ -180,6 +204,20 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    // Private-demo auth POST: /<app-path>__auth
+    // Handled before the GET/HEAD method gate so that form submissions work.
+    if (request.method === 'POST' && pathname.endsWith('__auth')) {
+      const appPath = pathname.slice(0, -'__auth'.length);
+      const app = findAppForPath(appPath);
+      if (app && appVisibility(app) === 'private' && app.auth) {
+        const ip = clientIp(request);
+        await handleAuthRequest(request, response, app, process.env, applySecurityHeaders, authRateLimiter, ip);
+        return;
+      }
+      sendJson(response, 404, { error: 'Not found' });
+      return;
+    }
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       sendJson(response, 405, { error: 'Method not allowed' });
       return;
@@ -218,6 +256,27 @@ const server = createServer(async (request, response) => {
         response.end(`${app.name} is not built. Run scripts/build-local.mjs first.`);
         return;
       }
+
+      // ── Private-demo auth gate ──────────────────────────────────
+      // Authorization MUST be checked before serveFromDir so that
+      // static assets are never leaked to unauthenticated visitors.
+      if (appVisibility(app) === 'private' && app.auth) {
+        const secret = process.env[app.auth.envVar];
+        if (!secret) {
+          // Password env var not configured — refuse to serve.
+          applySecurityHeaders(response);
+          response.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' });
+          response.end('This demo is not currently available.');
+          return;
+        }
+        if (!verifyAuthCookie(request, app.name, secret)) {
+          applySecurityHeaders(response);
+          response.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8' });
+          response.end(loginPageHtml(app));
+          return;
+        }
+      }
+
       const subPath = pathname.slice(app.path.length - 1);
       if (serveFromDir(app.dir, subPath, response)) return;
       applySecurityHeaders(response);
@@ -241,9 +300,9 @@ const server = createServer(async (request, response) => {
 
 if (process.env.NODE_ENV !== 'test') {
   server.listen(PORT, () => {
-    console.log(`trails.ninja gateway listening on :${PORT}`);
+    console.log(`Ryan Baumann portfolio gateway listening on :${PORT}`);
     console.log(`Apps: ${publicApps.map((app) => `${app.name}${app.available ? '' : ' (unbuilt)'}`).join(', ') || '(none found in apps.json)'}`);
   });
 }
 
-export { server, apps, publicApps };
+export { server, apps, publicApps, authRateLimiter };

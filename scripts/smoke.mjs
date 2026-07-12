@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // scripts/smoke.mjs
 //
-// Dependency-free smoke test for the trails.ninja gateway. Exercises a
+// Dependency-free smoke test for the Ryan Baumann portfolio gateway. Exercises a
 // running instance with plain `fetch`: route liveness, HTML sanity, the
 // apps.json <-> /api/apps contract, OAuth URL shape, a leaked-secret grep
 // over every served asset, and keyless proxy behavior. See
 // docs/ARCHITECTURE.md rule 4: "Smoke tests are dependency-free."
 //
 // Usage:
-//   BASE_URL=https://trails.ninja node scripts/smoke.mjs   # test a running instance
+//   BASE_URL=https://www.ryanbaumann-portfolio.com node scripts/smoke.mjs   # test a running instance
 //   node scripts/smoke.mjs                                  # build nothing; boot the
 //                                                            # gateway against ./apps
 //                                                            # (run `node scripts/build-local.mjs`

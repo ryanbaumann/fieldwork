@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Multi-stage build for the trails.ninja single-container portfolio.
+# Multi-stage build for the Ryan Baumann portfolio single-container site and demo lab.
 # One builder stage per app (each gets its own npm install + npm run build,
 # including whatever devDependencies its build needs), then a slim runtime
 # stage that only contains the zero-dependency gateway and each app's

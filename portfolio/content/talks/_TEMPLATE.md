@@ -2,9 +2,10 @@
 title: Talk title
 venue: Conference / channel name
 type: talk
-date: 2026
+date: 2026-01-15
 summary: One sentence on what the talk covers.
 links: [{"label": "Slides", "url": "/decks/my-deck.pdf"}, {"label": "Watch", "url": "https://example.com"}]
+draft: true
 order: 99
 ---
 

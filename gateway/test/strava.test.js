@@ -32,3 +32,12 @@ test('isAllowedPhotoUrl only allows the CloudFront photo host over https', () =>
   assert.equal(isAllowedPhotoUrl('https://evil.example.com/photo.jpg'), false);
   assert.equal(isAllowedPhotoUrl('not a url'), false);
 });
+
+test('handleStravaApi returns 400 for unsupported photo URL', async () => {
+  const result = await handleStravaApi(
+    { pathname: '/api/strava/photo', method: 'GET', searchParams: new URLSearchParams('url=https://evil.example.com/photo.jpg') },
+    { env: {} },
+  );
+  assert.equal(result.statusCode, 400);
+  assert.equal(result.json.error, 'Invalid or unsupported photo URL.');
+});

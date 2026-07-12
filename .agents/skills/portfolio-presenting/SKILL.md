@@ -1,5 +1,5 @@
 ---
-name: presenting
+name: portfolio-presenting
 description: How Ryan presents. Use when drafting talk abstracts, outlines, speaker notes, or deck content, and when adding presentations to the site.
 ---
 

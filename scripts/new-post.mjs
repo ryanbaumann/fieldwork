@@ -9,8 +9,9 @@
 //   npm run new:post -- "Developer experience is a growth engine"
 //   npm run new:post -- "Launch post" --external https://example.com/launch
 //   npm run new:post -- "My post" --summary "One-line summary for lists."
+//   npm run new:post -- "Draft" --draft true
 //
-// Voice and structure guidance: portfolio/.claude/skills/writing/SKILL.md
+// Voice and structure guidance: .agents/skills/portfolio-writing/SKILL.md
 
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -33,6 +34,8 @@ function flag(name, fallback) {
 
 const summary = flag('summary', 'One sentence: the claim and why the reader should care.');
 const external = flag('external', null);
+const draft = flag('draft', 'false') === 'true';
+const tags = flag('tags', 'developer experience');
 
 const slug = title
   .toLowerCase()
@@ -47,6 +50,8 @@ if (existsSync(postPath)) {
 }
 
 const date = new Date().toISOString().slice(0, 10);
+const canonical = external || `https://www.ryanbaumann-portfolio.com/writing/${slug}/`;
+const tagList = tags.split(',').map((tag) => tag.trim()).filter(Boolean);
 
 const body = external
   ? ''
@@ -64,8 +69,15 @@ writeFileSync(postPath, `---
 title: ${title}
 summary: ${summary}
 date: ${date}
+updated: ${date}
+canonical: ${canonical}
+image: /previews/portfolio.jpg
+imageAlt: Ryan Baumann Portfolio preview card
+tags: ${JSON.stringify(tagList)}
+draft: ${draft}
+noindex: ${draft}
 ${external ? `external: ${external}\n` : ''}---${body}`);
 
 console.log(`[new-post] created portfolio/content/writing/${slug}.md`);
 console.log('[new-post] preview:  cd portfolio && node build.mjs && node serve.mjs');
-console.log('[new-post] voice:    portfolio/.claude/skills/writing/SKILL.md');
+console.log('[new-post] voice:    .agents/skills/portfolio-writing/SKILL.md');

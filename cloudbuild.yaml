@@ -1,4 +1,4 @@
-# Cloud Build config for the trails.ninja single-container image.
+# Cloud Build config for the Ryan Baumann portfolio single-container image.
 #
 # Used by .github/workflows/deploy.yml. `gcloud builds submit --tag` cannot
 # forward Docker `--build-arg` values, so the build args the Dockerfile needs

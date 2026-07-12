@@ -1,11 +1,11 @@
 {
   "name": "Ryan Baumann",
   "role": "Head of Developer Experience, Google Maps Platform",
-  "tagline": "Engineer · Builder · Tinkerer",
+  "tagline": "Maps · Developer Experience · Agent-ready platforms",
   "location": "San Francisco, CA",
   "intro": "I run Developer Experience for Google Maps Platform — and I still ship. 15+ years building developer platforms at Google, Mapbox, and Instabase, across engineering, product, and go-to-market. This is my home page: the work, the writing, and a lab of live apps I build and operate myself.",
   "headline": "Developer experience is a growth engine, not a support function. Every entry here starts from the number it moved.",
-  "description": "Ryan Baumann — Head of Developer Experience at Google Maps Platform. Engineer, builder, and product leader with 15+ years scaling developer platforms at Google, Mapbox, and Instabase.",
+  "description": "Ryan Baumann — Head of Developer Experience at Google Maps Platform. Maps, developer experience, and agent-ready platforms from 15+ years at Google, Mapbox, Instabase, and Caterpillar.",
   "aboutTeaser": "First customer-facing engineer at Mapbox (grew the team 1→15 as the company passed $100M ARR), Director at Series-B Instabase, industrial IoT at Caterpillar (3 patents), and before all of it, two years as a professional cyclist. Racing taught me pacing, measurement, and marginal gains — every job since has been applying them.",
   "sectionIntros": {
     "work": "Selected platform, product, and growth work. Each entry starts from the goal it served — adoption, revenue, reach — and shows what shipped.",
@@ -17,5 +17,11 @@
     "github": "https://github.com/ryanbaumann",
     "linkedin": "https://www.linkedin.com/in/ryanbaumann/",
     "email": "rsbaumann@gmail.com"
-  }
+  },
+  "siteUrl": "https://www.ryanbaumann-portfolio.com/",
+  "canonicalHost": "www.ryanbaumann-portfolio.com",
+  "brand": "Ryan Baumann Portfolio",
+  "positioning": "Maps, developer experience, and agent-ready platforms.",
+  "defaultShareImage": "/previews/portfolio.jpg",
+  "socialHandle": "@ryanbaumann"
 }

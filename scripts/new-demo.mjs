@@ -81,7 +81,7 @@ writeFileSync(join(appDir, 'index.html'), `<!doctype html>
   <body>
     <div id="app">
       <aside class="panel" aria-label="${title} controls">
-        <a class="home-link" href="/" aria-label="Back to trails.ninja home">&larr; trails.ninja</a>
+        <a class="home-link" href="/" aria-label="Back to Ryan Baumann home">&larr; Ryan Baumann</a>
         <p class="eyebrow">Google Maps Platform demo</p>
         <h1>${title}</h1>
         <p class="lede">${description}</p>
@@ -193,7 +193,7 @@ writeFileSync(join(appDir, 'README.md'), `# ${title}
 
 ${description}
 
-Part of [trails.ninja](https://trails.ninja). Scaffolded by \`npm run new:demo\`.
+Part of [Ryan Baumann's demo lab](https://www.ryanbaumann-portfolio.com/demos/). Scaffolded by \`npm run new:demo\`.
 
 \`\`\`bash
 npm install

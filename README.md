@@ -1,9 +1,10 @@
-# trails.ninja — Ryan Baumann's site and lab
+# Ryan Baumann Portfolio — site and demo lab
 
-Ryan Baumann's home page — work, writing, talks — with a lab of live demo
-apps, served together behind one zero-dependency Node gateway as a single
-Cloud Run container. The site lives at the root; every demo mounts under its
-own path; navigation works in every direction. See
+Ryan Baumann's personal site — work, writing, talks, and a lab of live demo
+apps — served together behind one zero-dependency Node gateway as a single
+Cloud Run container. The canonical public URL is
+https://www.ryanbaumann-portfolio.com/. The site lives at the root; every demo
+mounts under its own path; navigation works in every direction. See
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
 
 ## Apps
@@ -83,7 +84,8 @@ routes locally — see each app's README for details. `AGENTS.md` has a full
 ## Deploy
 
 `.github/workflows/deploy.yml` builds the container image with Cloud Build
-and deploys it to a single Cloud Run service (`trails-ninja`) on pushes to
+and deploys it to a single Cloud Run service (currently named `trails-ninja` for
+legacy continuity) on pushes to
 `main`, authenticating via Workload Identity Federation. It replaces the
 project's previous two-part deploy (a GCS bucket for the static frontend
 plus a separate Cloud Run OAuth broker) — see the workflow file's header

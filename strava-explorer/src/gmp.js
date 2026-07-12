@@ -110,7 +110,7 @@ export async function initMap(mapHostElement, apiKey) {
 
         // Initialize Follow Camera module after map and dependencies are ready
         // Pass the module-level showError and updateTrackingMarker
-        initializeFollowCamera(map3d, LatLng, getClientElevation, showError, updateTrackingMarker);
+        initializeFollowCamera(map3d, showError, updateTrackingMarker);
 
         setPhotoTriggerCallback((photoId, shouldOpen) => {
             if (shouldOpen) {
@@ -616,7 +616,8 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                 const updateView = (idx) => {
                     activeIdx = idx;
                     const activePhoto = group.photos[idx];
-                    popoverImage.src = activePhoto.urls?.["1000"] || activePhoto.urls?.["600"] || activePhoto.urls?.["100"];
+                    const rawUrl = activePhoto.urls?.["1000"] || activePhoto.urls?.["600"] || activePhoto.urls?.["100"];
+                    popoverImage.src = getMarkerPhotoUrl(rawUrl);
                     popoverCaption.textContent = activePhoto.caption || 'No caption';
                     popoverHeading.textContent = activePhoto.caption || `Photo ${idx + 1} of ${group.photos.length}`;
                     counter.textContent = `${activeIdx + 1} / ${group.photos.length}`;
@@ -641,7 +642,8 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                 
                 updateView(0);
             } else {
-                popoverImage.src = primePhoto.urls?.["1000"] || primePhoto.urls?.["600"] || primePhoto.urls?.["100"];
+                const rawUrl = primePhoto.urls?.["1000"] || primePhoto.urls?.["600"] || primePhoto.urls?.["100"];
+                popoverImage.src = getMarkerPhotoUrl(rawUrl);
                 popoverCaption.textContent = primePhoto.caption || 'No caption';
             }
 

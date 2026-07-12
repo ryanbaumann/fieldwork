@@ -8,7 +8,7 @@ const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ENV_PATH = join(REPO_ROOT, '.env');
 
 async function main() {
-  console.log('--- trails.ninja Local Environment Setup ---');
+  console.log('--- Ryan Baumann Portfolio Local Environment Setup ---');
   if (existsSync(ENV_PATH)) {
     console.log('✅ .env already exists! If you want to re-run setup, delete it first.');
     process.exit(0);

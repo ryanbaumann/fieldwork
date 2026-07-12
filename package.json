@@ -1,7 +1,7 @@
 {
-  "name": "trails-ninja",
+  "name": "ryan-baumann-portfolio",
   "private": true,
-  "description": "trails.ninja portfolio container: gateway + demo apps. See docs/ARCHITECTURE.md.",
+  "description": "Ryan Baumann portfolio container: site + demo lab. See docs/ARCHITECTURE.md.",
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "build": "node scripts/build-local.mjs",

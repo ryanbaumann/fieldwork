@@ -33,5 +33,5 @@ VITE_GMP_API_KEY=your-browser-key npm run dev   # http://localhost:5173
 npm run build                                    # emits dist/
 ```
 
-Inside the trails.ninja container the app is mounted at `/aqi-map/`
+Inside the Ryan Baumann portfolio container the app is mounted at `/aqi-map/`
 (`BASE_PATH=/aqi-map/` at build time); it has no `/api/*` dependencies.

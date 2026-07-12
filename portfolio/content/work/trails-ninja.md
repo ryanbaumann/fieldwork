@@ -1,5 +1,5 @@
 ---
-title: trails.ninja — The Lab
+title: Ryan Baumann Demo Lab
 org: Personal
 role: Builder
 period: ongoing
@@ -13,7 +13,7 @@ order: 11
 
 ## What it is
 
-trails.ninja is where I stay in the work — and you're on it. This site and a set of [live demo apps](/demos/) ship from a single Cloud Run container behind a zero-dependency Node gateway:
+Ryan Baumann Demo Lab is where I stay in the work — and you're on it. This portfolio and a set of [live demo apps](/demos/) ship from a single Cloud Run container behind a zero-dependency Node gateway:
 
 - **[Strava 3D Explorer](/strava-explorer/)** — fly your rides and runs in Photorealistic 3D with photos anchored along the route.
 - **[Air Quality Map](/aqi-map/)** — live air-quality heatmap with click-to-inspect pollutant detail.
