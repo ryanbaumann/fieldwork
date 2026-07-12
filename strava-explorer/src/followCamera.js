@@ -1,6 +1,6 @@
 // strava-explorer/src/followCamera.js
 
-import { debug, warn, error } from './log.js';
+import { debug, error } from './log.js';
 import { toLatLngLiteral } from './latlng.js';
 import {
     DEFAULT_ALTITUDE_M,
@@ -8,7 +8,6 @@ import {
     lerp,
     lerpAngle,
     haversineKm,
-    bearingDeg,
     samplePointAlongLine,
     samplePointAlongLineExact,
     calculateCumulativeDistances,
@@ -17,8 +16,6 @@ import {
 
 // --- Module-Level Variables ---
 let map3d = null;
-let LatLng = null; // Kept for signature compatibility, not strictly needed
-let getClientElevation = async () => DEFAULT_ALTITUDE_M; // Placeholder, to be initialized
 let showError = (message) => error(`Error: ${message}`); // Placeholder
 
 // Follow Camera State
@@ -56,10 +53,8 @@ let onPhotoTriggerCb = null; // function(photoId, shouldOpen)
 /**
  * Initializes the follow camera module with necessary dependencies.
  */
-export function initializeFollowCamera(mapInstance, latLngClass, elevationGetter, errorReporter, trackingMarkerUpdater) {
+export function initializeFollowCamera(mapInstance, errorReporter, trackingMarkerUpdater) {
     map3d = mapInstance;
-    LatLng = latLngClass;
-    getClientElevation = elevationGetter;
     showError = errorReporter;
     updateTrackingMarkerCb = trackingMarkerUpdater;
     debug("Follow Camera module initialized.");

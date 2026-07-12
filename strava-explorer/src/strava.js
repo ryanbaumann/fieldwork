@@ -185,7 +185,7 @@ function readStoredAuthData() {
         const authData = JSON.parse(raw);
         if (!authData?.access_token) return null;
         return authData;
-    } catch (e) {
+    } catch {
         localStorage.removeItem(AUTH_STORAGE_KEY);
         return null;
     }

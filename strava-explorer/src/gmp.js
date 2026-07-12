@@ -110,7 +110,7 @@ export async function initMap(mapHostElement, apiKey) {
 
         // Initialize Follow Camera module after map and dependencies are ready
         // Pass the module-level showError and updateTrackingMarker
-        initializeFollowCamera(map3d, LatLng, getClientElevation, showError, updateTrackingMarker);
+        initializeFollowCamera(map3d, showError, updateTrackingMarker);
 
         setPhotoTriggerCallback((photoId, shouldOpen) => {
             if (shouldOpen) {
@@ -615,6 +615,7 @@ export async function displayPhotoMarkers(photosData) { // photosData = array fr
                 let activeIdx = 0;
                 const updateView = (idx) => {
                     activeIdx = idx;
+                    const activePhoto = group.photos[idx];
                     const rawUrl = activePhoto.urls?.["1000"] || activePhoto.urls?.["600"] || activePhoto.urls?.["100"];
                     popoverImage.src = getMarkerPhotoUrl(rawUrl);
                     popoverCaption.textContent = activePhoto.caption || 'No caption';

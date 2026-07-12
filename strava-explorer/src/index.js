@@ -13,7 +13,6 @@ import {
     getTourSettings,
     registerTourCallbacks,
     getTourState,
-    updateCameraForProgress,
     loadTourRoute,
     clearTourRoute
 } from './followCamera.js';
@@ -265,7 +264,7 @@ function setupShareButton() {
                         shareTooltip.classList.add('opacity-0');
                     }, 2000);
                 }
-            } catch (e) {
+            } catch {
                 showToast("Failed to copy link.", "error");
             }
             document.body.removeChild(textArea);
@@ -790,7 +789,7 @@ function setupActivityPickerFilters() {
     if (sportChipsContainer) {
         const chips = sportChipsContainer.querySelectorAll('.sport-chip');
         chips.forEach(chip => {
-            chip.addEventListener('click', (e) => {
+            chip.addEventListener('click', () => {
                 // Update active styles
                 chips.forEach(c => {
                     c.classList.remove('bg-indigo-600', 'text-white');
@@ -1349,7 +1348,7 @@ async function fetchAndDisplayDetailedActivity(activityId) {
 }
 
 async function displayDetailedActivity(activityData, streams) {
-    const { altitudeStream, distanceStream, latlngStream } = streams || {};
+    const { altitudeStream, latlngStream } = streams || {};
     debug(`[displayDetailedActivity] Called for activity ID: ${activityData?.id}`);
     
     if (!activityData?.map?.polyline) {
