@@ -298,7 +298,11 @@ const server = createServer(async (request, response) => {
   }
 });
 
-if (process.env.NODE_ENV !== 'test') {
+// Never start listening under the node:test runner: a listening socket keeps
+// the process alive after the tests pass, which hangs `node --test` (and hung
+// CI for up to 6 hours per run before this guard). NODE_TEST_CONTEXT is set
+// by the test runner itself, so this holds even when NODE_ENV is forgotten.
+if (process.env.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT) {
   server.listen(PORT, () => {
     console.log(`Ryan Baumann portfolio gateway listening on :${PORT}`);
     console.log(`Apps: ${publicApps.map((app) => `${app.name}${app.available ? '' : ' (unbuilt)'}`).join(', ') || '(none found in apps.json)'}`);
