@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-07-12 — CMS hardening and Ryan copy pass
+
+- Hardened the portfolio flat-file CMS with build-time checks for required metadata, ISO writing dates, URL shape, duplicate slugs, images/alt text, broken internal links, and draft/noindex safety.
+- Added explicit draft, canonical, image, imageAlt, tags, updated, and slug support for portfolio content plus an RSS feed for writing.
+- Updated blog/work/talk templates, `npm run new:post`, and portfolio docs so humans and agents can add valid content with one command.
+- Tightened Ryan-first copy and added a visible homepage/about media slot using existing preview assets.
+
 ## [Unreleased] - 2026-07-12 — Ryan Baumann portfolio overhaul
 
 ### Added — Planning

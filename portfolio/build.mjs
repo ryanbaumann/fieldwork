@@ -34,6 +34,84 @@ const COLLECTIONS = [
 
 const site = JSON.parse(readFileSync(join(CONTENT_DIR, 'site.json'), 'utf8'));
 
+const validationErrors = [];
+
+function failValidation(message) {
+  validationErrors.push(message);
+}
+
+function isValidIsoDate(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+}
+
+function isValidUrl(value) {
+  if (typeof value !== 'string') return false;
+  if (value.startsWith('/') && !value.startsWith('//')) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'mailto:';
+  } catch {
+    return false;
+  }
+}
+
+function pagePathForInternalHref(href) {
+  const clean = href.split('#')[0].split('?')[0];
+  if (demos.some((demo) => demo.path === clean || demo.path === `${clean}/`)) return null;
+  if (!clean || !clean.startsWith('/') || clean.startsWith('//')) return null;
+  if (/\.[a-z0-9]+$/i.test(clean)) return join(STATIC_DIR, clean.slice(1));
+  return join(DIST_DIR, clean.slice(1), 'index.html');
+}
+
+function collectMarkdownLinks(markdown) {
+  const links = [];
+  const pattern = /!?\[[^\]]*\]\(([^)\s]+)\)/g;
+  let match;
+  while ((match = pattern.exec(markdown))) links.push(match[1]);
+  return links;
+}
+
+function validateEntry(collection, entry, seenSlugs) {
+  const id = `${collection.name}/${entry.slug}`;
+  if (seenSlugs.has(id)) failValidation(`${id}: duplicate slug`);
+  seenSlugs.add(id);
+  const { meta } = entry;
+  if (meta.draft === true) return;
+  for (const field of ['title', 'summary']) {
+    if (!meta[field] || typeof meta[field] !== 'string') failValidation(`${id}: missing required ${field}`);
+  }
+  if (meta.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(meta.slug)) failValidation(`${id}: slug must be lowercase kebab-case`);
+  if (meta.noindex === true && meta.canonical) failValidation(`${id}: noindex entries should not also set canonical`);
+  if (collection.name === 'writing' && !isValidIsoDate(meta.date)) failValidation(`${id}: writing date must be YYYY-MM-DD`);
+  for (const field of ['external', 'canonical']) {
+    if (meta[field] && !isValidUrl(meta[field])) failValidation(`${id}: ${field} must be an https, mailto, or root-relative URL`);
+  }
+  if (meta.image) {
+    if (!meta.imageAlt) failValidation(`${id}: imageAlt is required when image is set`);
+    const imagePath = meta.image.startsWith('/') ? join(STATIC_DIR, meta.image.slice(1)) : join(CONTENT_DIR, collection.name, meta.image);
+    if (!existsSync(imagePath)) failValidation(`${id}: image asset not found: ${meta.image}`);
+  }
+  if (meta.tags && !Array.isArray(meta.tags)) failValidation(`${id}: tags must be a JSON array`);
+  if (meta.updated && !isValidIsoDate(meta.updated)) failValidation(`${id}: updated must be YYYY-MM-DD`);
+  for (const link of meta.links || []) {
+    if (!link.label || !isValidUrl(link.url)) failValidation(`${id}: links entries require label and valid url`);
+  }
+  for (const href of collectMarkdownLinks(entry.body)) {
+    if (href.startsWith('/')) {
+      const path = pagePathForInternalHref(href);
+      if (path && !existsSync(path)) failValidation(`${id}: broken internal link ${href}`);
+    }
+  }
+}
+
+function assertValidBuild() {
+  if (!validationErrors.length) return;
+  console.error('[portfolio] content validation failed:');
+  for (const error of validationErrors) console.error(`- ${error}`);
+  process.exit(1);
+}
+
+
 // Live demo apps. The manifest is the repo-root apps.json (the same file the
 // gateway routes from), so a demo added there shows up here on the next
 // build with zero portfolio changes. When this site is extracted into its
@@ -205,10 +283,12 @@ function loadCollection(name) {
   return readdirSync(dir)
     .filter((file) => file.endsWith('.md') && !file.startsWith('_'))
     .map((file) => {
-      const slug = file.replace(/\.md$/, '');
+      const fileSlug = file.replace(/\.md$/, '');
       const { meta, body } = parseFrontMatter(readFileSync(join(dir, file), 'utf8'));
-      return { slug, meta, body };
+      const slug = meta.slug || fileSlug;
+      return { slug, sourceSlug: fileSlug, meta, body };
     })
+    .filter((entry) => entry.meta.draft !== true)
     .sort((a, b) => {
       const orderA = a.meta.order ?? Number.MAX_SAFE_INTEGER;
       const orderB = b.meta.order ?? Number.MAX_SAFE_INTEGER;
@@ -404,7 +484,8 @@ function buildHome(collections) {
     : '';
 
   const content = `
-<section class="hero">
+<section class="hero hero-split">
+  <div>
   <p class="eyebrow">${escapeHtml(site.tagline)}</p>
   <h1>${escapeHtml(site.name)}</h1>
   <p class="lede">${escapeHtml(site.intro)}</p>
@@ -412,6 +493,8 @@ function buildHome(collections) {
   <p class="chips hero-links">${heroLinks
     .map((link) => `<a class="chip" href="${link.href}"${link.external ? ' rel="noopener"' : ''}>${escapeHtml(link.label)}${link.external ? ' ↗' : ''}</a>`)
     .join('')}</p>
+  </div>
+  <img class="hero-image" src="${rebase(site.defaultShareImage)}" alt="Ryan Baumann Portfolio preview card" width="960" height="600" loading="eager" />
 </section>
 
 <section>
@@ -510,6 +593,7 @@ function buildStandalonePages() {
     const content = `<article class="prose">
   <p class="eyebrow">${escapeHtml(meta.eyebrow || site.name)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
+  ${meta.image ? `<img class="article-hero" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" />` : ''}
   ${markdownToHtml(body)}
 </article>`;
     writePage(join(slug, 'index.html'), layout({
@@ -519,6 +603,32 @@ function buildStandalonePages() {
       active: slug,
     }));
   }
+}
+
+
+function absoluteUrl(pathOrUrl) {
+  if (/^https?:\/\//.test(pathOrUrl)) return pathOrUrl;
+  return new URL(pathOrUrl.replace(/^\//, ''), site.siteUrl || BASE).toString();
+}
+
+function rssFeed(entries) {
+  const items = entries
+    .filter((entry) => !entry.meta.noindex)
+    .map((entry) => `<item>
+      <title>${escapeHtml(entry.meta.title)}</title>
+      <link>${escapeHtml(absoluteUrl(entryUrl('writing', entry)))}</link>
+      <guid>${escapeHtml(absoluteUrl(entry.meta.canonical || entryUrl('writing', entry)))}</guid>
+      <pubDate>${new Date(`${entry.meta.date}T00:00:00Z`).toUTCString()}</pubDate>
+      <description>${escapeHtml(entry.meta.summary || '')}</description>
+    </item>`)
+    .join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+<title>${escapeHtml(site.name)} Writing</title>
+<link>${escapeHtml(absoluteUrl('/writing/'))}</link>
+<description>${escapeHtml(site.sectionIntros?.writing || site.description)}</description>
+${items}
+</channel></rss>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -543,6 +653,13 @@ for (const collection of COLLECTIONS) {
 buildHome(collections);
 buildDemosPage();
 buildStandalonePages();
+
+const seenSlugs = new Set();
+for (const collection of COLLECTIONS) {
+  for (const entry of collections[collection.name]) validateEntry(collection, entry, seenSlugs);
+}
+assertValidBuild();
+writePage('feed.xml', rssFeed(collections.writing));
 
 if (existsSync(STATIC_DIR)) {
   cpSync(STATIC_DIR, DIST_DIR, { recursive: true });

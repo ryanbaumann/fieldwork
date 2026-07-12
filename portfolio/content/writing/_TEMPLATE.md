@@ -2,6 +2,13 @@
 title: Post title
 summary: One-sentence description shown in lists and previews.
 date: 2026-01-15
+updated: 2026-01-15
+canonical: https://www.ryanbaumann-portfolio.com/writing/post-title/
+image: /previews/portfolio.jpg
+imageAlt: Ryan Baumann Portfolio preview card
+tags: ["developer experience"]
+draft: true
+noindex: true
 order: 99
 ---
 
@@ -15,4 +22,4 @@ publish. Two kinds of writing entries:
    `external: https://...` to the front matter and leave the body empty.
    It lists with an outbound link.
 
-Entries sort by `order`, then `date` descending.
+Drafts are safe by default: set `draft: false` or remove it before publishing. Hosted posts should use ISO dates, a canonical URL, tags, and image alt text. Entries sort by `order`, then `date` descending; published entries appear in `/feed.xml`.

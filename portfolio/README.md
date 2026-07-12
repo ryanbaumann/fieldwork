@@ -39,11 +39,19 @@ gateway's app manifest) when it exists — in a standalone deployment of this
 folder they simply disappear.
 
 Each collection folder has a `_TEMPLATE.md` showing its front-matter
-schema. Underscore-prefixed files are drafts — the build skips them.
+schema. Underscore-prefixed files are ignored; `draft: true` entries are also skipped by the build, which makes work-in-progress files safe to commit.
 
 ## Updating the site
 
-Adding anything is: copy the template, write markdown, `node build.mjs`.
+Adding anything is: copy the template, write markdown, `node build.mjs`. New blog posts have a paved path from the repo root:
+
+```bash
+npm run new:post -- "Developer experience is a growth engine" --summary "Why developer experience should be managed like a growth channel."
+npm run new:post -- "External launch" --external https://example.com/launch
+```
+
+The build validates content before it writes a deployable site: required titles and summaries, ISO dates for writing, valid URLs, duplicate slugs, image alt text, missing static assets, broken internal links, and unsafe `draft` / `noindex` combinations. Published writing entries also appear in `/feed.xml`, so adding or editing a post is edit → build → deploy → CDN cache refresh.
+
 The repo ships generic agent skills that encode the standards, so any AI coding
 agent can maintain the site in the same voice and style:
 
