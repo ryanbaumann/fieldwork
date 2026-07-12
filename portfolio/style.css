@@ -229,6 +229,7 @@ main > section { margin-bottom: clamp(3rem, 7vw, 4.5rem); }
 .work-card.has-thumb { padding: 0; overflow: hidden; }
 .work-card.has-thumb .card-body { padding: 1.15rem 1.35rem 1.35rem; display: flex; flex-direction: column; }
 .card-thumb {
+  height: auto;
   display: block;
   width: 100%;
   aspect-ratio: 16 / 10;
@@ -280,6 +281,7 @@ main > section { margin-bottom: clamp(3rem, 7vw, 4.5rem); }
 }
 .row:first-child { border-top: 1px solid var(--line); }
 .row-thumb {
+  height: auto;
   flex: none;
   width: 8rem;
   aspect-ratio: 16 / 10;

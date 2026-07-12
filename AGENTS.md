@@ -35,6 +35,9 @@ picture.
 - **Regenerate demo screenshots:** `npm run previews` (uses
   strava-explorer's Playwright; `BASE_URL=https://www.ryanbaumann-portfolio.com`
   to shoot production).
+- **Regenerate artifact cards:** `node scripts/artifact-cards.mjs` rebuilds
+  the SVG artifact cards used on work, writing, and talks pages when no
+  honest screenshot exists.
 
 Prefer small, reviewable changes. Keep app-specific code, commands, and dependencies inside the app directory you are modifying. Only use npm for dependency management (do not use yarn or other package managers).
 
@@ -89,7 +92,11 @@ Run commands from the app directory unless noted.
   root `package.json`'s script).
 - Run the gateway against that staged output: `node gateway/server.js` (or
   `npm start`), then open `http://localhost:8080/`.
-- Gateway unit tests (zero deps, `node:test`): `cd gateway && node --test`.
+- Gateway unit tests (zero deps, `node:test`): `cd gateway && npm test`.
+  Do not run raw `node --test` here: it imports `server.js` without
+  `NODE_ENV=test` and used to hang forever (see LEARNINGS.md 2026-07-12).
+  `server.js` now also guards `listen()` on `NODE_TEST_CONTEXT`, but
+  `npm test` (which sets `NODE_ENV=test`) is the supported path.
 - End-to-end smoke test (route liveness, asset resolution, OAuth URL shape,
   secret-leak scan, keyless proxy behavior): `node scripts/smoke.mjs` (or
   `npm run smoke`). This is what CI runs instead of the old Playwright
@@ -195,14 +202,13 @@ Use these repo-local skills when the task matches their scope:
 - `.agents/skills/google-maps-environment-apis/SKILL.md` for Google Maps Platform Environment APIs: Air Quality, Pollen, Solar, Weather, environmental heatmap tiles, quota, caching, source labeling, and environmental-data migrations.
 - `.agents/skills/frontend-responsive-design/SKILL.md` for responsive layout, accessibility, CSS architecture, Tailwind utility usage, and visual QA work.
 
-## How to Use AGENTS.md and the Changelog
+## The agentic loop
 
-This document ([AGENTS.md](AGENTS.md)) serves as the source of truth for repository structure, commands, styles, and guidelines.
-
-### Developer & Agent Guidelines
-1. **Always Read first:** Read this file at the start of any task or session.
-2. **Keep the Changelog updated:** Document all features, bug fixes, deprecations, and critical lessons learned in the root [CHANGELOG.md](CHANGELOG.md).
-3. **Reference historical learnings:** When working with Maps JavaScript API 3D, refer to the [CHANGELOG.md](CHANGELOG.md) for solutions to common pitfalls (such as the `PinElement` call stack overflow or `glyph` deprecations).
+1. Read this file and the relevant `.agents/skills/*/SKILL.md` before changing a surface it governs (styling changes require `portfolio-design`, prose requires `portfolio-writing`).
+2. Do the work in small, reviewable commits.
+3. Run the narrowest validation first, then the app build, then `node scripts/smoke.mjs` for gateway/apps.json changes.
+4. Before finishing, update `CHANGELOG.md` (every user-visible or behavioral change) and `LEARNINGS.md` (every surprise, root-caused bug, or environment gotcha, using the Context/Learning/Evidence/Use next time format).
+5. If a learning is durable, fold it into the matching skill in the same PR. The changelog records what happened, the learning log records why, and skills encode what to do next time.
 
 ## Pull Request Expectations
 
