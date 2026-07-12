@@ -3,7 +3,7 @@ title: Project name
 org: Company or "Personal"
 role: What you were on it
 period: 2025 – present
-summary: One sentence, outcome first — what shipped and what it moved.
+summary: One sentence, outcome first. What shipped and what it moved.
 tags: ["two", "or three", "tags"]
 links: [{"label": "Docs", "url": "https://example.com"}]
 image: /previews/portfolio.jpg
@@ -26,6 +26,6 @@ State the business, adoption, revenue, or reach goal the work served. Focus on i
 
 Detail what you actually built or led. Use short sentences, active voice, and concrete nouns. Link to real, shipped artifacts.
 
-## Why it matters
+## What I learned
 
-Deliver the durable lesson — explain why this matters to a platform business beyond this specific project. Cut the fluff.
+The durable lesson, stated plainly. No thesis-speak, no em-dashes, no claims you can't back.

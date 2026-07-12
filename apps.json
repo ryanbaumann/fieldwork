@@ -2,7 +2,7 @@
   {
     "name": "portfolio",
     "title": "Ryan Baumann",
-    "description": "Home — work, writing, talks, and the demo lab.",
+    "description": "Home: work, writing, talks, and the demo lab.",
     "path": "/",
     "dev_build_dir": "portfolio/dist",
     "tags": [],
@@ -11,7 +11,7 @@
   {
     "name": "strava-explorer",
     "title": "Strava 3D Explorer",
-    "description": "Fly through your Strava routes and ride photos in Photorealistic 3D — follow-camera animation, elevation profile, shareable tours.",
+    "description": "Fly your Strava routes in Photorealistic 3D with follow-camera animation, an elevation profile, and your ride photos on the path.",
     "path": "/strava-explorer/",
     "dev_build_dir": "strava-explorer/dist",
     "tags": ["strava", "3d-maps", "google-maps-platform"],

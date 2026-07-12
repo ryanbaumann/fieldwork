@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-07-12: UI/UX + copy refresh, CI hang fix, agentic loop
+
+- Fixed the CI hang root cause: the build-and-smoke job ran raw `node --test` in `gateway/`, which imports `server.js` without `NODE_ENV=test`, so `server.listen()` ran and the process never exited. Every run hung until GitHub's 6-hour job timeout, and 10 stuck runs piled up. CI now uses `npm test` (sets `NODE_ENV=test`), `server.js` also guards `listen()` on `NODE_TEST_CONTEXT`, and every job has a 10-20 minute timeout plus cancel-in-progress concurrency.
+- Rewrote portfolio copy in Ryan's voice: first person, short sentences, no em-dashes, nothing overstated. Work entries now end with a "What I learned" section instead of "Why it matters."
+- Added a new Writing entry (Vibing with Maps on Substack) and two new Talks entries (GeoMob SF, April 2025; vis.gl Summit, Seattle, October 2025) with links to the real decks.
+- Cut the generic firesides entry and the keyword-dump About copy.
+- Added a real image to every page: honest screenshots where they exist, and generated SVG artifact cards (`scripts/artifact-cards.mjs`) where they don't. Artifact cards state only facts already in the entry copy.
+- Work cards and writing/talks rows now render thumbnails.
+- Pulled the CSS back to the documented design system: system fonts, simple card lift, no webfont import, no 3D tilt, no scroll reveals.
+- Added an "agentic loop" section to `AGENTS.md`.
+- Updated `.agents/skills/portfolio-writing/SKILL.md` and `.agents/skills/portfolio-design/SKILL.md` with today's lessons.
+
 ## 2026-07-12 — CMS hardening and Ryan copy pass
 
 - Hardened the portfolio flat-file CMS with build-time checks for required metadata, ISO writing dates, URL shape, duplicate slugs, images/alt text, broken internal links, and draft/noindex safety.

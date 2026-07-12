@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-label="ONE-COMMAND INSTALL: Agent Skills">
+  <style>:root {
+      --bg: #0b1220; --border: #1f2b3f; --dot: #26334a;
+      --eyebrow: #2563eb; --title: #f3f6fb; --body: #c7d2e4; --footer: #7e8aa0;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f7f8fb; --border: #dfe4ee; --dot: #c7cede;
+        --eyebrow: #2563eb; --title: #111827; --body: #384156; --footer: #6b7280;
+      }
+    }
+    .card-bg { fill: var(--bg); } .card-border { stroke: var(--border); } .dot { fill: var(--dot); }
+    .rule { stroke: var(--border); } .eyebrow { fill: var(--eyebrow); }
+    .title { fill: var(--title); } .body { fill: var(--body); } .footer { fill: var(--footer); }
+  </style>
+  <rect class="card-bg" width="960" height="600"/>
+  <rect class="card-border" x="1.5" y="1.5" width="957" height="597" fill="none" stroke-width="3" rx="14"/>
+  <circle class="dot" cx="46" cy="46" r="7"/>
+  <circle class="dot" cx="72" cy="46" r="7"/>
+  <circle class="dot" cx="98" cy="46" r="7"/>
+  <text class="eyebrow" x="480" y="266" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="19" letter-spacing="4">ONE-COMMAND INSTALL</text>
+  <text class="title" x="480" y="330" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="700">Agent Skills</text>
+  <text class="body" x="480" y="392" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="30">$ npx skills add googlemaps/agent-skills</text>
+  <line class="rule" x1="120" y1="504" x2="840" y2="504" stroke-width="2"/>
+  <text class="footer" x="480" y="544" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="19">Web · Android · iOS · Web Services</text>
+</svg>

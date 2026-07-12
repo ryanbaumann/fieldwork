@@ -416,11 +416,20 @@ function workCard(entry) {
   const { meta } = entry;
   const url = hasDetailPage(entry) ? entryUrl('work', entry) : rebase(meta.links?.[0]?.url || `${BASE}work/`);
   const external = !hasDetailPage(entry) && /^https?:/.test(url);
-  return `<a class="card" href="${url}"${external ? ' rel="noopener"' : ''}>
-  <p class="card-meta">${metaLine([meta.org, meta.period])}</p>
+  const cardMeta = `<p class="card-meta">${metaLine([meta.org, meta.period])}</p>
   <h3>${escapeHtml(meta.title)}</h3>
   <p>${escapeHtml(meta.summary || '')}</p>
-  ${meta.tags ? `<p class="card-tags">${meta.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</p>` : ''}
+  ${meta.tags ? `<p class="card-tags">${meta.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</p>` : ''}`;
+  if (meta.image) {
+    return `<a class="card work-card has-thumb" href="${url}"${external ? ' rel="noopener"' : ''}>
+  <img class="card-thumb" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" width="960" height="600" />
+  <div class="card-body">
+  ${cardMeta}
+  </div>
+</a>`;
+  }
+  return `<a class="card" href="${url}"${external ? ' rel="noopener"' : ''}>
+  ${cardMeta}
 </a>`;
 }
 
@@ -432,7 +441,11 @@ function listRow(collection, entry) {
   const title = clickable
     ? `<a href="${url}"${external ? ' rel="noopener"' : ''}>${escapeHtml(meta.title)}${external ? ' ↗' : ''}</a>`
     : escapeHtml(meta.title);
+  const thumb = meta.image
+    ? `<img class="row-thumb" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" width="192" height="120" />`
+    : '';
   return `<li class="row">
+  ${thumb}
   <div>
     <p class="row-title">${title}</p>
     <p class="row-summary">${escapeHtml(meta.summary || '')}</p>
@@ -634,7 +647,10 @@ function buildHome(collections) {
     .map((link) => `<a class="chip" href="${link.href}"${link.external ? ' rel="noopener"' : ''}>${escapeHtml(link.label)}${link.external ? ' ↗' : ''}</a>`)
     .join('')}</p>
   </div>
-  <img class="hero-image" src="${rebase(site.defaultShareImage)}" alt="Ryan Baumann Portfolio preview card" width="960" height="600" loading="eager" />
+  <figure class="hero-figure">
+    <img class="hero-image" src="${rebase('/previews/strava-explorer.jpg')}" alt="The Strava 3D Explorer flying a route in Photorealistic 3D, one of the live demos in the lab" width="960" height="600" loading="eager" />
+    <p class="hero-image-caption">From the lab: <a href="${rebase('/strava-explorer/')}">Strava 3D Explorer</a></p>
+  </figure>
 </section>
 
 <section>
@@ -686,7 +702,7 @@ function buildDemosPage() {
   <div class="grid demo-grid">
     ${demos.map(demoCard).join('\n')}
   </div>
-  <p class="section-note">Every demo is open source — <a href="${site.links.github}/trails.ninja" rel="noopener">read the code</a>. One Ryan Baumann portfolio container, one Cloud Run service, no secrets in the browser.</p>
+  <p class="section-note">Every demo is open source. <a href="${site.links.github}/ryanbaumann-portfolio" rel="noopener">read the code</a>. One Ryan Baumann portfolio container, one Cloud Run service, no secrets in the browser.</p>
 </section>`;
 
   writePage(join('demos', 'index.html'), layout({

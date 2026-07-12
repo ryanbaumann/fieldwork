@@ -3,20 +3,22 @@ title: Geo Architecture Center
 org: Google
 role: Founder & principal author
 period: 2022 – present
-summary: 40+ published solution architectures showing developers how to build real systems on Google Maps Platform — several as principal author.
+summary: 40+ published solution architectures showing developers how to build real systems on Google Maps Platform. Principal author on several.
 tags: ["technical writing", "solution architecture"]
 links: [{"label": "Architecture Center", "url": "https://developers.google.com/maps/architecture"}]
+image: /img/work/geo-architecture-center.svg
+imageAlt: Panel showing the Geo Architecture Center stat of 40+ published solution architectures
 order: 7
 ---
 
 ## The goal
 
-API reference docs answer "what does this endpoint do?" They fail to answer "how do I build a fleet tracker, a store locator, or a logistics stack that scales?" System-level questions dictate where deals and massive workloads are won or lost.
+API reference docs answer "what does this endpoint do?" They don't answer "how do I build a fleet tracker, a store locator, or a logistics stack that scales?" Enterprise evaluations live and die on those system-level questions.
 
 ## What shipped
 
-I launched the Geo Architecture Center and served as principal author for multiple guides. We shipped 40+ published solution architectures covering real, end-to-end systems built on Google Maps Platform. I encoded patterns extracted directly from enterprise builds, delivering actionable architecture diagrams, cost models, and working reference implementations.
+I started the Geo Architecture Center and wrote several of its guides as principal author. The team has published 40+ solution architectures covering real, end-to-end systems built on Google Maps Platform: architecture diagrams, cost models, and working reference implementations, with patterns pulled from actual enterprise builds.
 
-## Why it matters
+## What I learned
 
-Architecture content scales sales engineering. One precise solution architecture resolves thousands of support threads and accelerates every enterprise evaluation it touches. Today, it acts as high-value agent fuel: structured, opinionated system designs provide the exact context AI agents need to build correctly on the platform.
+One precise solution architecture resolves thousands of support threads and speeds up every enterprise evaluation it touches. And it aged well: structured, opinionated system designs turn out to be exactly the context AI agents need to build correctly on a platform.
