@@ -24,7 +24,7 @@ jobs:
   deploy:
     name: Build and deploy trails-ninja
     runs-on: ubuntu-latest
-    if: github.repository == 'ryanbaumann/trails.ninja'
+    if: github.repository == 'ryanbaumann/Portfolio' || github.repository == 'ryanbaumann/portfolio'
     concurrency:
       group: "deploy"
       cancel-in-progress: false

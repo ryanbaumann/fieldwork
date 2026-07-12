@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## 2026-07-12: UI/UX + copy refresh, CI hang fix, agentic loop
 
+- Fixed Cloud Run auto-deployment workflow (skipped status) by correcting the repository filter in `.github/workflows/deploy.yml` to check for `ryanbaumann/Portfolio` instead of the legacy `ryanbaumann/trails.ninja` repository.
 - Fixed image aspect ratio and layout distortion for the homepage hero image (`/previews/strava-explorer.jpg`) by correcting its HTML template attributes to match its physical `1200x687` dimensions and adding `height: auto` in CSS.
 - Added a zero-dependency image dimension parser helper `getImageDimensions` in `build.mjs` that automatically reads and parses SVG (from viewBox/width/height) and JPEG (from SOF marker headers) image files at build time.
 - Integrated dynamic `width` and `height` attributes on page detail and standalone article hero images (`.article-hero`) to prevent Cumulative Layout Shift (CLS).

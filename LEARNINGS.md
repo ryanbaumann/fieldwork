@@ -42,3 +42,11 @@ Learning: Without `height: auto;` in CSS, modern browsers fall back to the aspec
 Evidence: Changing the HTML attributes of `.hero-image` to `width="1200" height="687"` and adding `height: auto;` in CSS resolved the distortion. Adding a zero-dependency image dimension parser helper `getImageDimensions` in `build.mjs` to automatically extract dimensions from SVG and JPEG files at build time and inject them as HTML `width`/`height` attributes resolved CLS across all detail/standalone pages.
 Use next time: Always specify `height: auto` on responsive images in CSS, ensure HTML dimension attributes match the actual physical image size, and dynamically parse/inject image dimensions at build time for dynamic content images.
 
+## 2026-07-12: Stale repository filters in deploy workflows cause silent workflow skips
+
+Context: Cloud Run deployments on merges to `main` were silently skipping because `.github/workflows/deploy.yml` had a conditional constraint `if: github.repository == 'ryanbaumann/trails.ninja'`.
+Learning: When a repository is moved or renamed, GitHub Actions workflows that filter jobs by `github.repository` must have their hardcoded values updated to the new repository slug. Otherwise, the jobs will evaluate to `false` and skip silently on push/PR triggers.
+Evidence: Changing the condition to `if: github.repository == 'ryanbaumann/Portfolio' || github.repository == 'ryanbaumann/portfolio'` allowed the deployment workflow to execute.
+Use next time: Always check and update workflow files for stale `github.repository` checks when renaming, moving, or cloning a repository.
+
+
