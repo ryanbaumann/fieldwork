@@ -12,7 +12,7 @@ import {
   handleAuthRequest,
 } from '../lib/auth.js';
 
-import { toPublicApp, appVisibility } from '../lib/apps.js';
+import { toPublicApp, appVisibility, validateManifestEntries } from '../lib/apps.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -47,8 +47,11 @@ function mockRequest({ cookies = '', method = 'GET' } = {}) {
 
 /** Build a valid HMAC cookie value for testing. */
 function validCookieValue(appName, secret) {
-  const hmac = createHmac('sha256', secret).update(appName).digest('hex');
-  return `${appName}:${hmac}`;
+  const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+  const nonce = 'a'.repeat(32);
+  const payload = `${appName}:${expiresAt}:${nonce}`;
+  const hmac = createHmac('sha256', secret).update(payload).digest('hex');
+  return `${payload}:${hmac}`;
 }
 
 function noop() {}
@@ -146,7 +149,7 @@ describe('verifyAuthCookie', () => {
   });
 
   test('returns false for tampered HMAC', () => {
-    const value = `${appName}:deadbeef`;
+    const value = validCookieValue(appName, secret).replace(/[a-f0-9]{64}$/, '0'.repeat(64));
     const req = mockRequest({ cookies: `${AUTH_COOKIE_NAME}=${value}` });
     assert.equal(verifyAuthCookie(req, appName, secret), false);
   });
@@ -160,6 +163,15 @@ describe('verifyAuthCookie', () => {
     const req = mockRequest({ cookies: '' });
     // Empty cookie string => no cookies header
     req.headers = {};
+    assert.equal(verifyAuthCookie(req, appName, secret), false);
+  });
+
+  test('returns false for an expired signed cookie', () => {
+    const expiresAt = Math.floor(Date.now() / 1000) - 1;
+    const nonce = 'b'.repeat(32);
+    const payload = `${appName}:${expiresAt}:${nonce}`;
+    const hmac = createHmac('sha256', secret).update(payload).digest('hex');
+    const req = mockRequest({ cookies: `${AUTH_COOKIE_NAME}=${payload}:${hmac}` });
     assert.equal(verifyAuthCookie(req, appName, secret), false);
   });
 });
@@ -208,12 +220,28 @@ describe('appVisibility', () => {
     assert.equal(appVisibility({ visibility: 'private' }), 'private');
   });
 
-  test('is case-insensitive', () => {
-    assert.equal(appVisibility({ visibility: 'PRIVATE' }), 'private');
+  test('manifest validation rejects unknown visibility instead of failing open', () => {
+    assert.throws(() => validateManifestEntries([{ name: 'demo', path: '/demo/', visibility: 'weirdo' }]), /Invalid visibility/);
+  });
+});
+
+describe('validateManifestEntries', () => {
+  test('requires valid password auth metadata for private apps', () => {
+    assert.throws(() => validateManifestEntries([{ name: 'secret', path: '/secret/', visibility: 'private' }]), /requires password auth/);
+    assert.throws(() => validateManifestEntries([{
+      name: 'secret', path: '/secret/', visibility: 'private', auth: { type: 'password', envVar: 'bad-name' },
+    }]), /requires password auth/);
   });
 
-  test('falls back to public for unknown values', () => {
-    assert.equal(appVisibility({ visibility: 'weirdo' }), 'public');
+  test('accepts known provider names but rejects unknown providers', () => {
+    assert.doesNotThrow(() => validateManifestEntries([{ name: 'demo', path: '/demo/', providers: ['strava'] }]));
+    assert.throws(() => validateManifestEntries([{ name: 'demo', path: '/demo/', providers: ['mystery'] }]), /unknown provider/);
+  });
+
+  test('rejects duplicate names and normalized paths', () => {
+    assert.throws(() => validateManifestEntries([
+      { name: 'one', path: '/same' }, { name: 'two', path: '/same/' },
+    ]), /Duplicate app path/);
   });
 });
 
@@ -299,5 +327,6 @@ describe('handleAuthRequest', () => {
     await handleAuthRequest(req, res, app, env, noop, alwaysBlocked, '1.2.3.4');
     assert.equal(res.statusCode, 429);
     assert.ok(res.body.includes('Too many attempts'));
+    assert.equal(res.headers['Retry-After'], '60');
   });
 });

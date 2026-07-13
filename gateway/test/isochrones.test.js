@@ -40,3 +40,8 @@ test('handleIsochronesApi returns 503 for a valid body when no key is configured
   const result = await handleIsochronesApi(validBody, { env: {} });
   assert.equal(result.statusCode, 503);
 });
+
+test('VITE_GMP_API_KEY is not accepted as a server credential', async () => {
+  const result = await handleIsochronesApi(validBody, { env: { VITE_GMP_API_KEY: 'browser-public-key' } });
+  assert.equal(result.statusCode, 503);
+});

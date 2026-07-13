@@ -10,6 +10,7 @@
 //
 // Usage:
 //   npm run new:demo -- my-demo --title "My Demo" --description "One line for the card."
+//   npm run new:demo -- client-preview --visibility private --providers isochrones
 //   node scripts/new-demo.mjs my-demo
 //
 // After scaffolding:
@@ -31,7 +32,7 @@ function fail(message) {
 
 const args = process.argv.slice(2);
 const name = args[0];
-if (!name || name.startsWith('-')) fail('usage: npm run new:demo -- <kebab-case-name> [--title "..."] [--description "..."]');
+if (!name || name.startsWith('-')) fail('usage: npm run new:demo -- <kebab-case-name> [--title "..."] [--description "..."] [--visibility public|unlisted|private]');
 if (!/^[a-z][a-z0-9-]*$/.test(name)) fail(`name must be kebab-case (got "${name}")`);
 
 function flag(flagName, fallback) {
@@ -41,6 +42,13 @@ function flag(flagName, fallback) {
 
 const title = flag('title', name.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' '));
 const description = flag('description', `One line about ${title} — shown on the homepage demo card.`);
+const visibility = flag('visibility', 'public');
+if (!['public', 'unlisted', 'private'].includes(visibility)) fail(`visibility must be public, unlisted, or private (got "${visibility}")`);
+const providers = flag('providers', '').split(',').map((provider) => provider.trim()).filter(Boolean);
+const knownProviders = new Set(['strava', 'isochrones', 'resend']);
+if (providers.some((provider) => !knownProviders.has(provider))) fail(`providers must be named gateway providers: ${[...knownProviders].join(', ')}`);
+const authEnv = flag('auth-env', `${name.replace(/-/g, '_').toUpperCase()}_PASSWORD`);
+if (visibility === 'private' && !/^[A-Z][A-Z0-9_]*$/.test(authEnv)) fail(`auth-env must be an uppercase environment variable name (got "${authEnv}")`);
 
 const appDir = join(REPO_ROOT, name);
 if (existsSync(appDir)) fail(`${name}/ already exists`);
@@ -220,11 +228,15 @@ apps.push({
   description,
   path: `/${name}/`,
   dev_build_dir: `${name}/dist`,
+  ...(providers.length ? { providers } : {}),
+  ...(visibility !== 'public' ? { visibility } : {}),
+  ...(visibility === 'private' ? { auth: { type: 'password', envVar: authEnv } } : {}),
   tags: ['google-maps-platform'],
   preview: null,
 });
 writeFileSync(appsJsonPath, `${JSON.stringify(apps, null, 2)}\n`);
 console.log('[new-demo] added apps.json entry (drives gateway routing, homepage card, build, smoke)');
+if (visibility === 'private') console.log(`[new-demo] private access requires server env ${authEnv}; the demo is hidden and fails closed until it is set`);
 
 // --- 3. Dockerfile ----------------------------------------------------------
 

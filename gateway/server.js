@@ -11,7 +11,8 @@ import { createServer } from 'node:http';
 
 import { loadApps, toPublicApp, appVisibility } from './lib/apps.js';
 import { applySecurityHeaders, serveFromDir } from './lib/staticFiles.js';
-import { createRateLimiter, clientIp } from './lib/rateLimit.js';
+import { createRateLimiter, clientIp, RATE_LIMIT_POLICIES, rateLimitPolicyForPath } from './lib/rateLimit.js';
+import { resolveProvider } from './lib/config.js';
 import {
   verifyAuthCookie,
   loginPageHtml,
@@ -38,8 +39,9 @@ const appsByPathLength = [...apps].sort((a, b) => b.path.length - a.path.length)
 // fine. The photo proxy is different: a single Strava tour can render
 // dozens of photo billboards, each firing its own GET, so it gets its own
 // more generous limiter to avoid 429s on ordinary page loads.
-const proxyRateLimiter = createRateLimiter({ windowMs: 60_000, max: 30 });
-const photoRateLimiter = createRateLimiter({ windowMs: 60_000, max: 120 });
+const routeRateLimiters = Object.fromEntries(
+  Object.entries(RATE_LIMIT_POLICIES).map(([name, policy]) => [name, createRateLimiter(policy)]),
+);
 
 // Route-aware rate limiter for private-demo auth attempts.
 // Deliberately tight (5 attempts/min per IP) to discourage brute-force.
@@ -54,7 +56,7 @@ const photoRateLimiter = createRateLimiter({ windowMs: 60_000, max: 120 });
 //   - Redis or Memorystore counters (requires a dependency)
 //   - Firestore increment-based counters (serverless, but adds latency)
 // For a portfolio site the single-instance limiter is the right trade-off.
-const authRateLimiter = createRateLimiter({ windowMs: 60_000, max: 5 });
+const authRateLimiter = routeRateLimiters.auth;
 
 function sendJson(response, statusCode, payload) {
   applySecurityHeaders(response);
@@ -135,9 +137,8 @@ async function handleContactRequest(request, response) {
     return;
   }
 
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const toEmail = process.env.CONTACT_TO_EMAIL;
-  const fromEmail = process.env.CONTACT_FROM_EMAIL || 'Portfolio Contact <onboarding@resend.dev>';
+  const { apiKey: resendApiKey, toEmail, fromEmail: configuredFromEmail } = resolveProvider('resend', process.env);
+  const fromEmail = configuredFromEmail || 'Portfolio Contact <onboarding@resend.dev>';
   if (!resendApiKey || !toEmail) {
     sendHtml(response, 503, contactResponsePage('Contact form is not configured yet', 'The backend route is live, but RESEND_API_KEY and CONTACT_TO_EMAIL must be set before it can deliver messages.', 503));
     return;
@@ -204,11 +205,6 @@ async function handleApi(request, response, pathname, searchParams) {
     return;
   }
 
-  if (pathname === '/api/contact') {
-    await handleContactRequest(request, response);
-    return;
-  }
-
   if (pathname === '/api/apps') {
     sendJson(response, 200, { apps: publicApps });
     return;
@@ -220,10 +216,15 @@ async function handleApi(request, response, pathname, searchParams) {
   // accepts both without requiring a client change.
   const isPhotoRoute = pathname === '/api/strava/photo' || pathname === '/api/photo-proxy';
   const isStravaRoute = pathname.startsWith('/api/strava/') || isPhotoRoute;
-  const isProxyRoute = isStravaRoute || pathname === '/api/isochrones';
-  const limiter = isPhotoRoute ? photoRateLimiter : proxyRateLimiter;
-  if (isProxyRoute && !limiter.check(ip)) {
+  const policyName = rateLimitPolicyForPath(pathname);
+  if (policyName && !routeRateLimiters[policyName].check(`${policyName}:${ip}`)) {
+    response.setHeader('Retry-After', String(Math.ceil(RATE_LIMIT_POLICIES[policyName].windowMs / 1000)));
     sendJson(response, 429, { error: 'Too many requests. Please try again later.' });
+    return;
+  }
+
+  if (pathname === '/api/contact') {
+    await handleContactRequest(request, response);
     return;
   }
 
@@ -308,7 +309,7 @@ const server = createServer(async (request, response) => {
     if (request.method === 'POST' && pathname.endsWith('__auth')) {
       const appPath = pathname.slice(0, -'__auth'.length);
       const app = findAppForPath(appPath);
-      if (app && appVisibility(app) === 'private' && app.auth) {
+      if (app && appVisibility(app) === 'private') {
         const ip = clientIp(request);
         await handleAuthRequest(request, response, app, process.env, applySecurityHeaders, authRateLimiter, ip);
         return;
@@ -349,17 +350,10 @@ const server = createServer(async (request, response) => {
         return;
       }
 
-      if (!app.available) {
-        applySecurityHeaders(response);
-        response.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' });
-        response.end(`${app.name} is not built. Run scripts/build-local.mjs first.`);
-        return;
-      }
-
       // ── Private-demo auth gate ──────────────────────────────────
       // Authorization MUST be checked before serveFromDir so that
       // static assets are never leaked to unauthenticated visitors.
-      if (appVisibility(app) === 'private' && app.auth) {
+      if (appVisibility(app) === 'private') {
         const secret = process.env[app.auth.envVar];
         if (!secret) {
           // Password env var not configured — refuse to serve.
@@ -374,6 +368,13 @@ const server = createServer(async (request, response) => {
           response.end(loginPageHtml(app));
           return;
         }
+      }
+
+      if (!app.available) {
+        applySecurityHeaders(response);
+        response.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' });
+        response.end(`${app.name} is not built. Run scripts/build-local.mjs first.`);
+        return;
       }
 
       const subPath = pathname.slice(app.path.length - 1);
@@ -408,4 +409,4 @@ if (process.env.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT) {
   });
 }
 
-export { server, apps, publicApps, authRateLimiter };
+export { server, apps, publicApps, appsByPathLength, authRateLimiter, routeRateLimiters };

@@ -16,6 +16,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isKnownProvider } from './config.js';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // gateway/lib -> gateway -> repo root (or /app in the container image).
@@ -52,6 +53,8 @@ export function loadApps(env = process.env) {
     }
   }
 
+  validateManifestEntries(raw);
+
   const apps = raw.map((entry) => {
     const prodDir = join(appsRoot, entry.name);
     const devDir = entry.dev_build_dir ? join(REPO_ROOT, entry.dev_build_dir) : null;
@@ -80,14 +83,52 @@ export function loadApps(env = process.env) {
   return { apps, manifestPath, appsRoot };
 }
 
+const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const ENV_VAR_PATTERN = /^[A-Z][A-Z0-9_]*$/;
+const APP_PATH_PATTERN = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*\/)*$/;
+
+export function validateManifestEntries(entries) {
+  if (!Array.isArray(entries)) throw new Error('apps.json must contain an array.');
+  const names = new Set();
+  const paths = new Set();
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new Error('Each apps.json entry must be an object.');
+    if (!NAME_PATTERN.test(entry.name || '')) throw new Error(`Invalid app name: ${entry.name || '(missing)'}`);
+    if (names.has(entry.name)) throw new Error(`Duplicate app name: ${entry.name}`);
+    names.add(entry.name);
+    if (typeof entry.path !== 'string' || (entry.path !== '/' && !APP_PATH_PATTERN.test(`${entry.path.replace(/\/+$/, '')}/`))) {
+      throw new Error(`Invalid path for app ${entry.name}.`);
+    }
+    const path = entry.path === '/' ? '/' : `${entry.path.replace(/\/+$/, '')}/`;
+    if (paths.has(path)) throw new Error(`Duplicate app path: ${path}`);
+    paths.add(path);
+
+    const visibility = entry.visibility || 'public';
+    if (!['public', 'unlisted', 'private'].includes(visibility)) {
+      throw new Error(`Invalid visibility for app ${entry.name}: ${visibility}`);
+    }
+    if (visibility === 'private') {
+      if (entry.auth?.type !== 'password' || !ENV_VAR_PATTERN.test(entry.auth?.envVar || '')) {
+        throw new Error(`Private app ${entry.name} requires password auth with a valid envVar.`);
+      }
+    } else if (entry.auth !== undefined) {
+      throw new Error(`Only private apps may define auth metadata (${entry.name}).`);
+    }
+    if (entry.providers !== undefined) {
+      if (!Array.isArray(entry.providers) || entry.providers.some((name) => typeof name !== 'string' || !isKnownProvider(name))) {
+        throw new Error(`App ${entry.name} references an unknown provider.`);
+      }
+    }
+  }
+  return entries;
+}
+
 /**
  * Returns the normalised visibility for an app manifest entry.
  * Defaults to 'public' when the field is absent.
  */
 export function appVisibility(app) {
-  const v = (app.visibility || 'public').toLowerCase();
-  if (v === 'public' || v === 'unlisted' || v === 'private') return v;
-  return 'public';
+  return app.visibility || 'public';
 }
 
 /**

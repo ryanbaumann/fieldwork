@@ -5,6 +5,7 @@ import { debug, warn, error } from './log.js';
 import { toLatLngLiteral } from './latlng.js';
 import { DEFAULT_ALTITUDE_M, haversineKm, downsamplePath } from './geo.js';
 import { groupPhotosByProximity } from './photos.js';
+import { proxiedPhotoUrl } from './photoUrl.js';
 
 // --- Module-Level Variables ---
 let map3d = null;
@@ -380,16 +381,7 @@ export function removePreviousPolyline() {
 }
 
 function getMarkerPhotoUrl(imageUrl) {
-    if (!imageUrl || !PHOTO_PROXY_BASE_URL) return imageUrl;
-    try {
-        const url = new URL(imageUrl);
-        if (url.protocol === 'https:' && url.hostname === 'dgtzuqphqg23d.cloudfront.net') {
-            return `${PHOTO_PROXY_BASE_URL}/api/photo-proxy?url=${encodeURIComponent(url.href)}`;
-        }
-    } catch (errorObj) {
-        warn('Invalid photo marker URL:', imageUrl, errorObj);
-    }
-    return imageUrl;
+    return proxiedPhotoUrl(imageUrl, PHOTO_PROXY_BASE_URL);
 }
 
 function resizeImageToDataUrl(imageUrl, maxDim = 100, photoCount = 1) {

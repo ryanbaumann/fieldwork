@@ -2,8 +2,10 @@
 //
 // Ports the validation + upstream call from isochrones/server.js so the
 // gateway can serve POST /api/isochrones same-origin. Env var name matches
-// isochrones/server.js: GMP_SERVER_API_KEY (falls back to VITE_GMP_API_KEY
-// for parity with local `isochrones/` dev setups).
+// isochrones/server.js: GMP_SERVER_API_KEY. VITE_* values are deliberately
+// excluded because they are browser-public build configuration.
+
+import { resolveProvider } from './config.js';
 
 const ISOCHRONES_ENDPOINT = 'https://isochrones.googleapis.com/v1/isochrones:generate';
 
@@ -28,7 +30,7 @@ export function validateIsochroneBody(body) {
 }
 
 export function isIsochronesConfigured(env = process.env) {
-  return Boolean(env.GMP_SERVER_API_KEY || env.VITE_GMP_API_KEY);
+  return Boolean(resolveProvider('isochrones', env).apiKey);
 }
 
 export async function handleIsochronesApi(body, { fetch = globalThis.fetch, env = process.env } = {}) {
@@ -41,7 +43,7 @@ export async function handleIsochronesApi(body, { fetch = globalThis.fetch, env 
     return { statusCode: 400, json: { error: validationError } };
   }
 
-  const apiKey = env.GMP_SERVER_API_KEY || env.VITE_GMP_API_KEY;
+  const { apiKey } = resolveProvider('isochrones', env);
   if (!apiKey) {
     return { statusCode: 503, json: { error: 'Isochrones proxy is not configured on this server (set GMP_SERVER_API_KEY).' } };
   }

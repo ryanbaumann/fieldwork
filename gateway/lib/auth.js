@@ -63,6 +63,7 @@ export function checkPassword(app, env, password) {
 // ---------------------------------------------------------------------------
 
 export const AUTH_COOKIE_NAME = '__Host-demo-auth';
+export const AUTH_COOKIE_TTL_SECONDS = 86400;
 
 /**
  * Derive a deterministic HMAC key from the demo password itself.
@@ -72,29 +73,32 @@ export const AUTH_COOKIE_NAME = '__Host-demo-auth';
  * separate signing key would only add value if we wanted to revoke cookies
  * without changing the password; for a portfolio demo that's over-engineering.
  */
-function hmacSign(appName, secret) {
-  return createHmac('sha256', secret).update(appName).digest('hex');
+function hmacSign(payload, secret) {
+  return createHmac('sha256', secret).update(payload).digest('hex');
 }
 
 /**
- * Build the cookie value: `appName:hmac`.
+ * Build the cookie value: `appName:expiresAt:nonce:hmac`.
  */
 function cookieValue(appName, secret) {
-  return `${appName}:${hmacSign(appName, secret)}`;
+  const expiresAt = Math.floor(Date.now() / 1000) + AUTH_COOKIE_TTL_SECONDS;
+  const payload = `${appName}:${expiresAt}:${randomBytes(16).toString('hex')}`;
+  return `${payload}:${hmacSign(payload, secret)}`;
 }
 
 /**
  * Set the auth cookie on `response`.
  *
  * Uses `__Host-` prefix which requires Secure, Path=/, no Domain.
- * In local HTTP dev the browser will reject it; that's fine — local
- * devs can set the password env var and rely on form re-posts.
+ * Browsers reject this cookie over local plain HTTP. Private-demo auth must
+ * therefore be tested through HTTPS; there is intentionally no insecure
+ * cookie mode that could drift into production configuration.
  */
 export function setAuthCookie(response, appName, secret) {
   const value = cookieValue(appName, secret);
   response.setHeader('Set-Cookie', [
     `${AUTH_COOKIE_NAME}=${value}; ` +
-    'HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400',
+    `HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${AUTH_COOKIE_TTL_SECONDS}`,
   ]);
 }
 
@@ -120,14 +124,15 @@ export function verifyAuthCookie(request, appName, secret) {
   const raw = cookies[AUTH_COOKIE_NAME];
   if (!raw) return false;
 
-  const colonIdx = raw.indexOf(':');
-  if (colonIdx < 0) return false;
-
-  const cookieApp = raw.slice(0, colonIdx);
-  const cookieHmac = raw.slice(colonIdx + 1);
-
+  const parts = raw.split(':');
+  if (parts.length !== 4) return false;
+  const [cookieApp, expiresRaw, nonce, cookieHmac] = parts;
   if (cookieApp !== appName) return false;
-  return constantTimeEqual(cookieHmac, hmacSign(appName, secret));
+  const expiresAt = Number(expiresRaw);
+  if (!Number.isSafeInteger(expiresAt) || expiresAt <= Math.floor(Date.now() / 1000)) return false;
+  if (!/^[a-f0-9]{32}$/.test(nonce) || !/^[a-f0-9]{64}$/.test(cookieHmac)) return false;
+  const payload = `${cookieApp}:${expiresRaw}:${nonce}`;
+  return constantTimeEqual(cookieHmac, hmacSign(payload, secret));
 }
 
 // ---------------------------------------------------------------------------
@@ -234,7 +239,7 @@ export function handleAuthRequest(request, response, app, env, applyHeaders, aut
     // Rate-limit auth attempts per IP.
     if (authLimiter && ip && !authLimiter.check(ip)) {
       applyHeaders(response);
-      response.writeHead(429, { 'Content-Type': 'text/html; charset=utf-8' });
+      response.writeHead(429, { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '60' });
       response.end(loginPageHtml(app, 'Too many attempts. Please wait and try again.'));
       return;
     }

@@ -6,6 +6,8 @@
 // strava-explorer/server/ is left intact for standalone deploys (see
 // strava-explorer/HOSTING.md).
 
+import { resolveProvider } from './config.js';
+
 export const allowedPhotoHosts = new Set([
   'dgtzuqphqg23d.cloudfront.net',
 ]);
@@ -13,7 +15,8 @@ export const allowedPhotoHosts = new Set([
 export function isAllowedPhotoUrl(rawUrl, hosts = allowedPhotoHosts) {
   try {
     const url = new URL(rawUrl);
-    return url.protocol === 'https:' && hosts.has(url.hostname);
+    return url.protocol === 'https:' && !url.username && !url.password
+      && (!url.port || url.port === '443') && hosts.has(url.hostname);
   } catch {
     return false;
   }
@@ -95,15 +98,42 @@ export async function handlePhotoProxy(photoUrl, { fetch, maxPhotoBytes, hosts =
   }
 
   let upstream;
+  let currentUrl = photoUrl;
   try {
-    upstream = await fetch(photoUrl, {
-      headers: {
-        'User-Agent': 'ryan-baumann-portfolio-photo-proxy/1.0',
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-      },
-      signal: AbortSignal.timeout(10000),
-    });
+    // One deadline covers the entire redirect chain so each hop cannot reset
+    // the upstream budget and multiply the gateway's 10-second timeout.
+    const requestSignal = AbortSignal.timeout(10000);
+    for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
+      upstream = await fetch(currentUrl, {
+        headers: {
+          'User-Agent': 'ryan-baumann-portfolio-photo-proxy/1.0',
+          'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        },
+        redirect: 'manual',
+        signal: requestSignal,
+      });
+      if (![301, 302, 303, 307, 308].includes(upstream.status)) break;
+      // Redirect bodies are never consumed. Cancel them before following so
+      // the fetch implementation can promptly release the connection/body.
+      if (upstream.body?.cancel) {
+        try {
+          await upstream.body.cancel();
+        } catch {
+          // A response may already be closed; redirect validation still
+          // determines whether it is safe to continue.
+        }
+      }
+      const location = upstream.headers.get('location');
+      const nextUrl = location ? new URL(location, currentUrl).href : '';
+      if (!isAllowedPhotoUrl(nextUrl, hosts) || redirectCount === 3) {
+        const error = new Error('Photo redirect was invalid or unsupported.');
+        error.statusCode = 502;
+        throw error;
+      }
+      currentUrl = nextUrl;
+    }
   } catch (err) {
+    if (err.statusCode) throw err;
     console.error('Photo proxy upstream fetch error:', err);
     const error = new Error('Failed to fetch photo from upstream.');
     error.statusCode = err.name === 'TimeoutError' || err.name === 'AbortError' ? 504 : 502;
@@ -117,7 +147,7 @@ export async function handlePhotoProxy(photoUrl, { fetch, maxPhotoBytes, hosts =
     throw error;
   }
 
-  const contentType = (upstream.headers.get('content-type') || 'image/jpeg').toLowerCase().split(';')[0].trim();
+  const contentType = (upstream.headers.get('content-type') || '').toLowerCase().split(';')[0].trim();
   const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']);
   if (!allowedMimeTypes.has(contentType)) {
     console.error(`Forbidden content type: ${contentType}`);
@@ -134,13 +164,7 @@ export async function handlePhotoProxy(photoUrl, { fetch, maxPhotoBytes, hosts =
     throw error;
   }
 
-  const photoBuffer = await upstream.arrayBuffer();
-  if (photoBuffer.byteLength > maxPhotoBytes) {
-    console.error(`Buffer length exceeds max allowed bytes: ${photoBuffer.byteLength} > ${maxPhotoBytes}`);
-    const error = new Error('Photo is too large to proxy.');
-    error.statusCode = 413;
-    throw error;
-  }
+  const photoBuffer = await readBodyWithLimit(upstream, maxPhotoBytes);
 
   return {
     contentType,
@@ -148,15 +172,41 @@ export async function handlePhotoProxy(photoUrl, { fetch, maxPhotoBytes, hosts =
   };
 }
 
+async function readBodyWithLimit(response, maxBytes) {
+  if (!response.body?.getReader) {
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength <= maxBytes) return buffer;
+    const error = new Error('Photo is too large to proxy.');
+    error.statusCode = 413;
+    throw error;
+  }
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      const error = new Error('Photo is too large to proxy.');
+      error.statusCode = 413;
+      throw error;
+    }
+    chunks.push(Buffer.from(value));
+  }
+  return Buffer.concat(chunks, total);
+}
+
 const STRAVA_TOKEN_URL = process.env.STRAVA_TOKEN_URL || 'https://www.strava.com/oauth/token';
 const STRAVA_DEAUTHORIZE_URL = process.env.STRAVA_DEAUTHORIZE_URL || 'https://www.strava.com/oauth/deauthorize';
-const MAX_PHOTO_PROXY_BYTES = Number(process.env.MAX_PHOTO_PROXY_BYTES || 8 * 1024 * 1024);
+const configuredPhotoBytes = Number(process.env.MAX_PHOTO_PROXY_BYTES);
+const MAX_PHOTO_PROXY_BYTES = Number.isSafeInteger(configuredPhotoBytes) && configuredPhotoBytes > 0
+  ? configuredPhotoBytes
+  : 8 * 1024 * 1024;
 
 function credentials(env = process.env) {
-  return {
-    clientId: env.STRAVA_CLIENT_ID,
-    clientSecret: env.STRAVA_CLIENT_SECRET,
-  };
+  return resolveProvider('strava', env);
 }
 
 export function isStravaConfigured(env = process.env) {

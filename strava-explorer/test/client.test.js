@@ -3,6 +3,7 @@ import * as geo from '../src/geo.js';
 import * as units from '../src/units.js';
 import * as urlState from '../src/urlState.js';
 import * as photos from '../src/photos.js';
+import { proxiedPhotoUrl } from '../src/photoUrl.js';
 import * as strava from '../src/strava.js';
 
 // Setup Mock LocalStorage for Strava tests
@@ -25,6 +26,29 @@ const mockLocalStorage = (() => {
 })();
 
 global.localStorage = mockLocalStorage;
+
+describe('src/photoUrl.js', () => {
+    const photo = 'https://dgtzuqphqg23d.cloudfront.net/path/photo.jpg?size=600';
+
+    test('uses the same-origin proxy when the broker base is empty', () => {
+        expect(proxiedPhotoUrl(photo)).toBe(`/api/photo-proxy?url=${encodeURIComponent(photo)}`);
+    });
+
+    test('uses a configured cross-origin broker base', () => {
+        expect(proxiedPhotoUrl(photo, 'https://broker.example/')).toBe(
+            `https://broker.example/api/photo-proxy?url=${encodeURIComponent(photo)}`,
+        );
+    });
+
+    test('does not proxy unsupported, insecure, or non-default-port URLs', () => {
+        const unsupported = 'https://images.example/photo.jpg';
+        const insecure = 'http://dgtzuqphqg23d.cloudfront.net/photo.jpg';
+        const customPort = 'https://dgtzuqphqg23d.cloudfront.net:444/photo.jpg';
+        expect(proxiedPhotoUrl(unsupported)).toBe(unsupported);
+        expect(proxiedPhotoUrl(insecure)).toBe(insecure);
+        expect(proxiedPhotoUrl(customPort)).toBe(customPort);
+    });
+});
 
 describe('src/geo.js', () => {
     test('clamp', () => {
