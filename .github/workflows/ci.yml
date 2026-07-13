@@ -107,7 +107,7 @@ jobs:
       # Layer-cached via the GitHub Actions cache: unchanged apps rebuild
       # from cache instead of re-running npm ci + vite build in every stage.
       - name: Build Docker Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
