@@ -20,7 +20,7 @@ Developers increasingly let their agents read the docs for them. When an AI gene
 
 I led the team that built and shipped Code Assist: an MCP server that grounds AI coding agents in official Google Maps Platform documentation, code samples, and architecture guides via retrieval. We took it from a GitHub alpha to a Google-hosted remote MCP service. It runs in Claude Code, Cursor, Antigravity, Gemini CLI, and any MCP client.
 
-With it connected, agents pull current docs instead of relying on training-data memory. That means real API surfaces, current best practices, and far fewer hallucinated parameters.
+With it connected, agents retrieve current official docs instead of relying only on training memory. That gives the agent current API surfaces, code samples, and architecture guidance inside the task.
 
 ## What I learned
 

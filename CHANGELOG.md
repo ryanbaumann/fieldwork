@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-07-13: Strategy-led portfolio experience
+
+- Rebuilt the homepage around the DevX/FDE thesis, proof strip, five-stage operating system, principal-builder recruiting, Lab, Field Notes, speaking, and earlier platform foundation.
+- Renamed the writing index to Field Notes and separated canonical owned essays from work published elsewhere.
+- Reduced primary navigation to four routes plus `Build with Ryan`, added a three-state theme control, raised touch targets to 44px, improved text contrast, and removed clipped mobile navigation.
+- Replaced the generic contact pitch with approved intent categories and a developer-friction prompt; provider-confirmed delivery now returns to an accessible portfolio success page while failures stay explicit.
+- Added eleven honest 1200×627 raster social cards for the portfolio, essays, talks, and demos, plus complete Open Graph/Twitter metadata and validation for dimensions, MIME type, alt text, canonical URLs, and large-card fallbacks.
+- Added a Privacy page and Basic Consent Mode foundation that loads no Google tag before opt-in, sanitizes page locations and referrers, excludes demos, and keeps the measurement ID unset pending GA4 administration approval.
+- Added contextual Work and recruiting links to every demo, a timed Strava map-loading fallback, consistent Strava naming, and deterministic Isochrones SVG icons.
+- Brought the remaining portfolio and demo controls to 44px touch targets, removed Strava motion under reduced-motion preferences, added intrinsic Strava image dimensions, and kept expected keyless builds console-clean.
+- Added a frozen synthetic evaluation set, strict privacy/schema validator, and blocking launch gates for the optional contact-note qualifier; no model integration or cloud evaluation is enabled.
+
+## 2026-07-13: DevX and FDE content strategy
+
+- Repositioned the portfolio around Developer Experience, Forward Deployed Engineering, and AI-native platform growth with approved 20+, 300%, approximately 200%, and 1M+ proof points.
+- Published three owned cornerstone essays covering DevX as a growth discipline, agent sessions as a platform interface, and evals as an operating system.
+- Rewrote About, Resume, Contact, and flagship work claims with team attribution, qualified language, and no current consulting or advisory availability.
+- Added a durable evidence ledger with claim status, approved wording, public sources, retrieval dates, and private-artifact exclusions.
+
+## 2026-07-13: Demo source organization
+
+- Moved the Strava, Air Quality, and Isochrones source packages under `demos/` while preserving their public routes and container staging paths.
+- Updated local builds, Docker, CI, Dependabot, preview tooling, demo scaffolding, repository guidance, and Maps skills for the nested source layout.
+- Added a regression test that derives each source package from its manifest `dev_build_dir`, so future demo folders can stay nested without name-based path assumptions.
+
 ## 2026-07-13: Portfolio overhaul acceptance hardening
 
 - Closed the remaining private-demo gaps with strict manifest/provider validation, fail-closed static routing, expiring signed access cookies, public-only discovery, route-specific limits, and direct-access integration tests.

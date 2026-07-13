@@ -24,6 +24,13 @@ import { handleIsochronesApi } from './lib/isochrones.js';
 const PORT = Number(process.env.PORT || 8080);
 const JSON_BODY_LIMIT_BYTES = 16 * 1024;
 const FORM_BODY_LIMIT_BYTES = 32 * 1024;
+const CONTACT_INTENTS = Object.freeze([
+  'Build or join an exceptional team',
+  'Executive opportunity',
+  'Speaking or media',
+  'Future advisory or board conversation',
+  'Other',
+]);
 
 const { apps } = loadApps(process.env);
 // Only public-visibility apps appear in /api/apps and /healthz.
@@ -106,8 +113,20 @@ function sendHtml(response, statusCode, body) {
   response.end(body);
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 function contactResponsePage(title, message, statusCode = 200) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title><style>body{font-family:system-ui,sans-serif;max-width:42rem;margin:4rem auto;padding:0 1.25rem;line-height:1.6;color:#111827;background:#faf9f6}a{color:inherit}</style></head><body><p><a href="/contact/">← Contact</a></p><h1>${title}</h1><p>${message}</p></body></html>`;
+  const delivered = statusCode >= 200 && statusCode < 300;
+  const deliveryState = delivered ? 'success' : 'failure';
+  const liveRole = delivered ? 'status' : 'alert';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="contact-delivery" content="${deliveryState}"><title>${escapeHtml(title)}</title><style>body{font-family:system-ui,sans-serif;max-width:42rem;margin:4rem auto;padding:0 1.25rem;line-height:1.6;color:#111827;background:#faf9f6}a{color:inherit}</style></head><body><header><nav aria-label="Contact"><a href="/contact/">← Contact</a></nav></header><main data-contact-delivery="${deliveryState}"><h1>${escapeHtml(title)}</h1><p role="${liveRole}" aria-live="${delivered ? 'polite' : 'assertive'}">${escapeHtml(message)}</p></main></body></html>`;
 }
 
 async function handleContactRequest(request, response) {
@@ -131,9 +150,15 @@ async function handleContactRequest(request, response) {
   const name = String(params.get('name') || '').trim().slice(0, 120);
   const email = String(params.get('email') || '').trim().slice(0, 200);
   const message = String(params.get('message') || '').trim().slice(0, 5000);
+  const intent = String(params.get('intent') || '').trim();
 
   if (!name || !email || !message || !email.includes('@') || message.length < 20) {
     sendHtml(response, 400, contactResponsePage('Message not sent', 'Please include your name, a valid email, and a message with at least 20 characters.', 400));
+    return;
+  }
+
+  if (!CONTACT_INTENTS.includes(intent)) {
+    sendHtml(response, 400, contactResponsePage('Message not sent', 'Please choose one of the available conversation types.', 400));
     return;
   }
 
@@ -144,28 +169,39 @@ async function handleContactRequest(request, response) {
     return;
   }
 
-  const upstream = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [toEmail],
-      reply_to: email,
-      subject: `Portfolio contact from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
-    }),
-    signal: AbortSignal.timeout(10_000),
-  });
+  let upstream;
+  try {
+    upstream = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [toEmail],
+        reply_to: email,
+        subject: `[${intent}] Portfolio contact from ${name}`,
+        text: `Intent: ${intent}\nName: ${name}\nEmail: ${email}\n\n${message}`,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    sendHtml(response, 502, contactResponsePage('Message not sent', 'The mail provider could not be reached. Please try again later.', 502));
+    return;
+  }
 
   if (!upstream.ok) {
     sendHtml(response, 502, contactResponsePage('Message not sent', 'The mail provider did not accept the message. Please try again later.', 502));
     return;
   }
 
-  sendHtml(response, 200, contactResponsePage('Message sent', 'Thanks. I have your note and enough context to reply.', 200));
+  applySecurityHeaders(response);
+  response.writeHead(303, {
+    Location: '/contact-success/?delivered=1',
+    'Cache-Control': 'no-store',
+  });
+  response.end();
 }
 
 function readJsonBody(request) {
@@ -212,7 +248,7 @@ async function handleApi(request, response, pathname, searchParams) {
 
   // /api/photo-proxy is a compatibility alias for /api/strava/photo: the
   // strava-explorer client (and its standalone Cloud Run broker in
-  // strava-explorer/server/) both speak /api/photo-proxy, so the gateway
+  // demos/strava-explorer/server/) both speak /api/photo-proxy, so the gateway
   // accepts both without requiring a client change.
   const isPhotoRoute = pathname === '/api/strava/photo' || pathname === '/api/photo-proxy';
   const isStravaRoute = pathname.startsWith('/api/strava/') || isPhotoRoute;
@@ -409,4 +445,4 @@ if (process.env.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT) {
   });
 }
 
-export { server, apps, publicApps, appsByPathLength, authRateLimiter, routeRateLimiters };
+export { server, apps, publicApps, appsByPathLength, authRateLimiter, routeRateLimiters, CONTACT_INTENTS };

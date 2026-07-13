@@ -50,6 +50,18 @@ h1 { margin: 0; font-size: clamp(2.4rem, 7vw, 3.6rem); line-height: 0.95; letter
 h2 { font-size: 0.95rem; margin: 0 0 0.75rem; }
 .lede { margin: 0; color: #cbd5e1; line-height: 1.55; }
 
+.portfolio-links { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+.portfolio-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.portfolio-links a:hover { color: #34d399; }
+
 .card {
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 1.25rem;
@@ -68,16 +80,19 @@ input, select {
   background: rgba(2, 6, 23, 0.68);
   padding: 0.65rem 0.8rem;
 }
-input[type="range"] { padding-inline: 0; accent-color: #34d399; }
+input[type="range"] { min-height: 44px; padding-inline: 0; accent-color: #34d399; }
 
 #search-slot { margin-bottom: 0.25rem; }
 #search-slot gmp-place-autocomplete {
+  display: block;
+  min-height: 44px;
   width: 100%;
   --gmp-mat-color-surface: rgba(2, 6, 23, 0.85);
   --gmp-mat-color-on-surface: #f8fafc;
   --gmp-mat-color-on-surface-variant: #94a3b8;
   color-scheme: dark;
 }
+#search-slot gmp-place-autocomplete::part(input) { min-height: 44px; }
 
 .legend { margin-top: 1rem; }
 .legend-bar { height: 0.6rem; border-radius: 999px; }

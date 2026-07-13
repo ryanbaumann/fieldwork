@@ -1,9 +1,9 @@
 ---
-title: Agentic Growth & AI-Native Distribution
+title: OSS client libraries grew active reach 300% in one year
 org: Google
 role: Product growth & distribution lead
 period: 2024 – present
-summary: Platform tools shipped into the default connectors of AI Studio, Replit, and Lovable, plus OSS libraries that grew reach 300%+ with AI-native builders.
+summary: From March 2025 to March 2026, our open-source client libraries grew unique active users 300% and API engagement approximately 200%.
 tags: ["growth", "distribution", "open source"]
 image: /img/work/agentic-growth.svg
 imageAlt: Panel listing the distribution surfaces, AI Studio, Replit, and Lovable, above the react-google-maps download stat
@@ -13,16 +13,14 @@ order: 2
 
 ## The goal
 
-Developer acquisition is moving from search-and-docs to agent-and-prompt. The goal: be present by default when someone prompts an agent to build something with a map in it, and measure whether that presence turns into adoption, not just awareness.
+Developer acquisition is moving into agent sessions. We needed to meet builders there, strengthen the open-source libraries they use, and measure whether that distribution turned into adoption.
 
 ## What shipped
 
-Three connected workstreams:
+From March 2025 to March 2026, our open-source client libraries grew unique active users 300% and API engagement approximately 200%. I led the team's client-library and AI distribution strategy across React, Compose, AI Studio, Lovable, and Replit.
 
-- **Default distribution.** We shipped Google Maps Platform skills and MCP tools into the default connectors for AI Studio, Replit, and Lovable, so the platform is available the moment a builder starts.
-- **The agentic funnel.** We started measuring adoption through agent context usage: skill installs, tool calls, and what they convert into. Agent-influenced adoption is now a tracked funnel, not a hunch.
-- **OSS as a growth vector.** We grew the reach of our open-source libraries for AI-assisted building by over 300%, with React and Compose as the main vectors. Google Maps Platform also sponsors @vis.gl/react-google-maps, which passed 500k weekly npm downloads.
+We treated open source, agent context, product integrations, and measurement as one system. Google Maps Platform also sponsors [@vis.gl/react-google-maps](https://www.npmjs.com/package/@vis.gl/react-google-maps), which reached approximately 1.5 million weekly downloads when verified on July 13, 2026.
 
 ## What I learned
 
-Distribution deals, product integrations, and open source work best as one system with shared measurement. The playbook is portable, but only the parts you can measure survive contact with a real roadmap.
+Distribution, product integration, and open source work best as one measured system. Keep the metrics separate, credit the team, and do not confuse presence in a workflow with proof of adoption.

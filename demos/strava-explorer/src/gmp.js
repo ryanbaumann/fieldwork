@@ -27,6 +27,7 @@ let LatLng, LatLngBounds, encoding;
 let showLoading = (isLoading, text) => debug(`Loading: ${isLoading}, Text: ${text}`);
 let showError = (message) => error(`Error: ${message}`);
 const PHOTO_PROXY_BASE_URL = (import.meta.env.VITE_STRAVA_AUTH_BASE_URL || '').replace(/\/$/, '');
+const MAP_LOAD_TIMEOUT_MS = 15_000;
 
 // Function to set helper dependencies (called from index.js)
 export function setHelpers(helpers) {
@@ -61,6 +62,27 @@ async function loadGoogleMapsApi(apiKey, libraries) {
     return google.maps.importLibrary.bind(google.maps);
 }
 
+async function loadGoogleMapsLibraries(apiKey, libraries) {
+    const importLibrary = await loadGoogleMapsApi(apiKey, libraries);
+    return Promise.all([
+        importLibrary("maps3d"),
+        importLibrary("marker"),
+        importLibrary("elevation"),
+        importLibrary("core"),
+        importLibrary("geometry"),
+    ]);
+}
+
+function withMapLoadTimeout(promise) {
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            reject(new Error("Google Maps did not finish loading within 15 seconds. Check your connection, then reload to try again."));
+        }, MAP_LOAD_TIMEOUT_MS);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+}
+
 // --- Map Initialization ---
 export async function initMap(mapHostElement, apiKey) {
     if (!mapHostElement) throw new Error("Map host element is required.");
@@ -70,15 +92,17 @@ export async function initMap(mapHostElement, apiKey) {
     const libraries = ["maps3d", "marker", "elevation", "geometry", "core"];
 
     try {
-        const importLibrary = await loadGoogleMapsApi(apiKey, libraries);
+        const [maps3dLibrary, markerLibrary, elevationLibrary, coreLibrary, geometryLibrary] = await withMapLoadTimeout(
+            loadGoogleMapsLibraries(apiKey, libraries)
+        );
         debug("Google Maps API loaded.");
 
         // Import necessary classes *after* API is loaded
-        ({ Map3DElement, Marker3DElement, Marker3DInteractiveElement, Polyline3DElement, AltitudeMode, MapMode, PopoverElement } = await importLibrary("maps3d"));
-        ({ PinElement } = await importLibrary("marker")); // Keep PinElement if default marker appearance is customized later
-        ({ ElevationService } = await importLibrary("elevation"));
-        ({ LatLng, LatLngBounds } = await importLibrary("core"));
-        ({ encoding } = await importLibrary("geometry"));
+        ({ Map3DElement, Marker3DElement, Marker3DInteractiveElement, Polyline3DElement, AltitudeMode, MapMode, PopoverElement } = maps3dLibrary);
+        ({ PinElement } = markerLibrary); // Keep PinElement if default marker appearance is customized later
+        ({ ElevationService } = elevationLibrary);
+        ({ LatLng, LatLngBounds } = coreLibrary);
+        ({ encoding } = geometryLibrary);
 
         // Instantiate services
         elevator = new ElevationService();

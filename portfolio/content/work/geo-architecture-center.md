@@ -3,7 +3,7 @@ title: Geo Architecture Center
 org: Google
 role: Founder, principal author, and solution architecture lead
 period: 2022 – present
-summary: 40+ published solution architectures that turn repeated enterprise questions into reusable system patterns for Google Maps Platform.
+summary: A public catalog that turns repeated enterprise questions into reusable system patterns for Google Maps Platform.
 tags: ["technical writing", "solution architecture"]
 links: [{"label": "Architecture Center", "url": "https://developers.google.com/maps/architecture"}]
 image: /img/work/geo-architecture-center.svg
@@ -17,8 +17,8 @@ API reference docs answer "what does this endpoint do?" They don't answer "how d
 
 ## What shipped
 
-I started the Geo Architecture Center and wrote several of its guides as principal author. The team has published 40+ solution architectures covering real, end-to-end systems built on Google Maps Platform: architecture diagrams, cost models, and working reference implementations, with patterns pulled from actual enterprise builds.
+I started the Geo Architecture Center and wrote several of its guides as principal author. The team publishes end-to-end system patterns for Google Maps Platform: architecture diagrams, cost considerations, and reference implementations grounded in repeated enterprise questions.
 
 ## What I learned
 
-One precise solution architecture resolves thousands of support threads and speeds up every enterprise evaluation it touches. And it aged well: structured, opinionated system designs turn out to be exactly the context AI agents need to build correctly on a platform.
+One precise solution architecture can answer a repeated question once, then help many teams move faster. Structured, opinionated system designs also give AI agents better context than an API reference alone.

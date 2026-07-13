@@ -13,14 +13,14 @@ order: 4
 
 ## The goal
 
-A platform with millions of developers hears from a tiny, unrepresentative fraction of them. Roadmaps driven by the loudest enterprise voices miss the long tail, and the long tail is where platform growth compounds.
+A large developer platform hears directly from only a fraction of its users. Roadmaps driven by the loudest voices miss repeated friction that quietly limits adoption.
 
 ## What shipped
 
-I created and lead an AI-driven Voice of Developer program: a pipeline that reads unstructured developer signals at scale. Discord, Stack Overflow, GitHub issues, and support tickets feed a system that outputs ranked, evidence-backed roadmap priorities. Combined with strategic customer input and org-wide dogfood events, it grounds product bets in observed developer friction instead of the last escalation.
+I created and lead an AI-driven Voice of Developer program. Discord, Stack Overflow, GitHub issues, and support channels feed a system that groups repeated friction and helps the team rank roadmap opportunities. Strategic customer input and dogfood sessions add context before the team makes a product decision.
 
-It's a descendant of the Voice of Customer program I built at Mapbox, which fed five-plus new products. Same motion, rebuilt for a platform ten times the size, with AI doing the reading.
+It extends the Voice of Customer program I built at Mapbox. The operating decision stayed the same: combine broad product signal with direct field work, then trace priorities back to observed developer problems.
 
 ## What I learned
 
-Working backwards from growth requires an honest picture of demand. The friction that silently caps adoption rarely shows up in escalations. You have to go read for it, and AI finally makes that affordable at platform scale.
+Working backwards from growth requires an honest picture of demand. The friction that caps adoption rarely arrives as a clean roadmap request. Build a repeatable way to find it, then keep a human responsible for the decision.

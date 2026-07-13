@@ -17,7 +17,7 @@ order: 5
 
 ## What shipped
 
-My team and I built the agentic eval suite for Google Maps Platform: task-based evaluations that measure grounded code-generation accuracy, tool-call behavior, token cost, and end-to-end task completion across agent harnesses and models. Results are benchmarked against a no-context baseline, so every launch, including Code Assist and agent skills, ships with a measured delta behind it.
+My team and I built the agentic eval suite for Google Maps Platform: task-based evaluations that measure grounded code-generation accuracy, tool-call behavior, token cost, and end-to-end task completion across agent harnesses and models. We benchmark context products against a no-context baseline and use the delta to make launch and roadmap decisions.
 
 I also started Agent Engine Optimization: benchmarking end-to-end developer workflows in Claude Code, Codex, and Antigravity, and working with model teams using evals, curated context, and signals from real developer usage.
 

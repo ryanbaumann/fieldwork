@@ -1,0 +1,58 @@
+---
+title: The Next Platform Interface Is an Agent Session
+summary: Platforms need to ship context and workflows into the agent sessions where developers now make product decisions.
+date: 2026-07-13
+canonical: https://www.ryanbaumann-portfolio.com/writing/the-next-platform-interface-is-an-agent-session/
+image: /img/work/code-assist.svg
+imageAlt: Code Assist shown as an MCP server connecting AI coding agents to retrieved Google Maps Platform documentation
+socialImage: /social/the-next-platform-interface-is-an-agent-session.png
+shareTitle: The Next Platform Interface Is an Agent Session
+shareSummary: Ship context and workflows where developers make decisions.
+shareImageAlt: The Next Platform Interface Is an Agent Session beside a Code Assist artifact
+tags: ["agent experience", "developer platforms", "context engineering"]
+order: 2
+---
+
+The next platform interface is an agent session. Developers still use documentation, consoles, SDKs, and samples, but an agent increasingly chooses which of those surfaces to read and how to combine them into working code.
+
+That makes agent experience part of the product experience. A correct website is no longer enough if the agent cannot find current context, apply it to the task, and follow the platform's preferred workflow.
+
+## Context is now a product surface
+
+When a developer asks an AI coding agent to add a map, the agent makes several platform decisions before the developer reviews the code. It selects an API, recalls initialization syntax, chooses an authentication pattern, and assembles a runnable example.
+
+Training memory alone is a weak contract for that work. APIs change. Samples improve. Recommended patterns move. A platform needs a way to provide current, official context inside the task.
+
+[Google Maps Platform Code Assist](https://developers.google.com/maps/ai/code-assist) addresses that gap through a Google-hosted remote MCP service. I led the team that took it from a GitHub alpha to a product that grounds compatible AI coding agents in official documentation, code samples, and architecture guidance. The [public repository](https://github.com/googlemaps/platform-ai) shows the integration surface, and the [launch walkthrough](https://youtu.be/L2V58kKIHvc) shows it in use.
+
+The interface is not a new destination. It is a tool call inside the developer's existing agent session.
+
+## Facts are necessary, workflows are different
+
+Retrieved documentation can tell an agent what is current. It does not automatically teach the agent how an experienced platform engineer approaches a task.
+
+That second layer is procedural. It includes how to choose between APIs, validate coordinates, structure a map experience, restrict a key, and verify the result. [Google Maps Platform agent skills](https://github.com/googlemaps/agent-skills) package those workflows as portable modules for Web, Android, iOS, and Web Services.
+
+This creates a useful separation:
+
+1. Retrieval grounds the agent in current platform facts.
+2. Skills teach the workflow used to apply those facts.
+3. Evals test whether the combined experience improves task completion.
+
+The separation matters because each layer fails differently. Missing context needs better retrieval or source material. A poor sequence of actions needs a better workflow. A confident but wrong result needs an eval case that makes the failure visible.
+
+## Distribution starts before the first API call
+
+The agent session is also a distribution surface. A developer may choose a library, service, or architecture during the conversation, before visiting a product page.
+
+Platforms therefore need to be useful where the decision happens. That can mean an MCP service, a portable skill, a high-quality open-source library, or an integration with an agent-building environment. It does not mean copying every document into every channel. The goal is a maintained path from developer intent to grounded action.
+
+The same principle has held across earlier shifts in developer workflow. At Mapbox, integrations with [deck.gl](https://github.com/visgl/deck.gl) and [kepler.gl](https://github.com/keplergl/kepler.gl) put the platform beneath tools developers already chose. Agent interfaces change the mechanics, but not the operating lesson: meet developers inside the workflow and make the path to a correct result short.
+
+## What to do next
+
+If you are a CPO, treat agent sessions as a product channel. Assign ownership for context quality, workflow packaging, distribution, and adoption instead of scattering them across documentation, partnerships, and AI experiments.
+
+If you are a VP Engineering, create one maintained path from official source material to agent tools and skills. Version it, test it, and decide who responds when an API change makes the agent experience stale.
+
+If you are a principal builder, replay a real developer task with no platform context, then with retrieval and workflow guidance. Inspect the trace. The first incorrect decision will tell you what to build next.

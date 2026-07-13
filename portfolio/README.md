@@ -8,7 +8,7 @@ Platform. Served at the root of
 
 Built to be **bare bones, fast, and easy to update**: a zero-dependency
 static site generator over a flat-file markdown CMS. No framework, no
-database, no client-side JavaScript. Every page is a single request.
+database, and only small inline scripts for theme and consent-controlled analytics.
 
 ## Quickstart
 

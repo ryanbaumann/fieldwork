@@ -19,6 +19,28 @@ function request(port, path, headers = {}) {
   });
 }
 
+function postForm(port, path, form) {
+  const body = new URLSearchParams(form).toString();
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname: 'localhost',
+      port,
+      path,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    }, (res) => {
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => resolve({ res, body: Buffer.concat(chunks).toString('utf8') }));
+    });
+    req.on('error', reject);
+    req.end(body);
+  });
+}
+
 test('server includes CORS headers on photo proxy binary response', async () => {
   server.listen(0);
   const port = server.address().port;
@@ -98,5 +120,75 @@ test('server enforces public, unlisted, and private manifest behavior before sta
     publicApps.splice(0, publicApps.length, ...originalPublic);
     await new Promise((resolve) => server.close(resolve));
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('contact delivery validates intent and marks only provider-confirmed success', async () => {
+  const previousEnv = {
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
+  };
+  const originalFetch = globalThis.fetch;
+  const delivered = [];
+  process.env.RESEND_API_KEY = 'test-resend-key';
+  process.env.CONTACT_TO_EMAIL = 'ryan@example.com';
+  globalThis.fetch = async (_url, options) => {
+    delivered.push(JSON.parse(options.body));
+    return { ok: true, status: 200 };
+  };
+  server.listen(0);
+  const port = server.address().port;
+  const valid = {
+    name: 'Ada Lovelace',
+    email: 'ada@example.com',
+    message: 'I am building a developer platform and would like to compare notes.',
+  };
+
+  try {
+    const missingIntent = await postForm(port, '/api/contact', valid);
+    assert.equal(missingIntent.res.statusCode, 400);
+    assert.match(missingIntent.body, /data-contact-delivery="failure"/);
+    assert.match(missingIntent.body, /role="alert"/);
+    assert.doesNotMatch(missingIntent.body, /data-contact-delivery="success"/);
+
+    const invalidIntent = await postForm(port, '/api/contact', { ...valid, intent: 'Consulting' });
+    assert.equal(invalidIntent.res.statusCode, 400);
+    assert.doesNotMatch(invalidIntent.body, /data-contact-delivery="success"/);
+
+    const invalidMessage = await postForm(port, '/api/contact', {
+      ...valid,
+      intent: 'Other',
+      message: 'Too short',
+    });
+    assert.equal(invalidMessage.res.statusCode, 400);
+    assert.match(invalidMessage.body, /message with at least 20 characters/);
+    assert.doesNotMatch(invalidMessage.body, /data-contact-delivery="success"/);
+
+    const success = await postForm(port, '/api/contact', {
+      ...valid,
+      intent: 'Executive opportunity',
+    });
+    assert.equal(success.res.statusCode, 303);
+    assert.equal(success.res.headers.location, '/contact-success/?delivered=1');
+    assert.equal(success.body, '');
+    assert.equal(delivered.length, 1);
+    assert.equal(delivered[0].subject, '[Executive opportunity] Portfolio contact from Ada Lovelace');
+    assert.match(delivered[0].text, /^Intent: Executive opportunity\nName: Ada Lovelace\nEmail: ada@example\.com\n\n/);
+
+    globalThis.fetch = async () => ({ ok: false, status: 500 });
+    const rejected = await postForm(port, '/api/contact', {
+      ...valid,
+      intent: 'Speaking or media',
+    });
+    assert.equal(rejected.res.statusCode, 502);
+    assert.match(rejected.body, /data-contact-delivery="failure"/);
+    assert.doesNotMatch(rejected.body, /data-contact-delivery="success"/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const [key, value] of Object.entries(previousEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    await new Promise((resolve) => server.close(resolve));
   }
 });

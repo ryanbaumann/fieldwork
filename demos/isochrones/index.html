@@ -5,7 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Isochrones: a Google Maps Platform demo</title>
     <meta name="description" content="Interactive reachability analysis: drive, bike, and walk isochrones from the Google Maps Platform Isochrones API." />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗺️</text></svg>" />
+    <link rel="canonical" href="https://www.ryanbaumann-portfolio.com/isochrones/" />
+    <meta property="og:title" content="Isochrones" />
+    <meta property="og:description" content="Live reachability bands for delivery, commute, and response planning." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.ryanbaumann-portfolio.com/isochrones/" />
+    <meta property="og:image" content="https://www.ryanbaumann-portfolio.com/social/isochrones.png" />
+    <meta property="og:image:alt" content="Isochrones demo showing layered travel-time reachability bands on a map" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="627" />
+    <meta property="og:image:type" content="image/png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Isochrones" />
+    <meta name="twitter:description" content="Live reachability bands for delivery, commute, and response planning." />
+    <meta name="twitter:image" content="https://www.ryanbaumann-portfolio.com/social/isochrones.png" />
+    <meta name="twitter:image:alt" content="Isochrones demo showing layered travel-time reachability bands on a map" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23050816%22/><circle cx=%2232%22 cy=%2232%22 r=%2222%22 fill=%22none%22 stroke=%22%2338bdf8%22 stroke-width=%224%22/><circle cx=%2232%22 cy=%2232%22 r=%2214%22 fill=%22none%22 stroke=%22%23818cf8%22 stroke-width=%224%22/><circle cx=%2232%22 cy=%2232%22 r=%226%22 fill=%22%23f472b6%22/></svg>" />
   </head>
   <body>
     <div id="app">
@@ -15,6 +30,10 @@
           <p class="eyebrow">Google Maps Platform demo</p>
           <h1>Isochrones</h1>
           <p class="lede">How far can you reach in 10, 20, 30 minutes? Pick a scenario, drop a point, and the rings draw themselves.</p>
+          <nav class="portfolio-links" aria-label="Explore Ryan Baumann's portfolio">
+            <a href="/work/">How it was built</a>
+            <a href="/contact/?intent=team">Build with Ryan</a>
+          </nav>
         </header>
 
         <section class="card">
@@ -24,17 +43,23 @@
 
           <div class="scenario-grid" role="group" aria-label="Scenario">
             <button class="scenario is-active" data-scenario="delivery" type="button" aria-pressed="true">
-              <span class="scenario-icon" aria-hidden="true">📦</span>
+              <svg class="scenario-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m4 7.5 8-4 8 4v9l-8 4-8-4v-9Z M4 7.5l8 4 8-4M12 11.5v9" />
+              </svg>
               <strong>Delivery</strong>
               <span>30-min courier radius</span>
             </button>
             <button class="scenario" data-scenario="commute" type="button" aria-pressed="false">
-              <span class="scenario-icon" aria-hidden="true">🏢</span>
+              <svg class="scenario-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 21V4h10v17M15 9h4v12M8 8h1m3 0h1M8 12h1m3 0h1M8 16h1m3 0h1M3 21h18" />
+              </svg>
               <strong>Commute</strong>
               <span>45-min drive to work</span>
             </button>
             <button class="scenario" data-scenario="response" type="button" aria-pressed="false">
-              <span class="scenario-icon" aria-hidden="true">🚑</span>
+              <svg class="scenario-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h11v10H3V7Zm11 4h4l3 3v3h-7v-6ZM7 10h3m-1.5-1.5v3M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+              </svg>
               <strong>Response</strong>
               <span>20-min emergency SLA</span>
             </button>

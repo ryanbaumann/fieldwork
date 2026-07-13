@@ -1,17 +1,19 @@
 {
   "name": "Ryan Baumann",
-  "role": "Product, go-to-market, and engineering leader for developer platforms",
-  "tagline": "Maps \u00b7 Product GTM \u00b7 Developer Experience \u00b7 Agent-ready platforms",
+  "role": "Developer Experience and Forward Deployed Engineering leader",
+  "tagline": "DEVX \u00b7 FORWARD DEPLOYED ENGINEERING \u00b7 AI-NATIVE PLATFORMS",
   "location": "San Francisco, CA",
-  "intro": "I lead Developer Experience Engineering for Google Maps Platform, a team of 20+ across engineering, product, technical writing, and developer relations, with multiple managers spanning product incubation, solution architecture, AI context, and developer growth. I have spent 15+ years turning field friction into shipped products, reference architectures, developer tools, and growth loops at Google, Mapbox, Instabase, and Caterpillar. This site is where I share the artifacts, lessons, and operating notes from that product go-to-market engineering blender.",
-  "headline": "Selected work from the artifact back: the market goal, the team system, what shipped, and what I learned.",
-  "description": "Ryan Baumann leads product, go-to-market, and engineering work for Google Maps Platform Developer Experience, with a focus on maps, agent-ready platforms, evals, and AI-native distribution.",
-  "aboutTeaser": "I operate where product, engineering, field reality, and growth meet. At Google Maps Platform, I lead a 20+ person Developer Experience Engineering team across managers and disciplines: engineering, product management, technical writing, developer relations, solution architecture, AI context, and developer growth. Before Google, I grew Mapbox customer engineering from 1 to 15 as the company crossed $100M ARR, led solutions architecture at Series-B Instabase, and built industrial IoT systems at Caterpillar with 3 patents.",
+  "heroHeadline": "I build the teams and systems that make developer platforms grow.",
+  "intro": "I lead Developer Experience and forward-deployed engineering from field signal to shipped product: context, tools, evals, distribution, and the teams behind them.",
+  "headline": "Developer experience is a growth system. AI makes it a product surface.",
+  "description": "Ryan Baumann leads Developer Experience and Forward Deployed Engineering for AI-native platforms, turning field signal into tools, evals, distribution, and growth.",
+  "categoryDefinition": "AI Developer Experience is the product, context, evals, and distribution system that lets developers and their agents succeed with a platform.",
+  "aboutTeaser": "I lead a 20+ person Developer Experience Engineering organization at Google Maps Platform. We turn repeated field friction into products, context, evals, and distribution that help developers and their agents succeed.",
   "sectionIntros": {
-    "work": "Selected product incubation, solution architecture, developer platform, and go-to-market engineering work. Each entry covers the goal it served, the team or system I led, what actually shipped, and the lesson I took from it.",
-    "writing": "Learnings and operating notes from the product go-to-market engineering blender: developer experience, applied AI, evals, maps, team systems, and building platforms agents can use.",
-    "talks": "Talks and videos. I present demo-first: working product over slides, then how the team and system shipped it, then why it matters.",
-    "demos": "Live apps I build and run myself: real OAuth, real quotas, real cold starts, and real architecture tradeoffs. One Cloud Run service, server-side secrets only, and no client JavaScript on the portfolio."
+    "work": "The operating system behind AI Developer Experience: find the signal, ship the tool, evaluate the experience, distribute it into the workflow, and measure growth.",
+    "writing": "Field notes on Developer Experience, forward-deployed engineering, evals, and building platforms for developers and their agents.",
+    "talks": "Demo-first talks about what shipped, how the team built it, and why it matters for developer platforms.",
+    "demos": "Working maps that keep me close to the developer experience: real APIs, real constraints, and the architecture choices behind them."
   },
   "links": {
     "github": "https://github.com/ryanbaumann",
@@ -21,25 +23,30 @@
   },
   "siteUrl": "https://www.ryanbaumann-portfolio.com/",
   "canonicalHost": "www.ryanbaumann-portfolio.com",
+  "analyticsMeasurementId": "",
   "brand": "Ryan Baumann Portfolio",
-  "positioning": "Maps, developer experience, and agent-ready platforms.",
-  "defaultShareImage": "/previews/portfolio.jpg",
+  "positioning": "Developer Experience, Forward Deployed Engineering, and AI-native platforms.",
+  "defaultShareImage": "/social/home.png",
   "socialHandle": "@ryanbaumann",
   "proofPoints": [
     {
       "label": "20+",
-      "text": "person Developer Experience Engineering team led across engineering, PM, technical writing, developer relations, and manager layers"
+      "text": "person organization"
     },
     {
-      "label": "10M+",
-      "text": "websites and apps powered by Google Maps Platform, the platform where I lead Developer Experience"
+      "label": "300%",
+      "text": "active-user growth"
     },
     {
-      "label": "$100M+",
-      "text": "ARR stage crossed while I grew Mapbox customer engineering from 1 to 15"
+      "label": "~200%",
+      "text": "API-engagement growth"
+    },
+    {
+      "label": "1M+",
+      "text": "weekly React-library downloads"
     }
   ],
-  "answerEngineSummary": "Ryan Baumann leads product, go-to-market, and engineering work for Google Maps Platform Developer Experience. He manages a 20+ person multi-disciplinary team across engineering, product, technical writing, developer relations, solution architecture, AI context, and developer growth. He focuses on maps, forward-deployed incubation, agent-ready documentation, evals, MCP tools, agent skills, and AI-native distribution.",
+  "answerEngineSummary": "Ryan Baumann leads Developer Experience and Forward Deployed Engineering for Google Maps Platform. He leads a 20+ person organization that turns field signal into products, context, evals, distribution, and measurable platform growth.",
   "profileImage": "/img/ryan-baumann-profile.jpg",
   "profileImageAlt": "Ryan Baumann profile image"
 }
