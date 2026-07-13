@@ -218,4 +218,6 @@ button, input, select, a { touch-action: manipulation; }
     transition: none !important;
     animation: none !important;
   }
+  .btn-primary,
+  .btn-secondary { transition: none !important; }
 }

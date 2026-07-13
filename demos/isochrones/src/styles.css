@@ -86,7 +86,7 @@ input, select {
   padding: 0.65rem 0.8rem;
 }
 input[type="checkbox"] { width: 44px; height: 44px; margin: 0; }
-input[type="range"] { padding-inline: 0; accent-color: #38bdf8; }
+input[type="range"] { min-height: 44px; padding-inline: 0; accent-color: #38bdf8; }
 .check { display: flex; align-items: center; gap: 0.5rem; }
 output { color: #38bdf8; font-weight: 700; }
 

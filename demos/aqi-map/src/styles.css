@@ -80,7 +80,7 @@ input, select {
   background: rgba(2, 6, 23, 0.68);
   padding: 0.65rem 0.8rem;
 }
-input[type="range"] { padding-inline: 0; accent-color: #34d399; }
+input[type="range"] { min-height: 44px; padding-inline: 0; accent-color: #34d399; }
 
 #search-slot { margin-bottom: 0.25rem; }
 #search-slot gmp-place-autocomplete {
