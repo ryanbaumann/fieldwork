@@ -2,6 +2,7 @@
 
 ## 2026-07-13: Portfolio leadership positioning and preview audit
 
+- Rewrote Contact page copy around advisor work, platform seats, and content collaboration, with clearer AI-native developer experience and growth prompts.
 - Repositioned the homepage and about copy around product, go-to-market, and engineering leadership for developer platforms, including the 20+ person Google Maps Platform Developer Experience Engineering team and manager-layer scope.
 - Reordered featured work to lead with AI-native distribution after Code Assist, then agent skills, Voice of Developer, and evals, so the page reads more like a product growth system than a list of artifacts.
 - Reordered writing to put weekly learnings first and Substack experiments second, and clarified thumbnail alt text where external preview image fetching is blocked by the environment.

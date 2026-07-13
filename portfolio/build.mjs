@@ -879,15 +879,20 @@ function resumePageContent() {
 function contactPageContent() {
   return `<section class="contact-shell">
   <p class="eyebrow">Contact</p>
-  <h1>Send a note</h1>
-  <p class="lede">Use this form instead of a public email address. It sends through the backend, keeps my address out of the HTML, and gives me enough context to reply.</p>
+  <h1>Build better platform experiences</h1>
+  <p class="lede">I am most useful when the work is about developer experience, AI-native product surfaces, or platform growth. Bring me in for advisor work, more platform seats, or content collaboration that helps builders succeed.</p>
+  <div class="contact-prompts" aria-label="Good reasons to reach out">
+    <article><h2>Advisor work</h2><p>Strategy for developer experience, agent-ready platforms, AI distribution, evals, and growth loops.</p></article>
+    <article><h2>Platform growth</h2><p>Turning natural-language and agentic product behavior into better user experience, better developer experience, and more durable adoption.</p></article>
+    <article><h2>Content collaboration</h2><p>Specific writing, talks, and launch content about how AI changes what builders can make and how platforms should meet them.</p></article>
+  </div>
   <form class="contact-form" action="${BASE}api/contact" method="post">
     <label>Name <input name="name" autocomplete="name" required /></label>
     <label>Email <input name="email" type="email" autocomplete="email" required /></label>
-    <label>What should I know? <textarea name="message" rows="7" required minlength="20"></textarea></label>
+    <label>What should I know? <textarea name="message" rows="7" required minlength="20" placeholder="Tell me if this is advisor work, platform seats, or content collaboration. Include the audience, the product surface, and what outcome you want to improve."></textarea></label>
     <button class="button" type="submit">Send note</button>
   </form>
-  <p class="section-note">If the backend mail provider is not configured yet, the form returns a setup message instead of exposing an address.</p>
+  <p class="section-note">The form sends through the backend so my address stays out of the HTML.</p>
 </section>`;
 }
 
