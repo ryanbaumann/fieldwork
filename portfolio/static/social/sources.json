@@ -1,0 +1,9 @@
+{
+  "home.png": "portfolio/static/previews/portfolio.jpg",
+  "developer-experience-is-a-growth-discipline.png": "portfolio/static/img/work/agentic-growth.svg",
+  "the-next-platform-interface-is-an-agent-session.png": "portfolio/static/img/work/code-assist.svg",
+  "evals-turn-ai-developer-experience-into-an-operating-system.png": "portfolio/static/img/work/agentic-evals.svg",
+  "strava-explorer.png": "portfolio/static/previews/strava-explorer.jpg",
+  "aqi-map.png": "portfolio/static/previews/aqi-map.jpg",
+  "isochrones.png": "portfolio/static/previews/isochrones.jpg"
+}

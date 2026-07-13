@@ -80,6 +80,22 @@ function validateInternalHref(id, href) {
   if (path && !existsSync(path)) failValidation(`${id}: broken internal link ${href}`);
 }
 
+function validateSocialImage(id, meta) {
+  if (!meta.socialImage) return;
+  if (!meta.shareTitle || !meta.shareSummary || !meta.shareImageAlt) {
+    failValidation(`${id}: socialImage requires shareTitle, shareSummary, and shareImageAlt`);
+  }
+  const imagePath = meta.socialImage.startsWith('/') ? join(STATIC_DIR, meta.socialImage.slice(1)) : null;
+  if (!imagePath || !existsSync(imagePath)) {
+    failValidation(`${id}: social image asset not found: ${meta.socialImage}`);
+    return;
+  }
+  const { width, height } = getImageDimensions(imagePath);
+  if (/\.(png|jpe?g)$/i.test(meta.socialImage) && (width !== 1200 || height !== 627)) {
+    failValidation(`${id}: raster social image must be 1200x627: ${meta.socialImage}`);
+  }
+}
+
 function validateEntry(collection, entry, seenSlugs) {
   const id = `${collection.name}/${entry.slug}`;
   if (seenSlugs.has(id)) failValidation(`${id}: duplicate slug`);
@@ -102,6 +118,7 @@ function validateEntry(collection, entry, seenSlugs) {
     const imagePath = meta.image.startsWith('/') ? join(STATIC_DIR, meta.image.slice(1)) : join(CONTENT_DIR, collection.name, meta.image);
     if (!existsSync(imagePath)) failValidation(`${id}: image asset not found: ${meta.image}`);
   }
+  validateSocialImage(id, meta);
   if (meta.tags && !Array.isArray(meta.tags)) failValidation(`${id}: tags must be a JSON array`);
   if (meta.updated && !isValidIsoDate(meta.updated)) failValidation(`${id}: updated must be YYYY-MM-DD`);
   for (const link of meta.links || []) {
@@ -121,6 +138,7 @@ function validatePage(slug, meta, body) {
     const imagePath = meta.image.startsWith('/') ? join(STATIC_DIR, meta.image.slice(1)) : join(CONTENT_DIR, 'pages', meta.image);
     if (!existsSync(imagePath)) failValidation(`${id}: image asset not found: ${meta.image}`);
   }
+  validateSocialImage(id, meta);
   for (const href of collectMarkdownLinks(body)) validateInternalHref(id, href);
 }
 
@@ -139,6 +157,12 @@ function validateSite() {
   if (site.defaultShareImage) {
     const imagePath = join(STATIC_DIR, site.defaultShareImage.replace(/^\//, ''));
     if (!existsSync(imagePath)) failValidation(`site.json: defaultShareImage asset not found: ${site.defaultShareImage}`);
+    else {
+      const { width, height } = getImageDimensions(imagePath);
+      if (/\.(png|jpe?g)$/i.test(site.defaultShareImage) && (width !== 1200 || height !== 627)) {
+        failValidation('site.json: raster defaultShareImage must be 1200x627');
+      }
+    }
   }
 }
 
@@ -355,14 +379,11 @@ function hasDetailPage(entry) {
 
 const CSS = readFileSync(join(ROOT, 'style.css'), 'utf8');
 
-function layout({ title, description, content, active = '', canonical, ogImage, ogImageAlt, ogType, articleDate, articleUpdated, robots, jsonLd }) {
+function layout({ title, description, content, active = '', canonical, ogImage, ogImageAlt, shareTitle, shareSummary, ogType, articleDate, articleUpdated, robots, jsonLd, contactDelivery }) {
   const navItems = [
     { href: `${BASE}work/`, label: 'Work', key: 'work' },
-    { href: `${BASE}writing/`, label: 'Writing', key: 'writing' },
-    { href: `${BASE}talks/`, label: 'Talks', key: 'talks' },
-    ...(demos.length ? [{ href: `${BASE}demos/`, label: 'Demos', key: 'demos' }] : []),
-    { href: `${BASE}resume/`, label: 'Resume', key: 'resume' },
-    { href: `${BASE}contact/`, label: 'Contact', key: 'contact' },
+    { href: `${BASE}writing/`, label: 'Field Notes', key: 'writing' },
+    ...(demos.length ? [{ href: `${BASE}demos/`, label: 'Lab', key: 'demos' }] : []),
     { href: `${BASE}about/`, label: 'About', key: 'about' },
   ];
   const nav = navItems
@@ -372,21 +393,33 @@ function layout({ title, description, content, active = '', canonical, ogImage, 
   const resolvedCanonical = canonical || absoluteUrl('/');
   const resolvedImage = absoluteUrl(ogImage || site.defaultShareImage);
   const resolvedImageAlt = escapeHtml(ogImageAlt || `${site.name} — ${site.role}`);
+  const resolvedShareTitle = shareTitle || title;
+  const resolvedShareSummary = shareSummary || description;
   const resolvedOgType = ogType || 'website';
   const socialHandle = site.socialHandle || '';
-  const twitterCardType = ogImage ? 'summary_large_image' : 'summary';
+  const twitterCardType = 'summary_large_image';
+  const localImage = ogImage || site.defaultShareImage;
+  const localImagePath = localImage?.startsWith('/') ? join(STATIC_DIR, localImage.slice(1)) : null;
+  const imageDimensions = localImagePath && existsSync(localImagePath) ? getImageDimensions(localImagePath) : null;
+  const imageMime = localImage?.endsWith('.png') ? 'image/png' : localImage?.match(/\.jpe?g$/i) ? 'image/jpeg' : localImage?.endsWith('.webp') ? 'image/webp' : localImage?.endsWith('.svg') ? 'image/svg+xml' : null;
 
   const canonicalTag = `<link rel="canonical" href="${escapeHtml(resolvedCanonical)}" />`;
   const ogUrlTag = `<meta property="og:url" content="${escapeHtml(resolvedCanonical)}" />`;
   const ogImageTag = `<meta property="og:image" content="${escapeHtml(resolvedImage)}" />`;
   const ogImageAltTag = `<meta property="og:image:alt" content="${resolvedImageAlt}" />`;
+  const ogImageDetails = [
+    imageDimensions ? `<meta property="og:image:width" content="${imageDimensions.width}" />` : '',
+    imageDimensions ? `<meta property="og:image:height" content="${imageDimensions.height}" />` : '',
+    imageMime ? `<meta property="og:image:type" content="${imageMime}" />` : '',
+  ].filter(Boolean).join('\n');
 
   const twitterTags = [
     `<meta name="twitter:card" content="${twitterCardType}" />`,
     socialHandle ? `<meta name="twitter:site" content="${escapeHtml(socialHandle)}" />` : '',
-    `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
-    `<meta name="twitter:description" content="${escapeHtml(description)}" />`,
+    `<meta name="twitter:title" content="${escapeHtml(resolvedShareTitle)}" />`,
+    `<meta name="twitter:description" content="${escapeHtml(resolvedShareSummary)}" />`,
     `<meta name="twitter:image" content="${escapeHtml(resolvedImage)}" />`,
+    `<meta name="twitter:image:alt" content="${resolvedImageAlt}" />`,
   ].filter(Boolean).join('\n');
 
   const articleTags = resolvedOgType === 'article'
@@ -400,6 +433,7 @@ function layout({ title, description, content, active = '', canonical, ogImage, 
   const robotsTag = robots ? `<meta name="robots" content="${escapeHtml(robots)}" />` : '';
 
   const jsonLdTag = jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : '';
+  const contactDeliveryTag = contactDelivery ? `<meta name="contact-delivery" content="${escapeHtml(contactDelivery)}" />` : '';
 
   return `<!doctype html>
 <html lang="en">
@@ -409,16 +443,17 @@ function layout({ title, description, content, active = '', canonical, ogImage, 
 <title>${escapeHtml(title)}</title>
 <meta name="description" content="${escapeHtml(description)}" />
 ${canonicalTag}
-<meta property="og:title" content="${escapeHtml(title)}" />
-<meta property="og:description" content="${escapeHtml(description)}" />
+<meta property="og:title" content="${escapeHtml(resolvedShareTitle)}" />
+<meta property="og:description" content="${escapeHtml(resolvedShareSummary)}" />
 <meta property="og:type" content="${escapeHtml(resolvedOgType)}" />
 ${ogUrlTag}
 ${ogImageTag}
 ${ogImageAltTag}
+${ogImageDetails}
 ${twitterTags}
 ${articleTags ? articleTags + '\n' : ''}<link rel="icon" href="${BASE}favicon.svg" type="image/svg+xml" />
 <link rel="alternate" type="application/rss+xml" title="${escapeHtml(site.name)} Writing" href="${absoluteUrl('/feed.xml')}" />
-${robotsTag ? robotsTag + '\n' : ''}${jsonLdTag ? jsonLdTag + '\n' : ''}<script>try{const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t;}catch{}</script>
+${robotsTag ? robotsTag + '\n' : ''}${contactDeliveryTag ? contactDeliveryTag + '\n' : ''}${jsonLdTag ? jsonLdTag + '\n' : ''}<script>try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch{}</script>
 <style>${CSS}</style>
 </head>
 <body>
@@ -426,7 +461,10 @@ ${robotsTag ? robotsTag + '\n' : ''}${jsonLdTag ? jsonLdTag + '\n' : ''}<script>
 <header class="site-header">
   <a class="site-name" href="${BASE}">${escapeHtml(site.name)}</a>
   <nav aria-label="Site">${nav}</nav>
-  <button class="theme-toggle" type="button" aria-label="Toggle color theme" onclick="try{const e=document.documentElement;const n=e.dataset.theme==='dark'?'light':'dark';e.dataset.theme=n;localStorage.setItem('theme',n)}catch{}">Theme</button>
+  <div class="header-actions">
+    <button class="theme-toggle" type="button">System</button>
+    <a class="header-cta" href="${BASE}contact/?intent=team">Build with Ryan</a>
+  </div>
 </header>
 <main id="main">
 ${content}
@@ -438,12 +476,36 @@ ${content}
     <a href="${site.links.linkedin}" rel="noopener">LinkedIn</a>
     ${site.links.x ? `<a href="${site.links.x}" rel="noopener">X</a>` : ''}
     ${site.links.substack ? `<a href="${site.links.substack}" rel="noopener">Substack</a>` : ''}
+    <a href="${BASE}talks/">Talks</a>
+    <a href="${BASE}resume/">Resume</a>
+    <a href="${BASE}privacy/">Privacy</a>
+    <button class="analytics-settings" type="button">Analytics settings</button>
     <a href="${BASE}contact/">Contact</a>
   </p>
 </footer>
+${analyticsMarkup()}
+<script>(()=>{const b=document.querySelector('.theme-toggle');if(!b)return;const states=['system','light','dark'];const sync=()=>{const current=document.documentElement.dataset.theme||'system';const next=states[(states.indexOf(current)+1)%states.length];b.textContent=current[0].toUpperCase()+current.slice(1);b.setAttribute('aria-label','Color theme: '+current+'. Activate to use '+next+'.')};b.addEventListener('click',()=>{const current=document.documentElement.dataset.theme||'system';const next=states[(states.indexOf(current)+1)%states.length];if(next==='system'){delete document.documentElement.dataset.theme;localStorage.removeItem('theme')}else{document.documentElement.dataset.theme=next;localStorage.setItem('theme',next)}sync()});sync()})();</script>
 </body>
 </html>
 `;
+}
+
+function analyticsMarkup() {
+  const measurementId = String(process.env.ANALYTICS_MEASUREMENT_ID || site.analyticsMeasurementId || '');
+  const canonicalHost = String(site.canonicalHost || '');
+  return `<div class="consent-banner" hidden role="region" aria-label="Analytics choice">
+  <p><strong>Optional analytics</strong><br />Allow anonymous portfolio usage measurement? No form text, identity, OAuth, activity, or location data is sent.</p>
+  <p class="consent-actions"><button class="button" type="button" data-consent="deny">No thanks</button><button class="button" type="button" data-consent="grant">Allow analytics</button></p>
+</div>
+<dialog class="analytics-dialog" aria-labelledby="analytics-title">
+  <form method="dialog">
+    <h2 id="analytics-title">Analytics settings</h2>
+    <p>Portfolio analytics are optional. Demo applications are outside this scope.</p>
+    <p class="consent-state" role="status"></p>
+    <p class="consent-actions"><button class="button" value="close">Close</button><button class="button" type="button" data-consent="deny">Do not allow</button><button class="button" type="button" data-consent="grant">Allow analytics</button></p>
+  </form>
+</dialog>
+<script>(()=>{const measurementId=${JSON.stringify(measurementId)};const canonicalHost=${JSON.stringify(canonicalHost)};const key='portfolio-analytics-consent-v1';const banner=document.querySelector('.consent-banner');const dialog=document.querySelector('.analytics-dialog');const state=document.querySelector('.consent-state');const debug=new URLSearchParams(location.search).get('analytics_debug')==='1';const hostAllowed=location.hostname===canonicalHost||debug;let loaded=false;const choice=()=>{try{return localStorage.getItem(key)}catch{return null}};const sanitizedLocation=location.origin+location.pathname;const sanitizedReferrer=()=>{try{const value=new URL(document.referrer);return value.origin===location.origin?value.origin+value.pathname:''}catch{return ''}};const event=(name,params)=>{if(window.gtag)window.gtag('event',name,params||{})};const update=()=>{const value=choice();if(state)state.textContent=!measurementId?'Analytics is not configured yet.':value==='granted'?'Analytics allowed.':value==='denied'?'Analytics not allowed.':'No choice saved.'};const load=()=>{if(loaded||!measurementId||!hostAllowed)return;loaded=true;window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});gtag('set','ads_data_redaction',true);const script=document.createElement('script');script.async=true;script.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(measurementId);script.onload=()=>{gtag('js',new Date());gtag('consent','update',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'granted'});gtag('config',measurementId,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false});event('page_view',{page_location:sanitizedLocation,page_referrer:sanitizedReferrer()});const delivered=document.querySelector('meta[name="contact-delivery"][content="success"]')&&new URLSearchParams(location.search).get('delivered')==='1';if(delivered&&!sessionStorage.getItem('contact-lead-recorded')){event('generate_lead',{currency:'USD',value:0});sessionStorage.setItem('contact-lead-recorded','1')}};document.head.append(script)};const save=(value)=>{try{localStorage.setItem(key,value)}catch{}banner.hidden=true;if(dialog.open)dialog.close();update();if(value==='granted')load()};document.querySelectorAll('[data-consent="grant"]').forEach((button)=>button.addEventListener('click',()=>save('granted')));document.querySelectorAll('[data-consent="deny"]').forEach((button)=>button.addEventListener('click',()=>save('denied')));document.querySelector('.analytics-settings')?.addEventListener('click',()=>{update();dialog.showModal()});if(choice()==='granted')load();else if(!choice()&&measurementId&&hostAllowed)banner.hidden=false;let formStarted=false;document.querySelector('.contact-form')?.addEventListener('focusin',()=>{if(!formStarted){formStarted=true;event('form_start',{form_id:'portfolio_contact'})}});document.querySelector('.contact-form')?.addEventListener('submit',()=>event('form_submit',{form_id:'portfolio_contact'}));document.addEventListener('click',(click)=>{const link=click.target.closest('[data-analytics-type][data-analytics-id]');if(link)event('select_content',{content_type:link.dataset.analyticsType,content_id:link.dataset.analyticsId});const share=click.target.closest('[data-analytics-share]');if(share)event('share',{method:share.dataset.analyticsShare,content_type:'page',item_id:location.pathname})});update()})();</script>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -510,6 +572,18 @@ function getImageDimensions(imagePath) {
     }
   }
 
+  if (imagePath.endsWith('.png')) {
+    try {
+      const buffer = readFileSync(imagePath);
+      const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+      if (buffer.length >= 24 && buffer.subarray(0, 8).equals(signature)) {
+        return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+      }
+    } catch (e) {
+      console.warn(`[build.mjs] failed to parse PNG dimensions for ${imagePath}:`, e.message);
+    }
+  }
+
   return { width: 960, height: 600 };
 }
 
@@ -524,14 +598,14 @@ function workCard(entry) {
   <p>${escapeHtml(meta.summary || '')}</p>
   ${meta.tags ? `<p class="card-tags">${meta.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</p>` : ''}`;
   if (meta.image) {
-    return `<a class="card work-card has-thumb" href="${url}"${external ? ' rel="noopener"' : ''}>
+    return `<a class="card work-card has-thumb" href="${url}" data-analytics-type="work" data-analytics-id="${escapeHtml(entry.slug)}"${external ? ' rel="noopener"' : ''}>
   <img class="card-thumb" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" width="${imageSize.width}" height="${imageSize.height}" />
   <div class="card-body">
   ${cardMeta}
   </div>
 </a>`;
   }
-  return `<a class="card" href="${url}"${external ? ' rel="noopener"' : ''}>
+  return `<a class="card" href="${url}" data-analytics-type="work" data-analytics-id="${escapeHtml(entry.slug)}"${external ? ' rel="noopener"' : ''}>
   ${cardMeta}
 </a>`;
 }
@@ -549,7 +623,7 @@ function listRow(collection, entry) {
   const thumb = meta.image
     ? `<img class="row-thumb" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" width="${imageSize.width}" height="${imageSize.height}" />`
     : '';
-  return `<li class="row">
+  return `<li class="row" data-analytics-type="${escapeHtml(collection)}" data-analytics-id="${escapeHtml(entry.slug)}">
   ${thumb}
   <div>
     <p class="row-title">${title}</p>
@@ -569,7 +643,7 @@ function demoCard(demo) {
   const preview = demo.preview
     ? `<img class="demo-preview" src="${rebase(demo.preview)}" alt="Screenshot of ${escapeHtml(demo.title)}" loading="lazy" width="${previewSize.width}" height="${previewSize.height}" />`
     : '';
-  return `<a class="card demo-card" href="${rebase(demo.path)}">
+  return `<a class="card demo-card" href="${rebase(demo.path)}" data-analytics-type="demo" data-analytics-id="${escapeHtml(demo.name)}">
   ${preview}
   <div class="demo-body">
     <h3>${escapeHtml(demo.title)}</h3>
@@ -594,8 +668,8 @@ function shareLinks(pageUrl, title) {
   const email = `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
   return `<p class="share-links">
   <span class="share-label">Share</span>
-  <a class="chip" href="${linkedIn}" rel="noopener" aria-label="Share on LinkedIn">LinkedIn</a>
-  <a class="chip" href="${email}" aria-label="Share via email">Email</a>
+  <a class="chip" href="${linkedIn}" rel="noopener" aria-label="Share on LinkedIn" data-analytics-share="linkedin">LinkedIn</a>
+  <a class="chip" href="${email}" aria-label="Share via email" data-analytics-share="email">Email</a>
 </p>`;
 }
 
@@ -737,8 +811,10 @@ function detailPage(collection, entry, activeKey) {
     content,
     active: activeKey,
     canonical: pageUrl,
-    ogImage: meta.image || null,
-    ogImageAlt: meta.imageAlt || meta.title,
+    ogImage: meta.socialImage || meta.image || null,
+    ogImageAlt: meta.shareImageAlt || meta.imageAlt || meta.title,
+    shareTitle: meta.shareTitle || null,
+    shareSummary: meta.shareSummary || null,
     ogType: (isWriting || isTalk) ? 'article' : 'website',
     articleDate: meta.date || null,
     articleUpdated: meta.updated || null,
@@ -748,19 +824,18 @@ function detailPage(collection, entry, activeKey) {
 }
 
 function buildHome(collections) {
-  const featuredWork = collections.work.filter((entry) => entry.meta.featured);
+  const bySlug = (collection, slug) => collections[collection].find((entry) => entry.slug === slug);
+  const operatingSteps = [
+    ['Field signal', 'Find repeated friction', 'voice-of-developer'],
+    ['Ship the tool', 'Turn the pattern into product', 'code-assist'],
+    ['Evaluate', 'Compare against a baseline', 'agentic-evals'],
+    ['Distribute', 'Meet builders in their workflow', 'agent-skills'],
+    ['Grow', 'Measure adoption and reach', 'agentic-growth'],
+  ].map(([label, text, slug]) => ({ label, text, entry: bySlug('work', slug) })).filter((step) => step.entry);
   const writingEntries = collections.writing.slice(0, 3);
   const talkEntries = collections.talks.slice(0, 3);
-
-  const heroLinks = [
-    { label: 'Work', href: `${BASE}work/` },
-    ...(demos.length ? [{ label: 'Demos', href: `${BASE}demos/` }] : []),
-    { label: 'Writing', href: `${BASE}writing/` },
-    { label: 'Resume', href: `${BASE}resume/` },
-    { label: 'Contact', href: `${BASE}contact/` },
-    { label: 'GitHub', href: site.links.github, external: true },
-    { label: 'LinkedIn', href: site.links.linkedin, external: true },
-  ];
+  const foundationEntries = ['intelligent-product-essentials', 'mapbox-boundaries-atlas', 'mapbox-uber-deckgl']
+    .map((slug) => bySlug('work', slug)).filter(Boolean);
   const demosSection = demos.length
     ? `
 <section>
@@ -781,57 +856,59 @@ function buildHome(collections) {
       </div>`).join('\n')}
     </dl>`
     : '';
-  const profileImagePath = site.profileImage?.startsWith('/') ? join(STATIC_DIR, site.profileImage.slice(1)) : null;
-  const profileImageDims = profileImagePath && existsSync(profileImagePath) ? getImageDimensions(profileImagePath) : { width: 800, height: 800 };
-  const profileImage = site.profileImage
-    ? `<img class="profile-image" src="${rebase(site.profileImage)}" alt="${escapeHtml(site.profileImageAlt || `${site.name} profile image`)}" width="${profileImageDims.width}" height="${profileImageDims.height}" loading="eager" />`
-    : '';
-
   const content = `
-<section class="hero hero-split">
-  <div>
-  ${profileImage}
+<section class="hero">
   <p class="eyebrow">${escapeHtml(site.tagline)}</p>
-  <h1>${escapeHtml(site.name)}</h1>
+  <h1>${escapeHtml(site.heroHeadline || site.name)}</h1>
   <p class="lede">${escapeHtml(site.intro)}</p>
-  <p class="hero-meta">${escapeHtml(site.role)} · ${escapeHtml(site.location)}</p>
-  <p class="chips hero-links">${heroLinks
-    .map((link) => `<a class="chip" href="${link.href}"${link.external ? ' rel="noopener"' : ''}>${escapeHtml(link.label)}${link.external ? ' ↗' : ''}</a>`)
-    .join('')}</p>
-  </div>
-  <figure class="hero-figure">
-    <img class="hero-image" src="${rebase('/previews/strava-explorer.jpg')}" alt="The Strava 3D Explorer flying a route in Photorealistic 3D, one of the live demos in the lab" width="1200" height="687" loading="eager" />
-    <p class="hero-image-caption">From the lab: <a href="${rebase('/strava-explorer/')}">Strava 3D Explorer</a></p>
-  </figure>
+  <p class="hero-actions"><a class="button button-primary" href="${BASE}contact/?intent=team">Build with me</a><a class="button" href="#operating-system">See the operating system</a></p>
 </section>
 ${proofPoints}
 
-<section>
-  ${sectionHeader('Selected work', '', `${BASE}work/`, 'All work')}
-  <p class="section-note">${escapeHtml(site.headline)}</p>
-  <div class="grid">
-    ${featuredWork.map(workCard).join('\n')}
+<section id="operating-system" class="operating-system">
+  ${sectionHeader('The operating system', site.headline, `${BASE}work/`, 'See the work')}
+  <p class="section-note">${escapeHtml(site.categoryDefinition || '')}</p>
+  <ol class="operating-steps">
+    ${operatingSteps.map((step) => `<li><a href="${entryUrl('work', step.entry)}"><span>${escapeHtml(step.label)}</span><strong>${escapeHtml(step.text)}</strong><small>${escapeHtml(step.entry.meta.title)}</small></a></li>`).join('\n')}
+  </ol>
+</section>
+
+<section class="build-section">
+  <div>
+    <p class="eyebrow">Build with Ryan</p>
+    <h2>Do the work that defines the next developer platform.</h2>
+  </div>
+  <div>
+    <p>I recruit principal builders who want to move from field signal to product, write the eval, ship the artifact, and measure whether developers succeed.</p>
+    <p>You will own real platform problems, work across product and engineering, and leave behind systems that scale beyond one customer or launch.</p>
+    <p class="hero-actions"><a class="button button-primary" href="${BASE}contact/?intent=team">Build with Ryan</a><a class="text-link" href="${BASE}contact/?intent=executive">Discuss an executive opportunity</a></p>
   </div>
 </section>
 ${demosSection}
 <section>
-  ${sectionHeader('Writing', '', `${BASE}writing/`, 'All writing')}
+  ${sectionHeader('Field Notes', 'Ideas you can use', `${BASE}writing/`, 'All field notes')}
   <ul class="rows">
     ${writingEntries.map((entry) => listRow('writing', entry)).join('\n')}
   </ul>
 </section>
 
 <section>
-  ${sectionHeader('Talks', '', `${BASE}talks/`, 'All talks')}
+  ${sectionHeader('Speaking and media', 'Demo first', `${BASE}talks/`, 'All talks')}
   <ul class="rows">
     ${talkEntries.map((entry) => listRow('talks', entry)).join('\n')}
   </ul>
 </section>
 
-<section class="about-teaser">
-  ${sectionHeader('Background', '')}
-  <p class="lede">${escapeHtml(site.aboutTeaser)}</p>
-  <p><a class="more" href="${BASE}about/">The full story →</a></p>
+<section>
+  ${sectionHeader('Foundation', 'Earlier platform work', `${BASE}about/`, 'Full background')}
+  <ul class="rows compact-rows">${foundationEntries.map((entry) => listRow('work', entry)).join('\n')}</ul>
+</section>
+
+<section class="personal-close">
+  <p class="eyebrow">Still in the work</p>
+  <h2>I lead the system and keep my hands on the tools.</h2>
+  <p class="lede">I started as an engineer, raced bikes professionally, and still build maps to understand the developer experience from the inside.</p>
+  <p class="hero-actions"><a class="button button-primary" href="${BASE}contact/?intent=team">Build with Ryan</a><a class="text-link" href="${BASE}contact/?intent=speaking">Speaking or media</a></p>
 </section>
 `;
 
@@ -932,21 +1009,29 @@ function resumePageContent(meta) {
 function contactPageContent(meta) {
   return `<section class="contact-shell">
   <p class="eyebrow">Contact</p>
-  <h1>Build better platform experiences</h1>
-  <p class="lede">I am most useful when the work is about developer experience, AI-native product surfaces, or platform growth. Bring me in for advisor work, more platform seats, or content collaboration that helps builders succeed.</p>
-  ${pageImage(meta)}
-  <div class="contact-prompts" aria-label="Good reasons to reach out">
-    <article><h2>Advisor work</h2><p>Strategy for developer experience, agent-ready platforms, AI distribution, evals, and growth loops.</p></article>
-    <article><h2>Platform growth</h2><p>Turning natural-language and agentic product behavior into better user experience, better developer experience, and more durable adoption.</p></article>
-    <article><h2>Content collaboration</h2><p>Specific writing, talks, and launch content about how AI changes what builders can make and how platforms should meet them.</p></article>
-  </div>
-  <form class="contact-form" action="${BASE}api/contact" method="post">
-    <label>Name <input name="name" autocomplete="name" required /></label>
-    <label>Email <input name="email" type="email" autocomplete="email" required /></label>
-    <label>What should I know? <textarea name="message" rows="7" required minlength="20" placeholder="Tell me if this is advisor work, platform seats, or content collaboration. Include the audience, the product surface, and what outcome you want to improve."></textarea></label>
+  <h1>What are you trying to build?</h1>
+  <p class="lede">Start with the developer experience that is breaking down. Choose an intent so the first reply can be useful.</p>
+  <form id="contact-form" class="contact-form" action="${BASE}api/contact" method="post">
+    <label>What is this about?
+      <select name="intent" required>
+        <option value="">Choose an intent</option>
+        <option value="Build or join an exceptional team">Build or join an exceptional team</option>
+        <option value="Executive opportunity">Executive opportunity</option>
+        <option value="Speaking or media">Speaking or media</option>
+        <option value="Future advisory or board conversation">Future advisory or board conversation</option>
+        <option value="Other">Other</option>
+      </select>
+    </label>
+    <p class="field-note">I am not taking outside consulting or advisory work while employed at Google. The future category keeps the longer-term door open.</p>
+    <label>What are you trying to build, and where is the developer experience breaking down?
+      <textarea name="message" rows="6" required minlength="20" maxlength="5000" placeholder="Share the product surface, the developer, and the outcome you want to change."></textarea>
+    </label>
+    <label>Name <input name="name" autocomplete="name" maxlength="120" required /></label>
+    <label>Email <input name="email" type="email" autocomplete="email" maxlength="200" required /></label>
     <button class="button" type="submit">Send note</button>
   </form>
-  <p class="section-note">The form sends through the backend so my address stays out of the HTML.</p>
+  <p class="section-note">The server uses your details only to deliver the note and reply. See <a href="${BASE}privacy/">Privacy</a>.</p>
+  <script>(()=>{const value=new URLSearchParams(location.search).get('intent');const intents={team:'Build or join an exceptional team',executive:'Executive opportunity',speaking:'Speaking or media',future:'Future advisory or board conversation',other:'Other'};const select=document.querySelector('select[name="intent"]');if(select&&intents[value])select.value=intents[value]})();</script>
 </section>`;
 }
 
@@ -977,8 +1062,12 @@ function buildStandalonePages() {
       content,
       active: slug,
       canonical: absoluteUrl(`/${slug}/`),
-      ogImage: meta.image || null,
-      ogImageAlt: meta.imageAlt || meta.title,
+      ogImage: meta.socialImage || meta.image || null,
+      ogImageAlt: meta.shareImageAlt || meta.imageAlt || meta.title,
+      shareTitle: meta.shareTitle || null,
+      shareSummary: meta.shareSummary || null,
+      robots: meta.noindex ? 'noindex, follow' : null,
+      contactDelivery: meta.contactDelivery || null,
     }));
   }
   for (const page of pages) validatePage(page.slug, page.meta, page.body);
@@ -1043,6 +1132,8 @@ function sitemapXml(collections) {
     for (const file of readdirSync(pagesDir)) {
       if (!file.endsWith('.md') || file.startsWith('_')) continue;
       const slug = file.replace(/\.md$/, '');
+      const { meta } = parseFrontMatter(readFileSync(join(pagesDir, file), 'utf8'));
+      if (meta.noindex) continue;
       urls.push({ loc: absoluteUrl(`/${slug}/`), priority: '0.5' });
     }
   }
@@ -1080,6 +1171,10 @@ function validateMetadata() {
     if (!html.includes('twitter:title')) errors.push(`${id}: missing twitter:title`);
     if (!html.includes('twitter:description')) errors.push(`${id}: missing twitter:description`);
     if (!html.includes('twitter:image')) errors.push(`${id}: missing twitter:image`);
+    if (!html.includes('twitter:image:alt')) errors.push(`${id}: missing twitter:image:alt`);
+    if (!html.includes('og:image:width')) errors.push(`${id}: missing og:image:width`);
+    if (!html.includes('og:image:height')) errors.push(`${id}: missing og:image:height`);
+    if (!html.includes('og:image:type')) errors.push(`${id}: missing og:image:type`);
     const description = html.match(/<meta name="description" content="([^"]+)"/i)?.[1];
     if (description) {
       if (descriptions.has(description)) errors.push(`${id}: duplicate description also used by ${descriptions.get(description)}`);

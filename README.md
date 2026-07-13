@@ -6,7 +6,7 @@ The live site is https://www.ryanbaumann-portfolio.com/.
 
 ## What is inside
 
-* **Portfolio site** at `/`: a zero-dependency static site over a flat-file markdown CMS. It covers work, writing, talks, and demos with no client-side JavaScript.
+* **Portfolio site** at `/`: a zero-dependency static site over a flat-file markdown CMS. It covers work, Field Notes, talks, and demos with only small inline theme and consent helpers.
 * **Demo lab** under app paths: Strava 3D Explorer, Air Quality Map, and Isochrones, each built as a self-contained app.
 * **Gateway** in `gateway/`: a zero-npm-dependency Node server that serves the site, mounts each demo, and keeps secret-bearing API calls behind same-origin `/api/*` routes.
 * **Cloud Run container**: one deployable artifact for the site and every demo.

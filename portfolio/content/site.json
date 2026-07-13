@@ -23,9 +23,10 @@
   },
   "siteUrl": "https://www.ryanbaumann-portfolio.com/",
   "canonicalHost": "www.ryanbaumann-portfolio.com",
+  "analyticsMeasurementId": "",
   "brand": "Ryan Baumann Portfolio",
   "positioning": "Developer Experience, Forward Deployed Engineering, and AI-native platforms.",
-  "defaultShareImage": "/previews/portfolio.jpg",
+  "defaultShareImage": "/social/home.png",
   "socialHandle": "@ryanbaumann",
   "proofPoints": [
     {

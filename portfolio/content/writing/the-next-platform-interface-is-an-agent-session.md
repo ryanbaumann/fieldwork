@@ -5,6 +5,10 @@ date: 2026-07-13
 canonical: https://www.ryanbaumann-portfolio.com/writing/the-next-platform-interface-is-an-agent-session/
 image: /img/work/code-assist.svg
 imageAlt: Code Assist shown as an MCP server connecting AI coding agents to retrieved Google Maps Platform documentation
+socialImage: /social/the-next-platform-interface-is-an-agent-session.png
+shareTitle: The Next Platform Interface Is an Agent Session
+shareSummary: Ship context and workflows where developers make decisions.
+shareImageAlt: The Next Platform Interface Is an Agent Session beside a Code Assist artifact
 tags: ["agent experience", "developer platforms", "context engineering"]
 order: 2
 ---

@@ -5,6 +5,10 @@ date: 2026-07-13
 canonical: https://www.ryanbaumann-portfolio.com/writing/developer-experience-is-a-growth-discipline/
 image: /img/work/agentic-growth.svg
 imageAlt: AI Studio, Replit, and Lovable shown as distribution surfaces above the react-google-maps weekly download measure
+socialImage: /social/developer-experience-is-a-growth-discipline.png
+shareTitle: Developer Experience Is a Growth Discipline
+shareSummary: Product, distribution, and measurement as one system.
+shareImageAlt: Developer Experience Is a Growth Discipline beside a distribution artifact
 tags: ["developer experience", "growth", "distribution"]
 order: 1
 ---

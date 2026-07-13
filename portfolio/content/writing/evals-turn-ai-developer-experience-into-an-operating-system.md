@@ -5,6 +5,10 @@ date: 2026-07-13
 canonical: https://www.ryanbaumann-portfolio.com/writing/evals-turn-ai-developer-experience-into-an-operating-system/
 image: /img/work/agentic-evals.svg
 imageAlt: An evaluation loop moving from developer task to agent run, scored result, and launch decision
+socialImage: /social/evals-turn-ai-developer-experience-into-an-operating-system.png
+shareTitle: Evals Turn AI Developer Experience Into an Operating System
+shareSummary: Connect field failures, context changes, and launch decisions.
+shareImageAlt: Evals Turn AI Developer Experience Into an Operating System beside an evaluation-loop artifact
 tags: ["evals", "ai developer experience", "operating systems"]
 order: 3
 ---

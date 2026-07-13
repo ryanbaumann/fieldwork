@@ -125,7 +125,7 @@ Run commands from the app directory unless noted.
 ## Code Style
 
 - Use modern JavaScript modules in `demos/strava-explorer/src/`, `demos/aqi-map/src/`, and `demos/isochrones/src/`; preserve the existing no-framework Vite architecture unless explicitly asked to migrate.
-- Keep `portfolio/` dependency-free: its build is `node build.mjs` and its pages ship zero client-side JavaScript (see `.agents/skills/portfolio-design/SKILL.md`).
+- Keep `portfolio/` dependency-free: its build is `node build.mjs`; client JavaScript is limited to small inline theme and consent-controlled analytics helpers (see `.agents/skills/portfolio-design/SKILL.md`).
 - Use descriptive names for geospatial values: `lat`, `lng`, `altitude`, `bounds`, `coordinates`, `polyline`, `featureCollection`.
 - Avoid broad rewrites, hidden formatting churn, and unrelated dependency upgrades.
 - Do not add `try`/`catch` blocks around imports.
