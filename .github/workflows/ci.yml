@@ -102,7 +102,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Layer-cached via the GitHub Actions cache: unchanged apps rebuild
       # from cache instead of re-running npm ci + vite build in every stage.
