@@ -153,7 +153,7 @@ img { max-width: 100%; height: auto; border-radius: 0.6rem; }
 .header-cta { border: 1px solid var(--line); border-radius: 999px; padding: 0.45rem 0.7rem; color: var(--ink); font-size: 0.85rem; text-decoration: none; white-space: nowrap; }
 .header-cta:hover { border-color: var(--accent); color: var(--accent-ink); transform: translateY(-1px); }
 
-main { padding-block: clamp(1.5rem, 4vw, 3rem) 2rem; }
+main { padding-block: clamp(1rem, 3vw, 2rem) 2rem; }
 main > section { margin-bottom: clamp(3rem, 7vw, 4.5rem); }
 
 .site-footer {
@@ -686,7 +686,8 @@ html[data-theme="dark"] {
 
 .hero {
   max-width: 58rem;
-  padding-block: clamp(1rem, 5vw, 3.75rem) clamp(0.5rem, 2vw, 1.5rem);
+  padding-top: 0;
+  padding-bottom: clamp(0.5rem, 2vw, 1.5rem);
 }
 .hero h1 {
   max-width: 56rem;
