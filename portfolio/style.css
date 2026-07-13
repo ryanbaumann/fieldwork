@@ -874,4 +874,7 @@ html[data-theme="dark"] {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .demo-body { padding: 0.75rem 1.1rem; }
+  .demo-grid { gap: 1rem; }
+  .row { padding-block: 0.75rem; }
 }
