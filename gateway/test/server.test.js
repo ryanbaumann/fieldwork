@@ -295,6 +295,13 @@ test('contact delivery validates intent and marks only provider-confirmed succes
 });
 
 test('unknown static path serves a styled HTML 404 with a home link', async () => {
+  // The portfolio app is mounted at "/", so it matches every pathname and an
+  // unknown path normally 404s inside that app. In CI the portfolio isn't
+  // built, which would hit the "not built" 503 branch instead — so drop the
+  // root app for this test to exercise the catch-all 404 path regardless of
+  // local build state.
+  const originalByPath = [...appsByPathLength];
+  appsByPathLength.splice(0, appsByPathLength.length, ...originalByPath.filter((app) => app.path !== '/'));
   server.listen(0);
   const port = server.address().port;
 
@@ -305,6 +312,7 @@ test('unknown static path serves a styled HTML 404 with a home link', async () =
     assert.match(body, /href="\/"/);
     assert.doesNotMatch(body, /^Not found\.$/);
   } finally {
+    appsByPathLength.splice(0, appsByPathLength.length, ...originalByPath);
     await new Promise((resolve) => server.close(resolve));
   }
 });
