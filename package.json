@@ -1,0 +1,17 @@
+{
+  "name": "ryan-baumann-portfolio",
+  "private": true,
+  "description": "Ryan Baumann portfolio container: site + demo lab. See docs/ARCHITECTURE.md.",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "build": "node scripts/build-local.mjs",
+    "start": "node --env-file=.env gateway/server.js",
+    "smoke": "node scripts/smoke.mjs",
+    "new:demo": "node scripts/new-demo.mjs",
+    "new:post": "node scripts/new-post.mjs",
+    "previews": "node scripts/previews.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

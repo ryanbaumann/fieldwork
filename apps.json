@@ -1,0 +1,55 @@
+[
+  {
+    "name": "portfolio",
+    "title": "Ryan Baumann",
+    "description": "Home: work, writing, talks, and the demo lab.",
+    "path": "/",
+    "dev_build_dir": "portfolio/dist",
+    "providers": ["resend"],
+    "tags": [],
+    "preview": "/previews/portfolio.jpg"
+  },
+  {
+    "name": "portfolio-writer",
+    "title": "Writer preview",
+    "description": "Private draft previews and publishing controls.",
+    "path": "/writer/",
+    "dev_build_dir": "portfolio/writer-dist",
+    "visibility": "private",
+    "auth": {
+      "type": "password",
+      "envVar": "PORTFOLIO_WRITER_PASSWORD"
+    },
+    "tags": [],
+    "preview": null
+  },
+  {
+    "name": "strava-explorer",
+    "title": "Strava 3D Explorer",
+    "description": "Fly your Strava routes in Photorealistic 3D with follow-camera animation, an elevation profile, and your ride photos on the path.",
+    "path": "/strava-explorer/",
+    "dev_build_dir": "demos/strava-explorer/dist",
+    "providers": ["strava"],
+    "tags": ["strava", "3d-maps", "google-maps-platform"],
+    "preview": "/previews/strava-explorer.jpg"
+  },
+  {
+    "name": "aqi-map",
+    "title": "Air Quality Map",
+    "description": "Live air-quality heatmap with click-to-inspect pollutant detail, straight from the Air Quality API.",
+    "path": "/aqi-map/",
+    "dev_build_dir": "demos/aqi-map/dist",
+    "tags": ["air-quality", "google-maps-platform"],
+    "preview": "/previews/aqi-map.jpg"
+  },
+  {
+    "name": "isochrones",
+    "title": "Isochrones",
+    "description": "How far can you get in 10, 20, 30 minutes? Live-regenerating reachability bands for delivery, commute, and response planning.",
+    "path": "/isochrones/",
+    "dev_build_dir": "demos/isochrones/dist",
+    "providers": ["isochrones"],
+    "tags": ["isochrones", "routing", "google-maps-platform"],
+    "preview": "/previews/isochrones.jpg"
+  }
+]
