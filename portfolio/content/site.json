@@ -30,19 +30,15 @@
   "socialHandle": "@ryanbaumann",
   "proofPoints": [
     {
-      "label": "40+",
-      "text": "solution architectures"
-    },
-    {
       "label": "300%",
-      "text": "active-user growth"
+      "text": "OSS active-user growth, Mar 2025–Mar 2026"
     },
     {
       "label": "~200%",
-      "text": "API-engagement growth"
+      "text": "OSS API-engagement growth, Mar 2025–Mar 2026"
     },
     {
-      "label": "1.5M",
+      "label": "1M+",
       "text": "weekly React-library downloads"
     }
   ],
