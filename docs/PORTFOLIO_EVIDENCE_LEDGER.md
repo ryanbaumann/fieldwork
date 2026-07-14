@@ -63,6 +63,15 @@ the actual public artifact over a decorative reconstruction.
 | 7 | About | An approved portrait or honest public work artifact. Do not use a screenshot of the portfolio as Ryan's profile image. |
 | 8 | Demo Lab | Fresh desktop and mobile screenshots of the live applications, captured without exposing account data, tokens, or private activities. |
 
+## Public image sources in use
+
+| Asset | Public source | License / basis | Retrieved |
+|---|---|---|---|
+| `code-assist-docs.png` | [official Code Assist documentation](https://developers.google.com/maps/ai/code-assist) | CC BY 4.0 documentation capture | 2026-07-14 |
+| `mapboxgl-jupyter.jpg` | [repository screenshot](https://raw.githubusercontent.com/mapbox/mapboxgl-jupyter/master/examples/screenshots/screenshot.png) | MIT-licensed repository asset | 2026-07-14 |
+| `mapboxgl-powerbi.jpg` | [repository screenshot](https://raw.githubusercontent.com/mapbox/mapboxgl-powerbi/master/assets/mapbox-viz-screenshot-1-min.png) | MIT-licensed repository asset | 2026-07-14 |
+| `kepler-mapbox.jpg` | [repository screenshot](https://raw.githubusercontent.com/keplergl/kepler.gl/master/screenshots/screenshot.png) | MIT-licensed repository asset; visible attribution preserved | 2026-07-14 |
+
 ## Excluded private artifacts
 
 Do not place these in the repository, screenshots, generated social cards, or

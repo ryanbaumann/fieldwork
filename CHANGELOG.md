@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-14: Stronger visual evidence
+
+- Replaced the highest-visibility generic card with a capture of the official Code Assist documentation, including its experimental status and real retrieval tools.
+- Removed unsupported and stale claims from generated growth, architecture, Mapbox, talk, and writing artifact cards.
+- Recorded source URLs, licenses, and retrieval dates for public repository imagery used in Work.
+
 ## 2026-07-14: Shorter, proof-led homepage
 
 - Reframed the homepage headline in active voice: "I grow builder platforms for the AI era."

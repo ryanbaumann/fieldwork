@@ -669,8 +669,8 @@ html[data-theme="dark"] {
 }
 main > section.hero { margin-bottom: clamp(0.75rem, 2vw, 1.5rem); }
 .hero h1 {
-  max-width: 56rem;
-  font-size: clamp(2.5rem, 7.2vw, 5.5rem);
+  max-width: 63rem;
+  font-size: clamp(2.5rem, 7.2vw, 5rem);
   line-height: 0.98;
   letter-spacing: -0.055em;
 }
