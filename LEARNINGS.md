@@ -193,3 +193,10 @@ Context: The writer build emits rendered drafts to `portfolio/writer-dist/`, but
 Learning: A new output directory containing non-public previews is a disclosure risk even when its deployed route is authenticated.
 Evidence: `portfolio/.gitignore` now ignores `writer-dist/`, and `git check-ignore` verifies the generated dashboard is excluded before commits.
 Use next time: Add ignore coverage in the same change that introduces any generated preview, export, or private build directory.
+
+## 2026-07-14: Explicit layout constraints are required for HTML/CSS generated infographics
+
+Context: The `portable-infographic-architect` script generated a very tall, vertically stacked infographic for a blog post. While it rendered well standalone, the extreme vertical aspect ratio hijacked the reading experience by pushing all prose below the fold when embedded in an essay.
+Learning: Large language models default to vertical stacking (flex-direction: column) when generating HTML/CSS cards for infographics unless explicitly constrained otherwise. A long vertical image works on Pinterest but fails catastrophically as a hero image or embedded asset in an essay.
+Evidence: The initial DevX essay thumbnail was unreadably tall. Passing "WIDESCREEN LANDSCAPE 16:9 ASPECT RATIO REQUIRED. Arrange items horizontally side-by-side, NOT vertically." to the script's `--text` parameter successfully forced the LLM to generate a horizontal layout that fit perfectly within the blog design without stretching.
+Use next time: When using the `portable-infographic-architect` for blog thumbnails, hero images, or essay embeds, explicitly command the script to use a landscape/widescreen layout and horizontal item arrangement in the prompt. Do not leave the aspect ratio up to the model.
