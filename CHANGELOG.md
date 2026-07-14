@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-14: Fix CI secret scanner false positives
+
+- Added `.gitleaks.toml` configuration to allowlist `.agents/skills/` mock credentials and build artifacts, resolving GitHub Actions `secret-scan` failures.
+
 ## 2026-07-14: Faster serving and consistent public docs
 
 - Added brotli/gzip compression for text responses (homepage HTML drops from ~36 KB to ~9 KB) and weak-ETag/Last-Modified conditional requests with 304s for static files. Images and fonts stay uncompressed; `/api/*` behavior is unchanged apart from compression.
