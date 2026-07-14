@@ -1,29 +1,29 @@
 ---
-title: DevEx is a Growth Discipline
+title: DevX is a Growth Discipline
 summary: Builder experience is a hypothesis-led engineering discipline that drives measurable reach, growth, and retention in the AI era.
 date: 2026-07-14
 canonical: https://www.ryanbaumann-portfolio.com/writing/devex-is-a-growth-discipline/
 image: /assets/devex-growth.png
-imageAlt: An infographic showing DevEx driving platform reach through distribution, metrics, and AI context.
+imageAlt: An infographic showing DevX driving platform reach through distribution, metrics, and AI context.
 socialImage: /assets/devex-growth-social.png
-shareTitle: DevEx is a Growth Discipline
+shareTitle: DevX is a Growth Discipline
 shareSummary: How to make builder experience an optimizable engine for growth.
-shareImageAlt: An infographic showing DevEx driving platform reach through distribution, metrics, and AI context.
+shareImageAlt: An infographic showing DevX driving platform reach through distribution, metrics, and AI context.
 tags: ["developer experience", "growth", "distribution", "ai"]
 order: 1
 ---
 
-DevEx is a growth discipline. Better documentation matters, but a platform grows when its product context, distribution, and measurement systems help builders reach a working result in the tools they already use. Instead of asking how to improve the docs, ask where developer friction limits adoption and what you can ship to move that constraint. 
+DevX is a growth discipline. Better documentation matters, but a platform grows when its product context, distribution, and measurement systems help builders reach a working result in the tools they already use. Instead of asking how to improve the docs, ask where developer friction limits adoption and what you can ship to move that constraint. 
 
 Builder experience is a hypothesis-led engineering and product discipline that drives a measurable, optimizable outcome: reach, user growth, and user retention. AI makes this possible. 
 
 ## Start with the growth constraint
 
-Developer friction appears in support tickets, stalled evaluations, and GitHub issues. The platform needs one unified view of the constraint. The Voice of the Developer program I scale with AI at Google Maps Platform combines broad product signal with direct field work, User Experience Research (UXR), and product-led growth (PLG) feedback built directly into the experience. 
+Developer friction appears in support tickets, stalled evaluations, and GitHub issues. The platform needs one unified view of the constraint. At Google Maps Platform DevX, our Voice of Developer tools combine broad product signal with direct field work, User Experience Research (UXR), and product-led growth (PLG) feedback built directly into the experience. 
 
 We want to focus on the "builder experience" because we want builders to dramatically expand the number of users in the AI era. The level of abstraction and the necessary understanding of underlying code are much lower than they used to be. Instead, builders need system design experience, and these are entirely new users to understand. 
 
-Our core hypothesis is that we use optimizations in evaluations along with real-time feedback. The Voice of the Developer program follows different developer signals to prove hypotheses, learn from users, and actually improve performance on those core things.
+Our core hypothesis is that we use optimizations in evaluations along with real-time feedback. Our Voice of Developer tools follow different developer signals to prove hypotheses, learn from users, and actually improve performance on those core things.
 
 ## Distribute into the workflow
 
