@@ -1,18 +1,20 @@
 # Air Quality Map
 
+![Air Quality Map preview](../../portfolio/static/previews/aqi-map.jpg)
+
 Live air-quality heatmap on a 2D Google map, powered end-to-end by Google
 Maps Platform:
 
 - **Heatmap tiles** from the [Air Quality API](https://developers.google.com/maps/documentation/air-quality)
-  (`mapTypes/{type}/heatmapTiles`) rendered as an `ImageMapType` overlay —
+  (`mapTypes/{type}/heatmapTiles`) rendered as an `ImageMapType` overlay:
   Universal AQI, US AQI (EPA), or PM2.5 layers with adjustable opacity.
 - **Point conditions**: click anywhere (or search a place) to call
-  `currentConditions:lookup` — AQI value and category, dominant pollutant,
+  `currentConditions:lookup` for AQI value and category, dominant pollutant,
   and top pollutant concentrations.
 - **Place search** via the Places `PlaceAutocompleteElement`.
 
 Everything runs on a single referrer-restricted browser API key, the same
-pattern as the other demos in this repo — no server proxy required.
+pattern as the other demos in this repo. No server proxy required.
 
 ## Setup
 

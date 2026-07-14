@@ -110,12 +110,15 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           set -euo pipefail
+          # --min-instances 1 keeps one warm instance so shared links don't
+          # hit a cold start.
           gcloud run deploy trails-ninja \
             --project "$GCP_PROJECT_ID" \
             --image "$IMAGE" \
             --region "$GCP_REGION" \
             --allow-unauthenticated \
-            --port 8080
+            --port 8080 \
+            --min-instances 1
 
           # Runtime env vars/secrets persist on the Cloud Run service across
           # revisions, so they are set once by hand (not on every deploy).

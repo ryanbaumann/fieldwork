@@ -1,5 +1,7 @@
 # Ryan Baumann Portfolio: one site, one demo lab, real maps
 
+![Ryan Baumann Portfolio homepage screenshot](portfolio/static/previews/portfolio.jpg)
+
 This repo is the public home for Ryan Baumann's portfolio and demo lab. It is part personal site, part runnable reference architecture, and part proof that developer experience work should ship as real artifacts.
 
 The live site is https://www.ryanbaumann-portfolio.com/.

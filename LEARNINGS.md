@@ -1,5 +1,12 @@
 # Learnings
 
+## 2026-07-14: Never put a comment inside a backslash-continued shell command
+
+Context: A generated edit to `.github/workflows/deploy.yml` inserted a `# comment` line between `--port 8080 \` and `--min-instances 1` in the `gcloud run deploy` invocation.
+Learning: A backslash continuation joins the next physical line onto the command, so a comment line there comments out the rest of the joined line and turns every following flag line into a separate (failing) command. The flag silently never reaches the command and, under `set -e`, the step dies.
+Evidence: Caught in review before commit; reproduced with `bash -n` plus a joined-line trace, then fixed by moving the comment above the whole command.
+Use next time: In multi-line shell commands, comments go above the command, never between continued lines. When reviewing agent-generated workflow edits, read continued commands as one joined line.
+
 ## 2026-07-14: Contact filtering needs a delivery-first third state
 
 Context: The contact route silently dropped any message matching a broad keyword or dotted-Gmail heuristic, and treated any Gemini response containing `SPAM` as final.

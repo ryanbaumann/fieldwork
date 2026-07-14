@@ -5,6 +5,7 @@
 
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
+import { createGzip, createBrotliCompress, gzipSync, brotliCompressSync, constants as zlibConstants } from 'node:zlib';
 
 export const MIME_TYPES = new Map([
   ['.html', 'text/html; charset=utf-8'],
@@ -72,6 +73,151 @@ export function applySecurityHeaders(response) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Compression: brotli/gzip only (node:zlib, zero deps). Images, fonts, and
+// other already-compressed formats are deliberately excluded — compressing
+// them wastes CPU and rarely shrinks the body.
+// ---------------------------------------------------------------------------
+
+const COMPRESSIBLE_EXTENSIONS = new Set([
+  '.html', '.js', '.mjs', '.css', '.json', '.map', '.svg', '.xml', '.txt', '.webmanifest',
+]);
+
+// Compressing a body smaller than this rarely pays for the CPU spent; gzip/
+// brotli framing overhead can even make tiny bodies bigger.
+const MIN_COMPRESSIBLE_BYTES = 1024;
+
+export function isCompressibleType(filePath) {
+  return COMPRESSIBLE_EXTENSIONS.has(extname(filePath).toLowerCase());
+}
+
+// Prefer brotli when the client offers it, else gzip, else no compression.
+// This is a simple substring/word-boundary check, not full Accept-Encoding
+// q-value parsing — good enough for a portfolio gateway with two candidate
+// encodings.
+export function pickEncoding(acceptEncodingHeader) {
+  const header = String(acceptEncodingHeader || '').toLowerCase();
+  if (/\bbr\b/.test(header)) return 'br';
+  if (/\bgzip\b/.test(header)) return 'gzip';
+  return null;
+}
+
+function compressionTransformFor(encoding) {
+  if (encoding === 'br') {
+    // Quality 5 (of 0-11): a good speed/ratio tradeoff for on-the-fly
+    // compression under load; quality 11 (the brotli default) is far too
+    // slow for a per-request transform.
+    return createBrotliCompress({ params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 5 } });
+  }
+  if (encoding === 'gzip') return createGzip({ level: 6 });
+  return null;
+}
+
+export function compressBuffer(buffer, encoding) {
+  if (encoding === 'br') {
+    return brotliCompressSync(buffer, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 5 } });
+  }
+  if (encoding === 'gzip') return gzipSync(buffer, { level: 6 });
+  return buffer;
+}
+
+/**
+ * Write a small in-memory response body (gateway-generated HTML/JSON, not a
+ * static file), compressing it when the client's Accept-Encoding allows it
+ * and the body is large enough to be worth compressing. Always sets `Vary:
+ * Accept-Encoding` so caches don't serve the wrong encoding to the wrong
+ * client.
+ */
+export function sendCompressibleBody(request, response, statusCode, headers, body) {
+  const buffer = Buffer.isBuffer(body) ? body : Buffer.from(String(body), 'utf8');
+  const finalHeaders = { ...headers, Vary: 'Accept-Encoding' };
+  const encoding = buffer.length >= MIN_COMPRESSIBLE_BYTES
+    ? pickEncoding(request?.headers?.['accept-encoding'])
+    : null;
+
+  if (encoding) {
+    finalHeaders['Content-Encoding'] = encoding;
+    response.writeHead(statusCode, finalHeaders);
+    response.end(compressBuffer(buffer, encoding));
+    return;
+  }
+
+  finalHeaders['Content-Length'] = buffer.length;
+  response.writeHead(statusCode, finalHeaders);
+  response.end(buffer);
+}
+
+// ---------------------------------------------------------------------------
+// Conditional requests (ETag / Last-Modified) for static files only —
+// gateway-generated dynamic responses never get one.
+// ---------------------------------------------------------------------------
+
+// Cheap weak ETag: content identity is size + mtime, not a real hash. Good
+// enough to catch the common case (unchanged file) without reading the file.
+function computeEtag(stat) {
+  return `W/"${stat.size}-${Math.floor(stat.mtimeMs)}"`;
+}
+
+function requestIsNotModified(request, etag, lastModified) {
+  const headers = request?.headers || {};
+  const ifNoneMatch = headers['if-none-match'];
+  if (ifNoneMatch !== undefined) {
+    return ifNoneMatch.split(',').map((tag) => tag.trim()).includes(etag);
+  }
+  const ifModifiedSince = headers['if-modified-since'];
+  if (ifModifiedSince) {
+    const since = Date.parse(ifModifiedSince);
+    // If-Modified-Since has 1-second resolution; truncate both sides.
+    if (!Number.isNaN(since)) {
+      return Math.floor(lastModified.getTime() / 1000) <= Math.floor(since / 1000);
+    }
+  }
+  return false;
+}
+
+/**
+ * Shared response-writer for a static file already resolved to a `filePath`
+ * + `stat`: sets caching/conditional-request headers, handles 304s, and
+ * compresses compressible types when the client allows it and the file is
+ * big enough to bother.
+ */
+function sendStaticFile(filePath, stat, request, response, statusCode, { cacheControl, extraHeaders = {} }) {
+  applySecurityHeaders(response);
+
+  const compressible = isCompressibleType(filePath);
+  const etag = computeEtag(stat);
+  const headers = {
+    'Content-Type': mimeTypeFor(filePath),
+    'Cache-Control': cacheControl,
+    'Last-Modified': stat.mtime.toUTCString(),
+    ETag: etag,
+    ...extraHeaders,
+  };
+  if (compressible) headers.Vary = 'Accept-Encoding';
+
+  if (requestIsNotModified(request, etag, stat.mtime)) {
+    response.writeHead(304, headers);
+    response.end();
+    return true;
+  }
+
+  const encoding = compressible && stat.size >= MIN_COMPRESSIBLE_BYTES
+    ? pickEncoding(request?.headers?.['accept-encoding'])
+    : null;
+
+  if (encoding) {
+    headers['Content-Encoding'] = encoding;
+    response.writeHead(statusCode, headers);
+    createReadStream(filePath).pipe(compressionTransformFor(encoding)).pipe(response);
+    return true;
+  }
+
+  headers['Content-Length'] = stat.size;
+  response.writeHead(statusCode, headers);
+  createReadStream(filePath).pipe(response);
+  return true;
+}
+
 /**
  * Resolve `subPath` inside `baseDir`, refusing anything that would escape
  * `baseDir` (path traversal via `..` or an absolute path). Note this is a
@@ -95,7 +241,7 @@ export function safeResolve(baseDir, subPath) {
  * given request subPath. Returns true if a response was sent, false if the
  * caller should fall through (e.g. to a 404 handler).
  */
-export function serveFromDir(baseDir, subPath, response, options = {}) {
+export function serveFromDir(baseDir, subPath, request, response, options = {}) {
   let filePath = safeResolve(baseDir, subPath || '/');
   if (!filePath) {
     response.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -114,15 +260,10 @@ export function serveFromDir(baseDir, subPath, response, options = {}) {
     stat = statSync(filePath);
   }
 
-  applySecurityHeaders(response);
-  response.writeHead(200, {
-    'Content-Type': mimeTypeFor(filePath),
-    'Content-Length': stat.size,
-    'Cache-Control': options.private ? 'private, no-store' : cacheControlFor(filePath),
-    ...(options.private ? { 'X-Robots-Tag': 'noindex, nofollow, noarchive' } : {}),
+  return sendStaticFile(filePath, stat, request, response, 200, {
+    cacheControl: options.private ? 'private, no-store' : cacheControlFor(filePath),
+    extraHeaders: options.private ? { 'X-Robots-Tag': 'noindex, nofollow, noarchive' } : {},
   });
-  createReadStream(filePath).pipe(response);
-  return true;
 }
 
 /**
@@ -132,17 +273,12 @@ export function serveFromDir(baseDir, subPath, response, options = {}) {
  * `serveFromDir` always sends. Returns true if a response was sent, false
  * if the caller should fall through (file missing or is a directory).
  */
-export function serveFileWithStatus(filePath, response, statusCode, options = {}) {
+export function serveFileWithStatus(filePath, request, response, statusCode, options = {}) {
   if (!existsSync(filePath)) return false;
   const stat = statSync(filePath);
   if (stat.isDirectory()) return false;
 
-  applySecurityHeaders(response);
-  response.writeHead(statusCode, {
-    'Content-Type': mimeTypeFor(filePath),
-    'Content-Length': stat.size,
-    'Cache-Control': options.cacheControl || 'no-store',
+  return sendStaticFile(filePath, stat, request, response, statusCode, {
+    cacheControl: options.cacheControl || 'no-store',
   });
-  createReadStream(filePath).pipe(response);
-  return true;
 }

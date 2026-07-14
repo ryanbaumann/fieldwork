@@ -11,7 +11,7 @@ import { createServer } from 'node:http';
 import { join } from 'node:path';
 
 import { loadApps, toPublicApp, appVisibility } from './lib/apps.js';
-import { applySecurityHeaders, serveFromDir, serveFileWithStatus } from './lib/staticFiles.js';
+import { applySecurityHeaders, serveFromDir, serveFileWithStatus, sendCompressibleBody } from './lib/staticFiles.js';
 import { createRateLimiter, clientIp, RATE_LIMIT_POLICIES, rateLimitPolicyForPath } from './lib/rateLimit.js';
 import { resolveProvider } from './lib/config.js';
 import {
@@ -68,22 +68,20 @@ const routeRateLimiters = Object.fromEntries(
 // For a portfolio site the single-instance limiter is the right trade-off.
 const authRateLimiter = routeRateLimiters.auth;
 
-function sendJson(response, statusCode, payload) {
+function sendJson(request, response, statusCode, payload) {
   applySecurityHeaders(response);
-  response.writeHead(statusCode, {
+  sendCompressibleBody(request, response, statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
-  });
-  response.end(JSON.stringify(payload));
+  }, JSON.stringify(payload));
 }
 
-function sendRaw(response, statusCode, body, contentType) {
+function sendRaw(request, response, statusCode, body, contentType) {
   applySecurityHeaders(response);
-  response.writeHead(statusCode, {
+  sendCompressibleBody(request, response, statusCode, {
     'Content-Type': contentType,
     'Cache-Control': 'no-store',
-  });
-  response.end(body);
+  }, body);
 }
 
 
@@ -107,13 +105,12 @@ function readTextBody(request, limitBytes = FORM_BODY_LIMIT_BYTES) {
   });
 }
 
-function sendHtml(response, statusCode, body) {
+function sendHtml(request, response, statusCode, body) {
   applySecurityHeaders(response);
-  response.writeHead(statusCode, {
+  sendCompressibleBody(request, response, statusCode, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',
-  });
-  response.end(body);
+  }, body);
 }
 
 function escapeHtml(value) {
@@ -134,7 +131,7 @@ function contactResponsePage(title, message, statusCode = 200) {
 
 async function handleContactRequest(request, response) {
   if (request.method !== 'POST') {
-    sendJson(response, 405, { error: 'Method not allowed' });
+    sendJson(request, response, 405, { error: 'Method not allowed' });
     return;
   }
 
@@ -142,7 +139,7 @@ async function handleContactRequest(request, response) {
   try {
     rawBody = await readTextBody(request);
   } catch (err) {
-    sendHtml(response, err.statusCode || 400, contactResponsePage('Message not sent', err.message, err.statusCode || 400));
+    sendHtml(request, response, err.statusCode || 400, contactResponsePage('Message not sent', err.message, err.statusCode || 400));
     return;
   }
 
@@ -158,17 +155,17 @@ async function handleContactRequest(request, response) {
   const honeypot = String(params.get('company_fax_number') || '').trim();
 
   if (!name || !email || !message || !email.includes('@') || message.length < 20) {
-    sendHtml(response, 400, contactResponsePage('Message not sent', 'Please include your name, a valid email, and a message with at least 20 characters.', 400));
+    sendHtml(request, response, 400, contactResponsePage('Message not sent', 'Please include your name, a valid email, and a message with at least 20 characters.', 400));
     return;
   }
 
   if (!CONTACT_INTENTS.includes(intent)) {
-    sendHtml(response, 400, contactResponsePage('Message not sent', 'Please choose one of the available conversation types.', 400));
+    sendHtml(request, response, 400, contactResponsePage('Message not sent', 'Please choose one of the available conversation types.', 400));
     return;
   }
 
   if (!humanConfirmed) {
-    sendHtml(response, 400, contactResponsePage('Message not sent', 'Please confirm that you are a person before sending your note.', 400));
+    sendHtml(request, response, 400, contactResponsePage('Message not sent', 'Please confirm that you are a person before sending your note.', 400));
     return;
   }
 
@@ -192,7 +189,7 @@ async function handleContactRequest(request, response) {
   const { apiKey: resendApiKey, toEmail, fromEmail: configuredFromEmail } = resolveProvider('resend', process.env);
   const fromEmail = configuredFromEmail || 'Portfolio Contact <onboarding@resend.dev>';
   if (!resendApiKey || !toEmail) {
-    sendHtml(response, 503, contactResponsePage('Contact form is not configured yet', 'The backend route is live, but RESEND_API_KEY and CONTACT_TO_EMAIL must be set before it can deliver messages.', 503));
+    sendHtml(request, response, 503, contactResponsePage('Contact form is not configured yet', 'The backend route is live, but RESEND_API_KEY and CONTACT_TO_EMAIL must be set before it can deliver messages.', 503));
     return;
   }
 
@@ -214,12 +211,12 @@ async function handleContactRequest(request, response) {
       signal: AbortSignal.timeout(10_000),
     });
   } catch {
-    sendHtml(response, 502, contactResponsePage('Message not sent', 'The mail provider could not be reached. Please try again later.', 502));
+    sendHtml(request, response, 502, contactResponsePage('Message not sent', 'The mail provider could not be reached. Please try again later.', 502));
     return;
   }
 
   if (!upstream.ok) {
-    sendHtml(response, 502, contactResponsePage('Message not sent', 'The mail provider did not accept the message. Please try again later.', 502));
+    sendHtml(request, response, 502, contactResponsePage('Message not sent', 'The mail provider did not accept the message. Please try again later.', 502));
     return;
   }
 
@@ -233,20 +230,20 @@ async function handleContactRequest(request, response) {
 
 async function handleWriterPublishRequest(request, response) {
   if (request.method !== 'POST') {
-    sendJson(response, 405, { error: 'Method not allowed' });
+    sendJson(request, response, 405, { error: 'Method not allowed' });
     return;
   }
   const writerApp = appsByPathLength.find((app) => app.name === 'portfolio-writer');
   const secret = writerApp?.auth?.envVar ? process.env[writerApp.auth.envVar] : null;
   if (!writerApp || !secret || !verifyAuthCookie(request, writerApp.name, secret)) {
-    sendJson(response, 401, { error: 'Writer authentication required.' });
+    sendJson(request, response, 401, { error: 'Writer authentication required.' });
     return;
   }
   try {
     const origin = new URL(String(request.headers.origin || ''));
     if (origin.host !== request.headers.host) throw new Error('origin mismatch');
   } catch {
-    sendJson(response, 403, { error: 'Invalid request origin.' });
+    sendJson(request, response, 403, { error: 'Invalid request origin.' });
     return;
   }
 
@@ -255,7 +252,7 @@ async function handleWriterPublishRequest(request, response) {
     const rawBody = await readTextBody(request);
     params = new URLSearchParams(rawBody);
   } catch (error) {
-    sendJson(response, error.statusCode || 400, { error: error.message });
+    sendJson(request, response, error.statusCode || 400, { error: error.message });
     return;
   }
   try {
@@ -271,7 +268,7 @@ async function handleWriterPublishRequest(request, response) {
     });
     response.end();
   } catch (error) {
-    sendJson(response, error.statusCode || 502, { error: error.message });
+    sendJson(request, response, error.statusCode || 502, { error: error.message });
   }
 }
 
@@ -310,13 +307,13 @@ function findAppForPath(pathname) {
 // shows up whenever the portfolio has been built. Falls back to a minimal
 // inline HTML page — for keyless dev or a portfolio build that hasn't run
 // yet — so a visitor never sees a bare "Not found." text response.
-function send404Page(response) {
+function send404Page(request, response) {
   const rootApp = appsByPathLength.find((entry) => entry.path === '/');
   if (rootApp?.dir) {
     const notFoundPath = join(rootApp.dir, '404.html');
-    if (serveFileWithStatus(notFoundPath, response, 404, { cacheControl: 'no-cache' })) return;
+    if (serveFileWithStatus(notFoundPath, request, response, 404, { cacheControl: 'no-cache' })) return;
   }
-  sendHtml(response, 404, errorPageHtml({
+  sendHtml(request, response, 404, errorPageHtml({
     title: 'Page not found',
     message: 'The page you were looking for does not exist.',
   }));
@@ -326,12 +323,12 @@ async function handleApi(request, response, pathname, searchParams) {
   const ip = clientIp(request);
 
   if (pathname === '/healthz' || pathname === '/api/healthz') {
-    sendJson(response, 200, { ok: true, apps: publicApps.map((app) => app.name) });
+    sendJson(request, response, 200, { ok: true, apps: publicApps.map((app) => app.name) });
     return;
   }
 
   if (pathname === '/api/apps') {
-    sendJson(response, 200, { apps: publicApps });
+    sendJson(request, response, 200, { apps: publicApps });
     return;
   }
 
@@ -344,7 +341,7 @@ async function handleApi(request, response, pathname, searchParams) {
   const policyName = rateLimitPolicyForPath(pathname);
   if (policyName && !routeRateLimiters[policyName].check(`${policyName}:${ip}`)) {
     response.setHeader('Retry-After', String(Math.ceil(RATE_LIMIT_POLICIES[policyName].windowMs / 1000)));
-    sendJson(response, 429, { error: 'Too many requests. Please try again later.' });
+    sendJson(request, response, 429, { error: 'Too many requests. Please try again later.' });
     return;
   }
 
@@ -365,7 +362,7 @@ async function handleApi(request, response, pathname, searchParams) {
       try {
         body = await readJsonBody(request);
       } catch (err) {
-        sendJson(response, err.statusCode || 400, { error: err.message });
+        sendJson(request, response, err.statusCode || 400, { error: err.message });
         return;
       }
     }
@@ -389,32 +386,32 @@ async function handleApi(request, response, pathname, searchParams) {
       response.end(Buffer.from(result.binary.body));
       return;
     }
-    sendJson(response, result.statusCode, result.json);
+    sendJson(request, response, result.statusCode, result.json);
     return;
   }
 
   if (pathname === '/api/isochrones') {
     if (request.method !== 'POST') {
-      sendJson(response, 405, { error: 'Method not allowed' });
+      sendJson(request, response, 405, { error: 'Method not allowed' });
       return;
     }
     let body;
     try {
       body = await readJsonBody(request);
     } catch (err) {
-      sendJson(response, err.statusCode || 400, { error: err.message });
+      sendJson(request, response, err.statusCode || 400, { error: err.message });
       return;
     }
     const result = await handleIsochronesApi(body);
     if (result.rawJson !== undefined) {
-      sendRaw(response, result.statusCode, result.rawJson, result.contentType);
+      sendRaw(request, response, result.statusCode, result.rawJson, result.contentType);
       return;
     }
-    sendJson(response, result.statusCode, result.json);
+    sendJson(request, response, result.statusCode, result.json);
     return;
   }
 
-  sendJson(response, 404, { error: 'Not found' });
+  sendJson(request, response, 404, { error: 'Not found' });
 }
 
 const server = createServer(async (request, response) => {
@@ -422,7 +419,7 @@ const server = createServer(async (request, response) => {
   try {
     requestUrl = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
   } catch {
-    sendJson(response, 400, { error: 'Bad request URL.' });
+    sendJson(request, response, 400, { error: 'Bad request URL.' });
     return;
   }
 
@@ -444,12 +441,12 @@ const server = createServer(async (request, response) => {
         await handleAuthRequest(request, response, app, process.env, applySecurityHeaders, authRateLimiter, ip);
         return;
       }
-      sendJson(response, 404, { error: 'Not found' });
+      sendJson(request, response, 404, { error: 'Not found' });
       return;
     }
 
     if (request.method !== 'GET' && request.method !== 'HEAD') {
-      sendJson(response, 405, { error: 'Method not allowed' });
+      sendJson(request, response, 405, { error: 'Method not allowed' });
       return;
     }
 
@@ -487,7 +484,7 @@ const server = createServer(async (request, response) => {
         const secret = process.env[app.auth.envVar];
         if (!secret) {
           // Password env var not configured — refuse to serve.
-          sendHtml(response, 503, errorPageHtml({
+          sendHtml(request, response, 503, errorPageHtml({
             title: 'Demo not available',
             message: 'This demo is not currently available.',
           }));
@@ -502,7 +499,7 @@ const server = createServer(async (request, response) => {
       }
 
       if (!app.available) {
-        sendHtml(response, 503, errorPageHtml({
+        sendHtml(request, response, 503, errorPageHtml({
           title: 'Demo not built',
           message: `${app.name} is not built. Run scripts/build-local.mjs first.`,
         }));
@@ -510,16 +507,16 @@ const server = createServer(async (request, response) => {
       }
 
       const subPath = pathname.slice(app.path.length - 1);
-      if (serveFromDir(app.dir, subPath, response, { private: appVisibility(app) === 'private' })) return;
-      send404Page(response);
+      if (serveFromDir(app.dir, subPath, request, response, { private: appVisibility(app) === 'private' })) return;
+      send404Page(request, response);
       return;
     }
 
-    send404Page(response);
+    send404Page(request, response);
   } catch (error) {
     console.error('Unhandled gateway error:', error);
     if (!response.headersSent) {
-      sendJson(response, 500, { error: 'Internal server error' });
+      sendJson(request, response, 500, { error: 'Internal server error' });
     } else {
       response.end();
     }

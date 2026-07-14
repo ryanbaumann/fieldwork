@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-14: Faster serving and consistent public docs
+
+- Added brotli/gzip compression for text responses (homepage HTML drops from ~36 KB to ~9 KB) and weak-ETag/Last-Modified conditional requests with 304s for static files. Images and fonts stay uncompressed; `/api/*` behavior is unchanged apart from compression.
+- Kept one warm Cloud Run instance (`--min-instances 1`) so shared links do not hit a cold start.
+- Brought the root and per-app READMEs into one consistent style: preview screenshot near the top, sentence-case headings, no em-dashes, section order aligned across demos, and copy checked against the evidence ledger.
+
 ## 2026-07-14: Public-readiness fixes and copy pass
 
 - Added a branded 404 page: the portfolio build now emits `404.html`, and the gateway serves it (with a styled inline fallback) instead of plain-text "Not found."; unavailable/unbuilt demo 503s got the same styled HTML shell. `/api/*` errors stay JSON.

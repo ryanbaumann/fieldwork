@@ -1,5 +1,7 @@
 # Google Maps Platform Isochrones Demo
 
+![Isochrones preview](../../portfolio/static/previews/isochrones.jpg)
+
 This is a small Vite + Node demo that showcases the Google Maps Platform Isochrones API on an interactive Google Map. It is designed around three common reachability workflows:
 
 - **Delivery**: compare service-area bands from a hub (default 30-minute radius).
@@ -15,7 +17,7 @@ The demo is live-by-default: rings generate automatically on load and regenerate
   - **Browser Key** (`VITE_GMP_API_KEY`): Used to load the Maps JavaScript API. This should be restricted by HTTP referrer in your Google Cloud console.
   - **Server Key** (`GMP_SERVER_API_KEY`): Used for backend requests to the Isochrones API. This should be unrestricted or IP-restricted.
 
-### Environment Setup
+### Environment setup
 
 Create a `.env` file in this directory with the following variables:
 
