@@ -36,7 +36,7 @@ Use the standard `<gmp-marker>` component as a child of `<gmp-map-3d>`. The cont
         <link rel="stylesheet" type="text/css" href="./style.css" />
         <script
             async
-            src="https://maps.googleapis.com/maps/api/js?loading=async&key=AIzaSyA6myHzS10YXdcazAFalmXvDkrYCp5cLc8&libraries=maps3d"></script>
+            src="https://maps.googleapis.com/maps/api/js?loading=async&key=YOUR_API_KEY&libraries=maps3d"></script>
     </head>
     <body>
         <gmp-map-3d

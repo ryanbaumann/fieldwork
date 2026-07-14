@@ -558,6 +558,7 @@ ${content}
 function analyticsMarkup() {
   if (WRITER_MODE) return '';
   const measurementId = String(process.env.ANALYTICS_MEASUREMENT_ID || site.analyticsMeasurementId || '');
+  if (!measurementId) return '';
   const canonicalHost = String(site.canonicalHost || '');
   return `<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=${measurementId}"></script>
@@ -1186,6 +1187,27 @@ function buildStandalonePages() {
 }
 
 
+function buildNotFoundPage() {
+  const content = `<section class="prose">
+  <p class="eyebrow">404</p>
+  <h1>Page not found</h1>
+  <p>I couldn't find that page. It may have moved, or the link is out of date.</p>
+  <p class="hero-actions">
+    <a class="button button-primary" href="${BASE}">Home</a>
+    <a href="${BASE}work/">Work</a>
+    <a href="${BASE}writing/">Field Notes</a>
+    ${demos.length ? `<a href="${BASE}demos/">Lab</a>` : ''}
+  </p>
+</section>`;
+  writePage('404.html', layout({
+    title: `Page not found — ${site.name}`,
+    description: 'The page you were looking for could not be found.',
+    content,
+    canonical: absoluteUrl('/404.html'),
+    robots: 'noindex, nofollow',
+  }));
+}
+
 function absoluteUrl(pathOrUrl) {
   if (/^https?:\/\//.test(pathOrUrl)) return pathOrUrl;
   return new URL(pathOrUrl.replace(/^\//, ''), site.siteUrl || BASE).toString();
@@ -1349,6 +1371,7 @@ if (WRITER_MODE) writerDashboard(allCollections.writing);
 else buildHome(collections);
 buildDemosPage();
 buildStandalonePages();
+buildNotFoundPage();
 
 const seenSlugs = new Set();
 for (const collection of COLLECTIONS) {

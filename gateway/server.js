@@ -8,9 +8,10 @@
 // docs/ARCHITECTURE.md for the full picture.
 
 import { createServer } from 'node:http';
+import { join } from 'node:path';
 
 import { loadApps, toPublicApp, appVisibility } from './lib/apps.js';
-import { applySecurityHeaders, serveFromDir } from './lib/staticFiles.js';
+import { applySecurityHeaders, serveFromDir, serveFileWithStatus } from './lib/staticFiles.js';
 import { createRateLimiter, clientIp, RATE_LIMIT_POLICIES, rateLimitPolicyForPath } from './lib/rateLimit.js';
 import { resolveProvider } from './lib/config.js';
 import {
@@ -22,6 +23,7 @@ import { handleStravaApi } from './lib/strava.js';
 import { handleIsochronesApi } from './lib/isochrones.js';
 import { publishWritingUpdate } from './lib/writer.js';
 import { classifyContactSubmission } from './lib/contactSpam.js';
+import { errorPageHtml } from './lib/errorPage.js';
 
 const PORT = Number(process.env.PORT || 8080);
 const JSON_BODY_LIMIT_BYTES = 16 * 1024;
@@ -302,6 +304,24 @@ function findAppForPath(pathname) {
   return appsByPathLength.find((app) => pathname === app.path.slice(0, -1) || pathname.startsWith(app.path));
 }
 
+// Styled 404 for any static-path miss (never for /api/* — those stay JSON,
+// see handleApi below). Prefers the portfolio build's own 404.html (served
+// from the root app's dir, path "/", at runtime) so the branded site 404
+// shows up whenever the portfolio has been built. Falls back to a minimal
+// inline HTML page — for keyless dev or a portfolio build that hasn't run
+// yet — so a visitor never sees a bare "Not found." text response.
+function send404Page(response) {
+  const rootApp = appsByPathLength.find((entry) => entry.path === '/');
+  if (rootApp?.dir) {
+    const notFoundPath = join(rootApp.dir, '404.html');
+    if (serveFileWithStatus(notFoundPath, response, 404, { cacheControl: 'no-cache' })) return;
+  }
+  sendHtml(response, 404, errorPageHtml({
+    title: 'Page not found',
+    message: 'The page you were looking for does not exist.',
+  }));
+}
+
 async function handleApi(request, response, pathname, searchParams) {
   const ip = clientIp(request);
 
@@ -467,9 +487,10 @@ const server = createServer(async (request, response) => {
         const secret = process.env[app.auth.envVar];
         if (!secret) {
           // Password env var not configured — refuse to serve.
-          applySecurityHeaders(response);
-          response.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' });
-          response.end('This demo is not currently available.');
+          sendHtml(response, 503, errorPageHtml({
+            title: 'Demo not available',
+            message: 'This demo is not currently available.',
+          }));
           return;
         }
         if (!verifyAuthCookie(request, app.name, secret)) {
@@ -481,23 +502,20 @@ const server = createServer(async (request, response) => {
       }
 
       if (!app.available) {
-        applySecurityHeaders(response);
-        response.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' });
-        response.end(`${app.name} is not built. Run scripts/build-local.mjs first.`);
+        sendHtml(response, 503, errorPageHtml({
+          title: 'Demo not built',
+          message: `${app.name} is not built. Run scripts/build-local.mjs first.`,
+        }));
         return;
       }
 
       const subPath = pathname.slice(app.path.length - 1);
       if (serveFromDir(app.dir, subPath, response, { private: appVisibility(app) === 'private' })) return;
-      applySecurityHeaders(response);
-      response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      response.end('Not found.');
+      send404Page(response);
       return;
     }
 
-    applySecurityHeaders(response);
-    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    response.end('Not found.');
+    send404Page(response);
   } catch (error) {
     console.error('Unhandled gateway error:', error);
     if (!response.headersSent) {

@@ -157,6 +157,26 @@ test('build rejects duplicate page descriptions without publishing invalid outpu
   assert.throws(() => readFileSync(join(paths.dist, 'one', 'index.html')), /ENOENT/);
 });
 
+test('build omits the analytics script entirely when no measurement id is configured', () => {
+  const paths = fixture();
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
+  assert.doesNotMatch(home, /gtag\/js\?id="/);
+  assert.doesNotMatch(home, /Google tag \(gtag\.js\)/);
+});
+
+test('build writes a styled 404 page with a link home', () => {
+  const paths = fixture();
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const notFound = readFileSync(join(paths.dist, '404.html'), 'utf8');
+  assert.match(notFound, /<h1>Page not found<\/h1>/);
+  assert.match(notFound, /<a[^>]*href="\/"[^>]*>Home<\/a>/);
+  assert.match(notFound, /<meta name="robots" content="noindex, nofollow"/);
+  assert.match(notFound, /class="site-header"/);
+});
+
 test('build rejects missing root-relative assets in frontmatter links', () => {
   const paths = fixture();
   write(join(paths.content, 'talks', 'missing-deck.md'), `---\ntitle: Missing deck\nsummary: Invalid fixture\nlinks: [{"label":"Slides","url":"/decks/missing.pdf"}]\n---`);

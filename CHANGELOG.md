@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-14: Public-readiness fixes and copy pass
+
+- Added a branded 404 page: the portfolio build now emits `404.html`, and the gateway serves it (with a styled inline fallback) instead of plain-text "Not found."; unavailable/unbuilt demo 503s got the same styled HTML shell. `/api/*` errors stay JSON.
+- Stopped emitting the Google Analytics snippet when no measurement ID is configured, removing a broken `gtag/js?id=` request from local and keyless builds.
+- Replaced a hardcoded Google Maps API key in a skill reference doc with a `YOUR_API_KEY` placeholder.
+- Copy pass for voice and consistency: dropped an unverified "weekly" cadence claim from the #ThisWeeksLearnings summary and alt text, and normalized "agent skills" casing in talk prose.
+
 ## 2026-07-14: Stronger visual evidence
 
 - Replaced the highest-visibility generic card with a capture of the official Code Assist documentation, including its experimental status and real retrieval tools.

@@ -293,3 +293,65 @@ test('contact delivery validates intent and marks only provider-confirmed succes
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('unknown static path serves a styled HTML 404 with a home link', async () => {
+  server.listen(0);
+  const port = server.address().port;
+
+  try {
+    const { res, body } = await request(port, '/this-path-should-not-exist-ever/');
+    assert.equal(res.statusCode, 404);
+    assert.match(res.headers['content-type'], /text\/html/);
+    assert.match(body, /href="\/"/);
+    assert.doesNotMatch(body, /^Not found\.$/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('unknown /api/ path still returns a JSON 404', async () => {
+  server.listen(0);
+  const port = server.address().port;
+
+  try {
+    const { res, body } = await request(port, '/api/this-route-does-not-exist');
+    assert.equal(res.statusCode, 404);
+    assert.match(res.headers['content-type'], /application\/json/);
+    assert.deepEqual(JSON.parse(body), { error: 'Not found' });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('private app with unset password env serves a styled 503 with the unavailable message and a home link', async () => {
+  const originalByPath = [...appsByPathLength];
+  const envVar = 'TEST_UNSET_PRIVATE_DEMO_PASSWORD';
+  const injected = {
+    name: 'private-unset-demo',
+    title: 'private-unset-demo',
+    description: 'private-unset-demo',
+    path: '/private-unset-demo/',
+    visibility: 'private',
+    auth: { type: 'password', envVar },
+    dir: null,
+    available: false,
+  };
+  const previousSecret = process.env[envVar];
+  delete process.env[envVar];
+  appsByPathLength.splice(0, appsByPathLength.length, injected, ...originalByPath);
+  server.listen(0);
+  const port = server.address().port;
+
+  try {
+    const { res, body } = await request(port, '/private-unset-demo/');
+    assert.equal(res.statusCode, 503);
+    assert.match(res.headers['content-type'], /text\/html/);
+    assert.match(body, /This demo is not currently available\./);
+    assert.match(body, /href="\/"/);
+  } finally {
+    if (previousSecret === undefined) delete process.env[envVar];
+    else process.env[envVar] = previousSecret;
+    appsByPathLength.splice(0, appsByPathLength.length, ...originalByPath);
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

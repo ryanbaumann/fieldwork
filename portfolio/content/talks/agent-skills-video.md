@@ -16,7 +16,7 @@ order: 2
 
 Retrieval tells an agent what is current. It does not teach the workflow an experienced platform engineer uses to complete the task.
 
-This demo introduces [Google Maps Platform Agent Skills](https://github.com/googlemaps/agent-skills): portable workflow modules for Web, Android, iOS, and Web Services. It shows the one-command install, the structure of a skill, and how skills work with retrieved platform context inside an agent session.
+This demo introduces [Google Maps Platform agent skills](https://github.com/googlemaps/agent-skills): portable workflow modules for Web, Android, iOS, and Web Services. It shows the one-command install, the structure of a skill, and how skills work with retrieved platform context inside an agent session.
 
 A skill makes the workflow versioned and installable. Retrieval supplies current facts; evals show whether the combination improves the task.
 

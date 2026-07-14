@@ -124,3 +124,25 @@ export function serveFromDir(baseDir, subPath, response, options = {}) {
   createReadStream(filePath).pipe(response);
   return true;
 }
+
+/**
+ * Serve a single known file (an exact path, not resolved against a request
+ * subPath) at an explicit status code. Used for serving the portfolio
+ * build's static `404.html` with a 404 status rather than the 200 that
+ * `serveFromDir` always sends. Returns true if a response was sent, false
+ * if the caller should fall through (file missing or is a directory).
+ */
+export function serveFileWithStatus(filePath, response, statusCode, options = {}) {
+  if (!existsSync(filePath)) return false;
+  const stat = statSync(filePath);
+  if (stat.isDirectory()) return false;
+
+  applySecurityHeaders(response);
+  response.writeHead(statusCode, {
+    'Content-Type': mimeTypeFor(filePath),
+    'Content-Length': stat.size,
+    'Cache-Control': options.cacheControl || 'no-store',
+  });
+  createReadStream(filePath).pipe(response);
+  return true;
+}
