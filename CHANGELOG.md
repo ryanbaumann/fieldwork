@@ -1,4 +1,9 @@
 # Changelog
+## 2026-07-13: Analytics, links, and CI/CD resilience
+
+- Fixed a persistent CI/CD deployment failure caused by strict case-sensitivity in Google Cloud IAM policies where the GitHub Actions WIF principal `attribute.repository/ryanbaumann/portfolio` (lowercase) was blocked by an uppercase `Portfolio` IAM binding.
+- Implemented global `target="_blank" rel="noopener noreferrer"` injection for all external links across the portfolio to improve browsing experience without manual authoring.
+- Injected the manual Google Analytics `gtag.js` setup into all site heads by default, using the `G-HVVM8H37P6` Measurement ID directly per request, while maintaining `localhost` tracking bypass for local development.
 
 ## 2026-07-13: Writer workflow and external-facing refinement
 

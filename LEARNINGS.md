@@ -105,6 +105,13 @@ Learning: In Google Cloud Workload Identity Federation, authenticating as a WIF 
 Evidence: The service account `github-actions-deployer` only allowed impersonation from `attribute.repository/ryanbaumann/trails.ninja`. Adding a new IAM policy binding for `attribute.repository/ryanbaumann/Portfolio` via `gcloud iam service-accounts add-iam-policy-binding` restored the GitHub Action's ability to impersonate the service account.
 Use next time: When renaming a repository that uses GCP WIF with Service Account Impersonation, you must update BOTH the WIF provider's attribute condition AND the Service Account's IAM policy bindings to allow the new mapped principal.
 
+## 2026-07-13: Case sensitivity in WIF Service Account IAM bindings blocks CI impersonation
+
+Context: After fixing the WIF attribute condition and IAM bindings to match the new `ryanbaumann/portfolio` repository name, the `google-github-actions/auth` step succeeded, but `gcloud builds submit` still failed with `Permission 'iam.serviceAccounts.getAccessToken' denied on resource`.
+Learning: Google Cloud IAM policies are strictly case-sensitive. While GitHub Actions might normalize repository names in some contexts, the actual token's `repository` claim and the Google Cloud IAM bindings evaluate strings exactly. The GitHub token presented the lowercase `ryanbaumann/portfolio`, but the Google Cloud service account policy was strictly bound to the uppercase `attribute.repository/ryanbaumann/Portfolio`.
+Evidence: Running `gcloud iam service-accounts get-iam-policy` showed the binding was explicitly for `attribute.repository/ryanbaumann/Portfolio`. Adding a new explicit binding for the lowercase `attribute.repository/ryanbaumann/portfolio` and ensuring the service account held `roles/iam.serviceAccountTokenCreator` resolved the permission denial immediately, allowing the CI/CD job to complete successfully.
+Use next time: When diagnosing Workload Identity Federation permission issues, always verify the exact case of the claims presented in the OIDC token against the exact case written in the IAM policy bindings. A mismatch in casing will result in a hard `PERMISSION_DENIED`.
+
 ## 2026-07-12: External planning docs need public access or exported assets
 
 Context: A public-readiness pass referenced a Google Doc for image and thumbnail source material.
