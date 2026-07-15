@@ -1,4 +1,4 @@
-# Ryan Baumann Portfolio: one site, one demo lab, real maps
+# Ryan Baumann's Portfolio site
 
 ![Ryan Baumann Portfolio homepage screenshot](portfolio/static/previews/portfolio.jpg)
 
