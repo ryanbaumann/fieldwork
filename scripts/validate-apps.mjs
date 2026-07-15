@@ -50,7 +50,8 @@ for (const app of apps) {
     const route = app.api.path || app.api.prefix;
     if (!GATEWAY_SERVER.includes(route)) fail(`${label}: declared gateway API is not registered in gateway/server.js (${route})`);
   }
-  const isHostedDemo = app.path !== '/' && app.name !== 'portfolio-writer';
+  const isExternal = app.path.startsWith('http');
+  const isHostedDemo = app.path !== '/' && app.name !== 'portfolio-writer' && !isExternal;
   if (isHostedDemo && app.path !== `/${app.name}/`) fail(`${label}: hosted demo path must be /${app.name}/`);
   if (isHostedDemo && !app.tags?.length) fail(`${label}: hosted demos need at least one tag`);
   if (app.source?.type === 'artifact') {

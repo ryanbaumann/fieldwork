@@ -766,7 +766,8 @@ function demoCard(demo) {
   const preview = demo.preview
     ? `<img class="demo-preview" src="${rebase(demo.preview)}" alt="Screenshot of ${escapeHtml(demo.title)}" loading="lazy" width="${previewSize.width}" height="${previewSize.height}" />`
     : '';
-  return `<a class="card demo-card" href="${rebase(demo.path)}" data-analytics-type="demo" data-analytics-id="${escapeHtml(demo.name)}">
+  const external = demo.path.startsWith('http');
+  return `<a class="card demo-card" href="${rebase(demo.path)}" data-analytics-type="demo" data-analytics-id="${escapeHtml(demo.name)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>
   ${preview}
   <div class="demo-body">
     <h3>${escapeHtml(demo.title)}</h3>
@@ -1029,13 +1030,14 @@ function buildHome(collections) {
   const selectedWork = ['code-assist', 'agent-skills', 'agentic-growth']
     .map((slug) => bySlug('work', slug)).filter(Boolean);
   const writingEntries = collections.writing.slice(0, 2);
-  const demosSection = demos.length
+  const homeDemos = demos.filter(d => !d.hideOnHome);
+  const demosSection = homeDemos.length
     ? `
 <section>
   ${sectionHeader('The lab', 'Working demos, public source', `${BASE}demos/`, 'All demos')}
   <p class="section-note">${escapeHtml(site.sectionIntros?.demos || '')}</p>
   <div class="grid demo-grid">
-    ${demos.map(demoCard).join('\n')}
+    ${homeDemos.map(demoCard).join('\n')}
   </div>
 </section>
 `
@@ -1075,16 +1077,16 @@ function buildHome(collections) {
 </section>
 
 <section>
+  ${sectionHeader('Field Notes', 'Ideas you can use', `${BASE}writing/`, 'All field notes')}
+  ${fieldNotesBody}
+</section>
+
+<section>
   ${sectionHeader('Selected work', 'Shipped tools, and the numbers behind them', `${BASE}work/`, 'All work')}
   <div class="grid home-work-grid">${selectedWork.map(workCard).join('\n')}</div>
 </section>
 
 ${demosSection}
-<section>
-  ${sectionHeader('Field Notes', 'Ideas you can use', `${BASE}writing/`, 'All field notes')}
-  ${fieldNotesBody}
-</section>
-
 <section class="build-section home-close">
   <div>
     <p class="eyebrow">Start a conversation</p>

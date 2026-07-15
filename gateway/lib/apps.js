@@ -100,7 +100,7 @@ export function loadApps(env = process.env) {
       path: routePath,
       dir,
       source,
-      available: Boolean(dir),
+      available: entry.source?.type === 'external' ? true : Boolean(dir),
       redirects: loadRedirects(dir),
     };
   });
@@ -126,10 +126,12 @@ export function validateManifestEntries(entries) {
     if (!NAME_PATTERN.test(entry.name || '')) throw new Error(`Invalid app name: ${entry.name || '(missing)'}`);
     if (names.has(entry.name)) throw new Error(`Duplicate app name: ${entry.name}`);
     names.add(entry.name);
-    if (typeof entry.path !== 'string' || (entry.path !== '/' && !APP_PATH_PATTERN.test(`${entry.path.replace(/\/+$/, '')}/`))) {
+    
+    const isExternal = entry.source?.type === 'external';
+    if (typeof entry.path !== 'string' || (!isExternal && entry.path !== '/' && !APP_PATH_PATTERN.test(`${entry.path.replace(/\/+$/, '')}/`))) {
       throw new Error(`Invalid path for app ${entry.name}.`);
     }
-    const path = entry.path === '/' ? '/' : `${entry.path.replace(/\/+$/, '')}/`;
+    const path = entry.path === '/' ? '/' : (isExternal ? entry.path : `${entry.path.replace(/\/+$/, '')}/`);
     if (paths.has(path)) throw new Error(`Duplicate app path: ${path}`);
     paths.add(path);
 
@@ -164,8 +166,8 @@ export function validateManifestEntries(entries) {
       throw new Error(`App ${entry.name} source_ref requires source_url.`);
     }
     const source = entry.source;
-    if (!source || !['workspace', 'artifact'].includes(source.type)) {
-      throw new Error(`App ${entry.name} requires source.type workspace or artifact.`);
+    if (!source || !['workspace', 'artifact', 'external'].includes(source.type)) {
+      throw new Error(`App ${entry.name} requires source.type workspace, artifact, or external.`);
     }
     if (source.type === 'workspace') {
       if (!RELATIVE_PATH_PATTERN.test(source.package || '') || !RELATIVE_PATH_PATTERN.test(source.output || '')) {
@@ -174,7 +176,7 @@ export function validateManifestEntries(entries) {
       if (entry.dev_build_dir !== `${source.package}/${source.output}`) {
         throw new Error(`App ${entry.name} dev_build_dir must match its workspace source.`);
       }
-    } else {
+    } else if (source.type === 'artifact') {
       if (entry.dev_build_dir !== undefined) throw new Error(`Artifact app ${entry.name} must not define dev_build_dir.`);
       if (typeof source.uri !== 'string' || !source.uri.startsWith('gs://') || source.uri.includes('?') || source.uri.includes('#')) {
         throw new Error(`Artifact app ${entry.name} requires a gs:// source URI.`);
@@ -182,6 +184,8 @@ export function validateManifestEntries(entries) {
       if (!SHA256_PATTERN.test(source.sha256 || '') || typeof source.release !== 'string' || !source.release) {
         throw new Error(`Artifact app ${entry.name} requires an immutable sha256 and release.`);
       }
+    } else if (source.type === 'external') {
+      if (!entry.path.startsWith('http')) throw new Error(`App ${entry.name} external path must start with http.`);
     }
     const api = entry.api || { type: 'none' };
     if (!['none', 'gateway', 'upstream'].includes(api.type)) throw new Error(`App ${entry.name} has an unsupported API type.`);
