@@ -1,0 +1,7 @@
+[allowlist]
+description = "Ignore mock API keys in reference docs and build artifacts"
+paths = [
+    '''\.agents/skills/.*''',
+    '''(.*/)?build/.*''',
+    '''(.*/)?dist/.*'''
+]

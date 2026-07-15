@@ -1,0 +1,49 @@
+{
+  "generator": "scripts/artifact-cards.mjs",
+  "model": null,
+  "rendering": "Deterministic SVG generated from checked-in labels and layout code",
+  "canvas": {
+    "width": 1200,
+    "height": 675,
+    "aspectRatio": "16:9"
+  },
+  "style": {
+    "background": "portfolio design-system background token",
+    "surface": "portfolio design-system surface token",
+    "ink": "portfolio design-system ink token",
+    "accent": "one restrained blue accent",
+    "motion": "none"
+  },
+  "visuals": [
+    {
+      "role": "agent-session essay header",
+      "output": "portfolio/static/img/writing/agent-session-header.svg",
+      "purpose": "Show developer intent moving through current context and workflow guidance to working code.",
+      "labels": ["Intent", "Current context", "Workflow", "Working code"]
+    },
+    {
+      "role": "agent-session inline diagnostic",
+      "output": "portfolio/static/img/writing/agent-session-diagnostic.svg",
+      "purpose": "Map each failure class to the platform layer that should change.",
+      "labels": ["Wrong fact", "Retrieval", "Wrong sequence", "Skill", "Wrong result", "Eval"]
+    },
+    {
+      "role": "evals essay header",
+      "output": "portfolio/static/img/writing/evals-header.svg",
+      "purpose": "Show quality as a comparison from field signal through a launch decision.",
+      "labels": ["Field signal", "Task", "Baseline", "Change", "Delta", "Decision"]
+    },
+    {
+      "role": "evals inline independent-check mechanism",
+      "output": "portfolio/static/img/writing/evals-independent-checks.svg",
+      "purpose": "Show deterministic checks and a separate grader informing trace review and a ship-or-hold decision.",
+      "labels": ["Agent output", "Deterministic checks", "Separate grader", "Trace review", "Ship or hold"]
+    }
+  ],
+  "socialCards": {
+    "generator": "scripts/social-cards.mjs",
+    "width": 1200,
+    "height": 627,
+    "sourceLedger": "portfolio/static/social/sources.json"
+  }
+}

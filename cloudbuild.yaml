@@ -1,0 +1,57 @@
+# Cloud Build config for the Ryan Baumann portfolio single-container image.
+#
+# Used by .github/workflows/deploy.yml. `gcloud builds submit --tag` cannot
+# forward Docker `--build-arg` values, so the build args the Dockerfile needs
+# (VITE_GMP_API_KEY, VITE_STRAVA_CLIENT_ID) are threaded through this config
+# via substitutions instead.
+#
+# These VITE_ values are inlined into the browser bundle at build time, so they
+# are public client config, not secrets — passing them as substitutions is fine.
+# True runtime secrets (STRAVA_CLIENT_SECRET, GMP_SERVER_API_KEY) are never
+# built into the image; they live on the Cloud Run service (see deploy.yml).
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'VITE_GMP_API_KEY=${_VITE_GMP_API_KEY}'
+      - '--build-arg'
+      - 'VITE_ISOCHRONES_GMP_API_KEY=${_VITE_ISOCHRONES_GMP_API_KEY}'
+      - '--build-arg'
+      - 'VITE_STRAVA_CLIENT_ID=${_VITE_STRAVA_CLIENT_ID}'
+      - '--build-arg'
+      - 'ANALYTICS_MEASUREMENT_ID=${_ANALYTICS_MEASUREMENT_ID}'
+      - '--tag'
+      - '${_IMAGE}'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        PRIVATE_ENVS="$$(docker run --rm --entrypoint node '${_IMAGE}' -e "const apps=require('/app/apps.json'); console.log(apps.filter(a=>a.source?.type==='artifact').map(a=>'-e '+a.auth.envVar+'=artifact-smoke-password').join(' '))")"
+        docker run --rm -d --network=cloudbuild --name=portfolio-private-smoke $$PRIVATE_ENVS '${_IMAGE}'
+        trap 'docker rm -f portfolio-private-smoke >/dev/null 2>&1 || true' EXIT
+        for attempt in $$(seq 1 30); do
+          if docker run --rm --network=cloudbuild curlimages/curl:8.12.1 --fail --silent http://portfolio-private-smoke:8080/healthz >/dev/null; then break; fi
+          if [ "$$attempt" -eq 30 ]; then docker logs portfolio-private-smoke; exit 1; fi
+          sleep 1
+        done
+        docker run --rm --network=cloudbuild -v /workspace:/workspace -w /workspace \
+          -e BASE_URL=http://portfolio-private-smoke:8080 -e LABS_SMOKE_PASSWORD=artifact-smoke-password \
+          node:20-slim node scripts/smoke-private-artifacts.mjs
+
+images:
+  - '${_IMAGE}'
+
+substitutions:
+  _IMAGE: ''
+  _VITE_GMP_API_KEY: ''
+  _VITE_ISOCHRONES_GMP_API_KEY: ''
+  _VITE_STRAVA_CLIENT_ID: ''
+  _ANALYTICS_MEASUREMENT_ID: ''
+
+options:
+  logging: CLOUD_LOGGING_ONLY

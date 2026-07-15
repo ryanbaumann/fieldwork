@@ -1,0 +1,34 @@
+{
+  "name": "strava-3d-explorer",
+  "private": true,
+  "type": "module",
+  "description": "Strava 3D Route Explorer using Google Maps Platform Photorealistic 3D maps.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "test": "vitest run test/",
+    "e2e": "playwright test",
+    "lint": "eslint src/",
+    "deploy:static": "npm run build && printf \"Deploy the dist/ directory with your static hosting provider.\\n\"",
+    "deploy:gcs": "./scripts/deploy-gcs.sh",
+    "deploy:gcp": "./scripts/deploy-gcp.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/google.maps": "^3.65.1",
+    "eslint": "^10.7.0",
+    "tailwindcss": "^4.0.0",
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@googlemaps/js-api-loader": "^2.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

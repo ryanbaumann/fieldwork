@@ -1,0 +1,33 @@
+demos/aqi-map/node_modules
+demos/strava-explorer/node_modules
+node_modules/
+
+.env
+demos/strava-explorer/.env.development
+demos/strava-explorer/.env.production
+demos/strava-explorer/.env
+demos/isochrones/.env
+demos/aqi-map/.env
+
+# Ignore build artifacts
+demos/strava-explorer/build
+demos/strava-explorer/dist
+demos/isochrones/dist/
+demos/isochrones/node_modules
+demos/aqi-map/dist/
+portfolio/dist/
+portfolio/node_modules
+gateway/node_modules
+
+# scripts/build-local.mjs staging output (mirrors the Dockerfile's runtime
+# stage); regenerate with `node scripts/build-local.mjs`.
+/apps/
+/.labs-artifacts/
+gha-creds-*.json
+
+# OS files
+.DS_Store
+**/.DS_Store
+
+# Ignore large source images
+demos/strava-explorer/strava-explorer.png

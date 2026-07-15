@@ -1,0 +1,17 @@
+{
+  "name": "ryan-baumann-portfolio-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Zero-dependency Node gateway: Ryan Baumann portfolio hosting + secret-bearing API proxy.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "NODE_ENV=test node --test"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=20"
+  }
+}

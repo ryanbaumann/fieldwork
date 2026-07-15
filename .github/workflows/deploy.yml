@@ -1,0 +1,186 @@
+name: Deploy to Cloud Run
+
+# Single-container deploy (see docs/ARCHITECTURE.md). This replaces the
+# previous two-part deploy (GCS bucket for strava-explorer's static build +
+# a separate Cloud Run OAuth broker): the gateway and every app's static
+# build now ship in one image, built with Cloud Build and deployed to one
+# Cloud Run service. There is no GCS step anymore.
+#
+# Runtime secrets (STRAVA_CLIENT_SECRET, GMP_SERVER_API_KEY, RESEND_API_KEY, GEMINI_API_KEY,
+# CONTACT_TO_EMAIL, PORTFOLIO_WRITER_PASSWORD, GITHUB_CONTENT_TOKEN) and public
+# config (STRAVA_CLIENT_ID) are set once on the Cloud Run
+# service, not passed through this workflow on every deploy — see the
+# comment above the `gcloud run deploy` step for the one-time setup
+# command. This workflow deliberately never passes a `VITE_*SECRET*`
+# build arg: Vite inlines every `VITE_` value into the browser bundle, so a
+# client secret passed that way would leak to every visitor.
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Rebuild immutable static output so due publishAt timestamps go live.
+    - cron: '17 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    name: Build and deploy Ryan Baumann Portfolio
+    runs-on: ubuntu-latest
+    if: github.repository == 'ryanbaumann/Portfolio' || github.repository == 'ryanbaumann/portfolio'
+    concurrency:
+      group: "deploy"
+      cancel-in-progress: false
+
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Required for Workload Identity Federation
+
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Preflight config check
+        run: |
+          MISSING=0
+          if [ -z "${{ vars.GCP_PROJECT_ID }}" ]; then
+            echo "::error::Missing required repository variable: GCP_PROJECT_ID"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.GCP_WIF_PROVIDER }}" ]; then
+            echo "::error::Missing required repository secret: GCP_WIF_PROVIDER"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.GCP_SA_EMAIL }}" ]; then
+            echo "::error::Missing required repository secret: GCP_SA_EMAIL"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.VITE_GMP_API_KEY }}" ]; then
+            echo "::error::Missing required repository secret: VITE_GMP_API_KEY"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.VITE_ISOCHRONES_GMP_API_KEY }}" ]; then
+            echo "::error::Missing required repository secret: VITE_ISOCHRONES_GMP_API_KEY"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.VITE_STRAVA_CLIENT_ID }}" ]; then
+            echo "::error::Missing required repository secret: VITE_STRAVA_CLIENT_ID"
+            MISSING=1
+          fi
+          if [ "$MISSING" -eq 1 ]; then
+            echo "Preflight check failed: Missing required configuration."
+            echo ""
+            echo "Ensure the following runtime secrets are also configured directly on the Cloud Run service:"
+            echo "- STRAVA_CLIENT_SECRET"
+            echo "- GMP_SERVER_API_KEY"
+            echo "- RESEND_API_KEY (optional)"
+            echo "- GEMINI_API_KEY (optional)"
+            echo "- CONTACT_TO_EMAIL (optional)"
+            echo "- PORTFOLIO_WRITER_PASSWORD (required for /writer/)"
+            echo "- GITHUB_CONTENT_TOKEN (required for writer publishing)"
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Fetch checksum-pinned private lab artifacts
+        run: npm run labs:fetch -- --required && npm run labs:scan
+
+      - name: Build image with Cloud Build
+        run: |
+          set -euo pipefail
+          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/trails-ninja/app:${GITHUB_SHA}"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          # `gcloud builds submit --tag` can't forward Docker --build-arg values,
+          # so the VITE_* build args are threaded through cloudbuild.yaml via
+          # substitutions instead (see that file's header comment).
+          gcloud builds submit --project "$GCP_PROJECT_ID" --config cloudbuild.yaml \
+            --substitutions=_IMAGE="$IMAGE",_VITE_GMP_API_KEY="${{ secrets.VITE_GMP_API_KEY }}",_VITE_ISOCHRONES_GMP_API_KEY="${{ secrets.VITE_ISOCHRONES_GMP_API_KEY }}",_VITE_STRAVA_CLIENT_ID="${{ secrets.VITE_STRAVA_CLIENT_ID }}",_ANALYTICS_MEASUREMENT_ID="${{ vars.ANALYTICS_MEASUREMENT_ID }}" .
+
+      - name: Deploy to Cloud Run
+        run: |
+          set -euo pipefail
+          # --min-instances 0 scales down to zero when idle to minimize costs.
+          # --cpu-boost temporarily allocates extra CPU during startup to keep cold starts snappy.
+          gcloud run deploy trails-ninja \
+            --project "$GCP_PROJECT_ID" \
+            --image "$IMAGE" \
+            --region "$GCP_REGION" \
+            --allow-unauthenticated \
+            --port 8080 \
+            --min-instances 0 \
+            --cpu-boost
+
+          # Runtime env vars/secrets persist on the Cloud Run service across
+          # revisions, so they are set once by hand (not on every deploy).
+          # First-time setup, after creating the secrets in Secret Manager:
+          #
+          #   gcloud run services update trails-ninja \
+          #     --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+          #     --update-secrets=STRAVA_CLIENT_SECRET=strava-client-secret:latest \
+          #     --update-secrets=GMP_SERVER_API_KEY=gmp-server-api-key:latest \
+          #     --update-secrets=RESEND_API_KEY=resend-api-key:latest \
+          #     --update-secrets=GEMINI_API_KEY=gemini-api-key:latest \
+          #     --update-secrets=CONTACT_TO_EMAIL=contact-to-email:latest \
+          #     --update-secrets=PORTFOLIO_WRITER_PASSWORD=portfolio-writer-password:latest \
+          #     --update-secrets=GITHUB_CONTENT_TOKEN=github-content-token:latest \
+          #     --set-env-vars=STRAVA_CLIENT_ID=<your Strava app's client id>,CONTACT_FROM_EMAIL=<verified sender>
+          #
+          # STRAVA_CLIENT_ID isn't secret on its own (it's public in the
+          # OAuth authorize URL), so plain --set-env-vars is fine for it.
+          # Everything else should be a Secret Manager reference via
+          # --update-secrets, never a literal value in this workflow.
+
+      - name: Verify Cloud Run runtime configuration
+        run: |
+          set -euo pipefail
+          SERVICE_JSON="$(mktemp)"
+          gcloud run services describe trails-ninja \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --format=json > "$SERVICE_JSON"
+          node - "$SERVICE_JSON" <<'NODE'
+          const { readFileSync } = require('node:fs');
+          const service = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+          const apps = JSON.parse(readFileSync('apps.json', 'utf8'));
+          const configured = new Set(
+            (service.spec?.template?.spec?.containers?.[0]?.env || []).map((entry) => entry.name),
+          );
+          const required = new Set([
+            'STRAVA_CLIENT_ID',
+            'STRAVA_CLIENT_SECRET',
+            'GMP_SERVER_API_KEY',
+            'GITHUB_CONTENT_TOKEN',
+          ]);
+          for (const app of apps) {
+            if (app.auth?.envVar) required.add(app.auth.envVar);
+            if (app.api?.type === 'upstream') {
+              required.add(app.api.originEnv);
+              required.add(app.api.audienceEnv);
+            }
+          }
+          const missing = [...required].filter((name) => !configured.has(name));
+          if (missing.length) {
+            console.error(`::error::Cloud Run is missing runtime configuration: ${missing.join(', ')}`);
+            process.exit(1);
+          }
+          console.log('Cloud Run runtime variable names are configured; values were not read or printed.');
+          NODE
+
+      - name: Post-deploy smoke test
+        env:
+          BASE_URL: https://www.ryanbaumann-portfolio.com
+        run: node scripts/smoke-production.mjs
