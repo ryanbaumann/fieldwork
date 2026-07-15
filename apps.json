@@ -1,0 +1,87 @@
+[
+  {
+    "name": "portfolio",
+    "title": "Ryan Baumann",
+    "description": "Home: work, writing, talks, and the demo lab.",
+    "path": "/",
+    "dev_build_dir": "portfolio/dist",
+    "source": { "type": "workspace", "package": "portfolio", "output": "dist" },
+    "api": { "type": "gateway", "path": "/api/contact" },
+    "providers": ["resend"],
+    "tags": [],
+    "preview": "/previews/portfolio.jpg"
+  },
+  {
+    "name": "portfolio-writer",
+    "title": "Writer preview",
+    "description": "Private draft previews and publishing controls.",
+    "path": "/writer/",
+    "dev_build_dir": "portfolio/writer-dist",
+    "source": { "type": "workspace", "package": "portfolio", "output": "writer-dist" },
+    "api": { "type": "gateway", "path": "/api/writer/publish" },
+    "visibility": "private",
+    "auth": {
+      "type": "password",
+      "envVar": "PORTFOLIO_WRITER_PASSWORD"
+    },
+    "tags": [],
+    "preview": null
+  },
+  {
+    "name": "strava-explorer",
+    "title": "Strava 3D Explorer",
+    "description": "Fly your Strava routes in Photorealistic 3D with follow-camera animation, an elevation profile, and your ride photos on the path.",
+    "path": "/strava-explorer/",
+    "dev_build_dir": "demos/strava-explorer/dist",
+    "source": { "type": "workspace", "package": "demos/strava-explorer", "output": "dist" },
+    "api": { "type": "gateway", "prefix": "/api/strava/" },
+    "providers": ["strava"],
+    "tags": ["strava", "3d-maps", "google-maps-platform"],
+    "preview": "/previews/strava-explorer.jpg"
+  },
+  {
+    "name": "infographic-agent",
+    "title": "Infographic Agent",
+    "description": "A portable skill that generates accurate, visually stunning infographics from text using Gemini Flash and Playwright.",
+    "path": "https://infographic-agent-gajikud3na-uc.a.run.app/",
+    "source": { "type": "external" },
+    "api": { "type": "none" },
+    "tags": ["gemini-api", "agents"],
+    "preview": "/previews/infographic-agent.jpg"
+  },
+  {
+    "name": "real-world-reasoning-agent",
+    "title": "Atlas - Real World Reasoning Agent",
+    "description": "An interactive map agent that solves real-world geo reasoning problems using Maps APIs.",
+    "path": "https://atlas-demo-gajikud3na-uw.a.run.app/",
+    "source": { "type": "external" },
+    "api": { "type": "none" },
+    "tags": ["gemini-api", "agents", "google-maps-platform"],
+    "preview": "/previews/real-world-reasoning-agent.jpg"
+  },
+  {
+    "name": "aqi-map",
+    "title": "Air Quality Map",
+    "description": "Live air-quality heatmap with click-to-inspect pollutant detail, straight from the Air Quality API.",
+    "path": "/aqi-map/",
+    "dev_build_dir": "demos/aqi-map/dist",
+    "source": { "type": "workspace", "package": "demos/aqi-map", "output": "dist" },
+    "api": { "type": "none" },
+    "tags": ["air-quality", "google-maps-platform"],
+    "preview": "/previews/aqi-map.jpg",
+    "hideOnHome": true
+  },
+  {
+    "name": "isochrones",
+    "title": "Isochrones",
+    "description": "How far can you get in 10, 20, 30 minutes? Live-regenerating reachability bands for delivery, commute, and response planning.",
+    "path": "/isochrones/",
+    "dev_build_dir": "demos/isochrones/dist",
+    "source": { "type": "workspace", "package": "demos/isochrones", "output": "dist" },
+    "api": { "type": "gateway", "path": "/api/isochrones" },
+    "providers": ["isochrones"],
+    "tags": ["isochrones", "routing", "google-maps-platform"],
+    "preview": "/previews/isochrones.jpg",
+    "hideOnHome": true
+  }
+]

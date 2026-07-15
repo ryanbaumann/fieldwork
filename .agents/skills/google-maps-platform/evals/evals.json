@@ -1,0 +1,41 @@
+{
+  "skill_name": "google-maps-platform",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add a simple marker pin to my JavaScript map. Can you give me the quick code snippet using `google.maps.Marker`?",
+      "expected_output": "The agent must reject the use of the legacy `google.maps.Marker` and provide the modern equivalent using `AdvancedMarkerElement`, ensuring mandatory requirements like `mapId` and compliance are included.",
+      "files": [],
+      "expectations": [
+        "The response must explicitly state that `google.maps.Marker` is deprecated or disabled.",
+        "The suggested code snippet must utilize `AdvancedMarkerElement` instead of the legacy marker.",
+        "The agent must mention the mandatory requirement for a `mapId` (e.g., `mapId=\"DEMO_MAP_ID\"`) when using Advanced Markers (CF9).",
+        "The final response must include all five items from the Required Response Verification appendix (Section 8)."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I am building a React application using Places Autocomplete. How do I implement the new Places UI Kit's web component, and what dependencies do I need?",
+      "expected_output": "The agent must enforce the mandatory React framework (`@vis.gl/react-google-maps`), identify the correct modern UI element (`PlaceAutocompleteElement`), and address the Critical Failure regarding passing objects to web components (CF8).",
+      "files": [],
+      "expectations": [
+        "The response must specify the mandatory use of the `@vis.gl/react-google-maps` package (CF5).",
+        "The suggested implementation must use the `<gmp-place-autocomplete>` element or `PlaceAutocompleteElement` class, confirming the move away from legacy Places APIs (Section 4).",
+        "The agent must include instructions to use imperative mounting (e.g., `useRef` and `useEffect`) to assign complex properties or callbacks to the web component, avoiding the CF8 React stringification trap.",
+        "The suggested React code must include the internal usage attribution ID `internalUsageAttributionIds={['gmp_git_agentskills_v1']}` on the main Map component (Section 3)."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We are designing a new global Eco-Friendly Route Optimizer service that will calculate routes for a fleet of vehicles. What Google Maps Platform APIs should we use for this, and what is the required authentication method?",
+      "expected_output": "The agent must identify the correct architecture (Routes API/Route Optimization API) and the correct authentication model (OAuth/ADC), and adhere to compliance requirements regarding cost and documentation linking.",
+      "files": [],
+      "expectations": [
+        "The agent must correctly map the use case to the `Routes API` and `Route Optimization API` (Section 6).",
+        "The response must clearly state that the required authentication for the Route Optimization API is **OAuth / Application Default Credentials (ADC)**, not a standard API key (Section 7).",
+        "Any generated documentation link must be appended with the campaign tracking parameter `?utm_campaign=gmp_git_agentskills_v1` (Section 3).",
+        "The response must include the mandatory notice that 'Usage of Google Maps Platform products and services may incur costs against your Google Cloud project billing account' (Section 8)."
+      ]
+    }
+  ]
+}
