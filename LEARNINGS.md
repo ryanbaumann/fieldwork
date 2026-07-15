@@ -222,3 +222,10 @@ Context: The DevX essay visual pass required Gemini 3.1 Flash Image at 1K with h
 Learning: Model support and client-library support can land at different times. Feature-detect optional SDK fields, and use the official REST request shape when a required generation setting is supported by the model but absent from the installed client.
 Evidence: Compatibility helpers keep the infographic skill runnable on the current SDK, while the successful final image requests used `imageConfig.imageSize: "1K"` and `thinkingConfig.thinkingLevel: "high"` through the Gemini API.
 Use next time: Confirm required image settings against the live client types before a render loop. Archive the exact model, request configuration, prompt, and uncropped source beside the finished asset.
+
+## 2026-07-15: Content quality needs separate deterministic and judgment gates
+
+Context: The DevX essay passed copy, redirect, and visual review, but an independent final check still found JPEG bytes stored behind a `.png` extension after the composition itself looked complete.
+Learning: A polished render cannot prove its file contract, and a green build cannot prove voice, causality, or taste. Public content needs deterministic checks for facts that tools can establish, plus independent reviewers for copy, claims, URL ownership, and visual judgment.
+Evidence: File-signature inspection caught the mislabeled social source; build and HTTP checks proved canonicals and 308 aliases; desktop/mobile captures exposed the actual reading experience; separate reviewers found issues the maker pass missed.
+Use next time: Run the `portfolio-review` maker/checker loop for every publishable change. Inventory claims and assets, verify mechanically first, split independent review by surface, correct one focused set of findings, and stop within three rounds or ask Ryan to decide.

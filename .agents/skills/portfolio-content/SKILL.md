@@ -67,6 +67,8 @@ Write asset-specific alt text for each. Do not reuse a generic portfolio preview
 
 ## Verify
 
+Run the `portfolio-review` skill before publication. Its claim, link, canonical, redirect, image, metadata, browser, and independent-review gates are required in addition to the build commands below.
+
 ```bash
 node build.mjs   # prints the page count
 BASE_PATH=/writer/ PORTFOLIO_WRITER_MODE=true PORTFOLIO_DIST_DIR=writer-dist node build.mjs
