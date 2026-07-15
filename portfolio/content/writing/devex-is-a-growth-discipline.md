@@ -18,7 +18,7 @@ order: 1
 
 DevX is a growth discipline. The job is not to publish more documentation. The job is to find the friction that stops a builder, fix it in the product or experience, put that fix where people work, and prove that it improved an outcome.
 
-From March 2025 to March 2026, our Google Maps Platform open-source client libraries grew unique active users 300% and API engagement approximately 200%. During that period, I led the team's client-library and AI distribution strategy across React, Compose, AI Studio, Lovable, and Replit. We treated product, distribution, and measurement as one system without confusing presence in a workflow with proof of adoption.
+Between early 2025 and 2026, our open-source ecosystem grew unique active users 300% and API engagement approximately 200%. During that period, I helped align our distribution strategy across major UI frameworks and AI agent platforms. We treated product, distribution, and measurement as one system without confusing presence in a workflow with proof of adoption.
 
 ## Own the friction
 

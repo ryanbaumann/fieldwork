@@ -63,18 +63,18 @@ async function main() {
       const response = await fetch(pageUrl);
       const html = await response.text();
       if (!response.ok || !response.headers.get('content-type')?.includes('text/html')) throw new Error(`returned ${response.status} ${response.headers.get('content-type')}`);
+      
       if (app.source?.type !== 'external') {
         servedText.push(html);
       }
+
       for (const asset of localAssets(html)) {
         const assetUrl = new URL(asset, pageUrl);
         const assetResponse = await fetch(assetUrl);
         if (!assetResponse.ok) throw new Error(`${assetUrl.pathname} returned ${assetResponse.status}`);
-        if (/\.(?:js|css|json|svg)$/i.test(assetUrl.pathname)) {
-          const text = await assetResponse.text();
-          if (app.source?.type !== 'external') {
-            servedText.push(text);
-          }
+        
+        if (app.source?.type !== 'external' && /\.(?:js|css|json|svg)$/i.test(assetUrl.pathname)) {
+          servedText.push(await assetResponse.text());
         }
       }
     });

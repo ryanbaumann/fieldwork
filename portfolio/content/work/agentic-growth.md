@@ -3,13 +3,13 @@ title: OSS client libraries grew active reach 300% in one year
 org: Google
 role: Open-source and distribution lead
 period: 2024 – present
-summary: From March 2025 to March 2026, our open-source client libraries grew unique active users 300% and API engagement approximately 200%.
+summary: Between early 2025 and 2026, our open-source ecosystem grew unique active users 300% and API engagement approximately 200%.
 tags: ["growth", "distribution", "open source"]
 image: /img/work/agentic-growth.svg
 imageAlt: Panel listing the distribution surfaces, AI Studio, Replit, and Lovable, above the react-google-maps download stat
 socialImage: /social/work-agentic-growth.png
 shareTitle: OSS Client-Library Growth
-shareSummary: From March 2025 to March 2026, our open-source client libraries grew unique active users 300%.
+shareSummary: Between early 2025 and 2026, our open-source ecosystem grew unique active users 300%.
 shareImageAlt: Open-source client-library growth beside the public react-google-maps download artifact.
 featured: true
 order: 2
@@ -21,7 +21,7 @@ Developer acquisition is moving into agent sessions. We needed to meet builders 
 
 ## What shipped
 
-From March 2025 to March 2026, our open-source client libraries grew unique active users 300% and API engagement approximately 200%. I led the team's client-library and AI distribution strategy across React, Compose, AI Studio, Lovable, and Replit.
+Between early 2025 and 2026, our open-source ecosystem grew unique active users 300% and API engagement approximately 200%. I helped align our distribution strategy across major UI frameworks and AI agent platforms.
 
 We treated open source, agent context, product integrations, and measurement as one system. Google Maps Platform also sponsors [@vis.gl/react-google-maps](https://www.npmjs.com/package/@vis.gl/react-google-maps), which has more than 1 million weekly downloads.
 
