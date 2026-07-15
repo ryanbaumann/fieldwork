@@ -637,11 +637,29 @@ def _normalize_to_png(data: bytes, mime: str):
         return data, m
 
 
+def _image_config(aspect: str, resolution: str):
+    """Use newer quality controls only when the installed SDK supports them."""
+    fields = getattr(types.ImageConfig, "model_fields", {})
+    kwargs = {"aspect_ratio": aspect}
+    if "image_size" in fields:
+        kwargs["image_size"] = resolution
+    else:
+        warn("Installed google-genai does not expose image_size; using the model's native resolution.")
+    return types.ImageConfig(**kwargs)
+
+
+def _thinking_config():
+    fields = getattr(types.ThinkingConfig, "model_fields", {})
+    if "thinking_level" in fields:
+        return types.ThinkingConfig(thinking_level="HIGH", include_thoughts=True)
+    return types.ThinkingConfig(thinking_budget=-1, include_thoughts=True)
+
+
 def generate_image(client, prompt: str, aspect: str, image_model: str, resolution: str):
     config = types.GenerateContentConfig(
         response_modalities=["TEXT", "IMAGE"],
-        image_config=types.ImageConfig(aspect_ratio=aspect, image_size=resolution),
-        thinking_config=types.ThinkingConfig(thinking_level="HIGH", include_thoughts=True),
+        image_config=_image_config(aspect, resolution),
+        thinking_config=_thinking_config(),
         http_options=types.HttpOptions(timeout=180_000),
     )
     info(f"🎨 Generating the infographic ({image_model}) at {resolution}...")
@@ -656,8 +674,8 @@ def generate_image(client, prompt: str, aspect: str, image_model: str, resolutio
 def refine_image(client, image_bytes: bytes, mime: str, instruction: str, aspect: str, image_model: str, resolution: str):
     config = types.GenerateContentConfig(
         response_modalities=["TEXT", "IMAGE"],
-        image_config=types.ImageConfig(aspect_ratio=aspect, image_size=resolution),
-        thinking_config=types.ThinkingConfig(thinking_level="HIGH", include_thoughts=True),
+        image_config=_image_config(aspect, resolution),
+        thinking_config=_thinking_config(),
         http_options=types.HttpOptions(timeout=180_000),
     )
     contents = [

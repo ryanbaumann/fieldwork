@@ -215,3 +215,10 @@ Context: The `portable-infographic-architect` script generated a very tall, vert
 Learning: Large language models default to vertical stacking (flex-direction: column) when generating HTML/CSS cards for infographics unless explicitly constrained otherwise. A long vertical image works on Pinterest but fails catastrophically as a hero image or embedded asset in an essay.
 Evidence: The initial DevX essay thumbnail was unreadably tall. Passing "WIDESCREEN LANDSCAPE 16:9 ASPECT RATIO REQUIRED. Arrange items horizontally side-by-side, NOT vertically." to the script's `--text` parameter successfully forced the LLM to generate a horizontal layout that fit perfectly within the blog design without stretching.
 Use next time: When using the `portable-infographic-architect` for blog thumbnails, hero images, or essay embeds, explicitly command the script to use a landscape/widescreen layout and horizontal item arrangement in the prompt. Do not leave the aspect ratio up to the model.
+
+## 2026-07-15: Image-generation settings can outpace an installed SDK
+
+Context: The DevX essay visual pass required Gemini 3.1 Flash Image at 1K with high thinking, but the locally installed Python SDK did not expose `image_size` or `thinking_level` in its typed configuration objects.
+Learning: Model support and client-library support can land at different times. Feature-detect optional SDK fields, and use the official REST request shape when a required generation setting is supported by the model but absent from the installed client.
+Evidence: Compatibility helpers keep the infographic skill runnable on the current SDK, while the successful final image requests used `imageConfig.imageSize: "1K"` and `thinkingConfig.thinkingLevel: "high"` through the Gemini API.
+Use next time: Confirm required image settings against the live client types before a render loop. Archive the exact model, request configuration, prompt, and uncropped source beside the finished asset.

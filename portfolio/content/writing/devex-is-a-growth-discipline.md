@@ -6,12 +6,12 @@ summary: DevX teams should own developer friction from discovery through distrib
 date: 2026-07-14
 updated: 2026-07-15
 canonical: https://www.ryanbaumann-portfolio.com/writing/devx-is-a-growth-discipline/
-image: /assets/devx-growth-loop.svg
-imageAlt: A continuous loop from finding developer friction to shipping a better experience, distributing it, and measuring the outcome.
+image: /assets/devx-growth-header.png
+imageAlt: A four-stage DevX loop moves from observed friction to a shipped fix, distribution in builder workflows, and rising measured outcomes.
 socialImage: /social/devx-growth-discipline.png
 shareTitle: DevX Is a Growth Discipline
 shareSummary: Own the friction, ship the fix, distribute the experience, and measure the outcome.
-shareImageAlt: The DevX growth loop: find friction, ship, distribute, and measure.
+shareImageAlt: DevX Is a Growth Discipline, with a product, distribution, and measurement loop beside observed user and API engagement growth.
 tags: ["developer experience", "growth", "distribution", "ai"]
 order: 1
 ---
@@ -42,6 +42,6 @@ Traditional feedback loops are slow. Interviews, support themes, and developer s
 
 Evals do not replace user research. An eval delta tests whether the experience can complete the task. Product telemetry shows whether builders found it, completed the journey, and returned. Direct research explains why people behaved that way. Together, those signals let a DevX team test a specific hypothesis without pretending one score explains the user.
 
-![An agentic evaluation loop from task to agent run to score to a ship-or-hold decision.](/img/work/agentic-evals.svg)
+![An agent evaluation loop moves from a representative task through an agent trace and rubric comparison to a ship-or-hold decision, then repeats using telemetry and research.](/assets/devx-eval-loop.png)
 
 This is the discipline: own the friction, solve it, improve the product, ship the better experience into the workflow, and measure the impact. Then run the loop again.

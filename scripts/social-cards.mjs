@@ -36,11 +36,8 @@ const CARDS = [
   },
   {
     file: 'devx-growth-discipline.png',
-    eyebrow: 'WRITING · DEVX',
-    title: 'DevX Is a Growth Discipline',
-    summary: 'Own the friction. Ship the fix. Distribute it. Measure the outcome.',
-    source: 'portfolio/static/assets/devx-growth-loop.svg',
-    layout: 'artifact',
+    source: 'portfolio/static/social/devx-growth-discipline-final-source.png',
+    layout: 'direct',
   },
   {
     file: 'the-next-platform-interface-is-an-agent-session.png',
@@ -157,6 +154,13 @@ function imageDataUrl(path) {
 function cardHtml(spec) {
   const assetPath = resolve(ROOT, spec.source);
   const image = imageDataUrl(assetPath);
+  if (spec.layout === 'direct') {
+    return `<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html, body { width: ${WIDTH}px; height: ${HEIGHT}px; margin: 0; overflow: hidden; }
+  img { display: block; width: 100%; height: 100%; object-fit: cover; }
+</style></head><body><img src="${image}" alt=""></body></html>`;
+  }
   const titleSize = spec.title.length > 64 ? 50 : spec.title.length > 56 ? 56 : spec.title.length > 42 ? 62 : 70;
   const screenshot = spec.layout === 'screenshot';
 
