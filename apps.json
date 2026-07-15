@@ -40,6 +40,26 @@
     "preview": "/previews/strava-explorer.jpg"
   },
   {
+    "name": "infographic-agent",
+    "title": "Infographic Agent",
+    "description": "A portable skill that generates accurate, visually stunning infographics from text using Gemini Flash and Playwright.",
+    "path": "https://github.com/ryanbaumann/infographic-agent",
+    "source": { "type": "external" },
+    "api": { "type": "none" },
+    "tags": ["gemini-api", "agents"],
+    "preview": null
+  },
+  {
+    "name": "real-world-reasoning-agent",
+    "title": "Real-World Reasoning Agent",
+    "description": "An interactive map agent that solves real-world geo reasoning problems using Maps APIs.",
+    "path": "https://github.com/ryanbaumann/unlimited-maps-demo",
+    "source": { "type": "external" },
+    "api": { "type": "none" },
+    "tags": ["gemini-api", "agents", "google-maps-platform"],
+    "preview": null
+  },
+  {
     "name": "aqi-map",
     "title": "Air Quality Map",
     "description": "Live air-quality heatmap with click-to-inspect pollutant detail, straight from the Air Quality API.",
@@ -48,7 +68,8 @@
     "source": { "type": "workspace", "package": "demos/aqi-map", "output": "dist" },
     "api": { "type": "none" },
     "tags": ["air-quality", "google-maps-platform"],
-    "preview": "/previews/aqi-map.jpg"
+    "preview": "/previews/aqi-map.jpg",
+    "hideOnHome": true
   },
   {
     "name": "isochrones",
@@ -60,6 +81,7 @@
     "api": { "type": "gateway", "path": "/api/isochrones" },
     "providers": ["isochrones"],
     "tags": ["isochrones", "routing", "google-maps-platform"],
-    "preview": "/previews/isochrones.jpg"
+    "preview": "/previews/isochrones.jpg",
+    "hideOnHome": true
   }
 ]

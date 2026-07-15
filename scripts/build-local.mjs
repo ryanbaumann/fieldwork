@@ -102,6 +102,7 @@ function loadApps() {
 }
 
 export function resolveAppPaths(entry, repoRoot = REPO_ROOT) {
+  if (entry.source?.type === 'external') return { dir: null, outDir: null };
   if (entry.source?.type === 'artifact') return { dir: null, outDir: join(repoRoot, '.labs-artifacts', entry.name) };
   const outDir = join(repoRoot, entry.dev_build_dir || join(entry.source.package, entry.source.output));
   return { dir: dirname(outDir), outDir };
@@ -136,6 +137,10 @@ export function buildTimeOverrides(app, env) {
 
 function buildApp(app, childEnv) {
   log(`--- ${app.name} ---`);
+  if (app.source?.type === 'external') {
+    log(`Skipping build for external link ${app.name}.`);
+    return;
+  }
   const destDir = join(APPS_OUT_DIR, app.name);
   if (app.source?.type === 'artifact') {
     rmSync(destDir, { recursive: true, force: true });
