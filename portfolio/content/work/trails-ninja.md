@@ -4,10 +4,14 @@ org: Personal
 role: Builder
 period: ongoing
 summary: This site plus its live demo apps. One container, no secrets shipped to the browser, and a reference architecture for agent-maintained portfolios.
-tags: ["side project", "self-hosted", "reference apps"]
+tags: ["developer experience", "open source", "reference apps"]
 links: [{"label": "The demos", "url": "/demos/"}, {"label": "Source", "url": "https://github.com/ryanbaumann/Portfolio"}]
 image: /previews/strava-explorer.jpg
 imageAlt: The Strava 3D Explorer flying a route through Chamonix in Photorealistic 3D, with photos anchored along the path
+socialImage: /social/work-demo-lab.png
+shareTitle: Ryan Baumann Demo Lab
+shareSummary: Working reference apps served from one Cloud Run container.
+shareImageAlt: The Strava 3D Explorer flying through a route in Photorealistic 3D.
 order: 12
 ---
 
@@ -25,4 +29,4 @@ These demos are where I test OAuth flows, API quotas, key restrictions, cold sta
 
 ## What I learned
 
-The repo is also a working example of what I ship at work: it's built to be maintained by agents. Skills encode the voice and design system, `npm run new:demo` wires a new demo in one command, CI smoke-tests every route without keys, and a changelog plus learning log keep every agent session building on the last one. The stack is deliberately boring: no framework, only small inline scripts for theme and consent-controlled analytics, one container, fast deploys. Boring is a feature.
+The repository is also built to be maintained by agents. Skills encode the voice and design system, `npm run labs:new` wires a new hosted demo in one command, CI smoke-tests every route without keys, and a changelog plus learning log carry durable context forward. The stack stays deliberately boring: no portfolio framework, only small inline scripts for theme and consent-controlled analytics, and one container. Boring is a feature.

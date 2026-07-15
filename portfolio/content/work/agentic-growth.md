@@ -7,6 +7,10 @@ summary: From March 2025 to March 2026, our open-source client libraries grew un
 tags: ["growth", "distribution", "open source"]
 image: /img/work/agentic-growth.svg
 imageAlt: Panel listing the distribution surfaces, AI Studio, Replit, and Lovable, above the react-google-maps download stat
+socialImage: /social/work-agentic-growth.png
+shareTitle: OSS Client-Library Growth
+shareSummary: From March 2025 to March 2026, our open-source client libraries grew unique active users 300%.
+shareImageAlt: Open-source client-library growth beside the public react-google-maps download artifact.
 featured: true
 order: 2
 ---
@@ -23,4 +27,4 @@ We treated open source, agent context, product integrations, and measurement as 
 
 ## What I learned
 
-Distribution, product integration, and open source work best as one measured system. Keep the metrics separate, credit the team, and do not confuse presence in a workflow with proof of adoption.
+Distribution, product integration, and open source work best as one measured system. Keep the metrics separate, credit the team, and do not confuse presence in a workflow with proof of adoption. That is the core of [DevX as a growth discipline](/writing/devx-is-a-growth-discipline/).

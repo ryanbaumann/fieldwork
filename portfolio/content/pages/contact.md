@@ -2,8 +2,10 @@
 title: Contact
 summary: Questions about builder platforms, developer tools, AI coding agents, speaking, or the work shown here.
 eyebrow: Contact
-image: /img/work/agentic-evals.svg
-imageAlt: An evaluation loop moving from developer task to agent run, scored result, and launch decision
+socialImage: /social/contact.png
+shareTitle: Start a Conversation With Ryan Baumann
+shareSummary: Discuss builder platforms, developer tools, AI coding agents, content, or speaking.
+shareImageAlt: Ryan Baumann beside an invitation to start with the thing you are trying to build.
 ---
 
 The most useful conversations start with the thing you are trying to build and the developer friction in the way.

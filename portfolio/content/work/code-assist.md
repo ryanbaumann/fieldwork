@@ -3,11 +3,15 @@ title: Google Maps Platform Code Assist MCP
 org: Google
 role: Product and engineering lead
 period: 2024 – present
-summary: Led the cross-functional team that turned field demand for accurate AI-generated Maps code into a Google-hosted MCP service grounded in official docs and samples.
-tags: ["mcp", "applied ai", "developer platforms"]
-links: [{"label": "Docs", "url": "https://developers.google.com/maps/ai/code-assist"}, {"label": "Launch blog", "url": "https://mapsplatform.google.com/resources/blog/announcing-code-assist-toolkit-bring-google-maps-platform-expertise-to-your-ai-coding-assistant/"}, {"label": "Video", "url": "https://youtu.be/L2V58kKIHvc"}]
+summary: A Google-hosted MCP service that gives AI coding agents current official Google Maps Platform documentation and samples.
+tags: ["developer experience", "ai", "developer tools"]
+links: [{"label": "Docs", "url": "https://developers.google.com/maps/ai/code-assist"}, {"label": "Launch blog", "url": "https://mapsplatform.google.com/resources/blog/announcing-code-assist-toolkit-bring-google-maps-platform-expertise-to-your-ai-coding-assistant/"}]
 image: /img/work/code-assist-docs.png
 imageAlt: Official Code Assist documentation showing its experimental status, MCP grounding, public sources, and retrieval tools
+socialImage: /social/work-code-assist.png
+shareTitle: Google Maps Platform Code Assist
+shareSummary: Current official platform context inside AI coding agents.
+shareImageAlt: Google Maps Platform Code Assist beside an official documentation capture.
 featured: true
 order: 1
 ---
@@ -18,7 +22,7 @@ Developers increasingly let their agents read the docs for them. When an AI gene
 
 ## What shipped
 
-I led the team that built and shipped Code Assist: an MCP server that grounds AI coding agents in official Google Maps Platform documentation, code samples, and architecture guides via retrieval. We took it from a GitHub alpha to a Google-hosted remote MCP service. It runs in Claude Code, Cursor, Antigravity, Gemini CLI, and any MCP client.
+I led the team that built and shipped [Code Assist](https://developers.google.com/maps/ai/code-assist): an MCP server that grounds AI coding agents in official Google Maps Platform documentation, code samples, and architecture guides through retrieval. We took it from a GitHub alpha to a Google-hosted remote MCP service that works with compatible MCP clients.
 
 With it connected, agents retrieve current official docs instead of relying only on training memory. That gives the agent current API surfaces, code samples, and architecture guidance inside the task.
 

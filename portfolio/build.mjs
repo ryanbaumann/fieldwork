@@ -471,7 +471,9 @@ function layout({ title, description, content, active = '', canonical, ogImage, 
 
   const resolvedCanonical = canonical || absoluteUrl('/');
   const resolvedImage = absoluteUrl(ogImage || site.defaultShareImage);
-  const resolvedImageAlt = escapeHtml(ogImageAlt || `${site.name} - ${site.role}`);
+  const resolvedImageAlt = escapeHtml(ogImage
+    ? (ogImageAlt || `${site.name} - ${site.role}`)
+    : (site.defaultShareImageAlt || `${site.name} - ${site.role}`));
   const resolvedShareTitle = shareTitle || title;
   const resolvedShareSummary = shareSummary || description;
   const resolvedOgType = ogType || 'website';
@@ -1101,7 +1103,7 @@ ${demosSection}
     content,
     canonical: absoluteUrl('/'),
     ogImage: site.defaultShareImage,
-    ogImageAlt: `${site.name} - ${site.role}`,
+    ogImageAlt: site.defaultShareImageAlt,
     jsonLd: [jsonLdHomePage(), jsonLdWebSite()],
   }));
 }
@@ -1175,11 +1177,11 @@ ${elsewhere.length ? `<div class="collection-group">
 }
 
 
-function pageImage(meta) {
+function pageImage(meta, extraClass = '') {
   if (!meta.image) return '';
   const imagePath = meta.image.startsWith('/') ? join(STATIC_DIR, meta.image.slice(1)) : join(CONTENT_DIR, 'pages', meta.image);
   const { width, height } = getImageDimensions(imagePath);
-  return `<img class="article-hero" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt)}" loading="lazy" width="${width}" height="${height}" />`;
+  return `<img class="article-hero${escapeHtml(extraClass)}" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt)}" loading="lazy" width="${width}" height="${height}" />`;
 }
 
 function resumePageContent(meta, body) {
@@ -1192,6 +1194,7 @@ function resumePageContent(meta, body) {
     </div>
     <p class="resume-meta">${escapeHtml(site.location)}<br /><a href="${site.links.linkedin}" target="_blank" rel="noopener noreferrer">LinkedIn</a> · <a href="${site.links.github}" target="_blank" rel="noopener noreferrer">GitHub</a></p>
   </div>
+  ${pageImage(meta, ' profile-portrait')}
   <div class="resume-body">${markdownToHtml(body)}</div>
 </section>`;
 }

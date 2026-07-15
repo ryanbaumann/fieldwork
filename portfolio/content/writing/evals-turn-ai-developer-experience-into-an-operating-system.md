@@ -4,14 +4,15 @@ noindex: true
 title: Evals Are How You Know an AI Developer Tool Got Better
 summary: Task-based evals show whether a context, tool, or prompt improved the developer's actual job.
 date: 2026-07-13
+updated: 2026-07-15
 canonical: https://www.ryanbaumann-portfolio.com/writing/evals-turn-ai-developer-experience-into-an-operating-system/
-image: /img/work/agentic-evals.svg
-imageAlt: An evaluation loop moving from developer task to agent run, scored result, and launch decision
+image: /img/writing/evals-header.svg
+imageAlt: A six-stage evaluation flow moves from field signal through a task, baseline, targeted change, measured delta, and launch decision.
 socialImage: /social/evals-turn-ai-developer-experience-into-an-operating-system.png
 shareTitle: Evals Are How You Know an AI Developer Tool Got Better
 shareSummary: Test whether a context, tool, or prompt improved the developer's actual job.
-shareImageAlt: Evals Are How You Know an AI Developer Tool Got Better beside an evaluation-loop artifact
-tags: ["evals", "ai developer experience", "developer tools"]
+shareImageAlt: Evals Are How You Know an AI Developer Tool Got Better beside a task-to-launch evaluation loop.
+tags: ["developer experience", "ai", "evals"]
 order: 3
 ---
 
@@ -51,6 +52,8 @@ The system proposing a change should not be the only system judging it. An optim
 Use deterministic checks where possible. Compile generated code. Validate required APIs and tool calls. Check that the result follows security constraints. Use a separate grader for behavior that needs judgment, then review failure traces directly.
 
 Trust deltas more than absolute scores. Model behavior, agent harnesses, and adaptive graders move. A stable baseline and a focused metric make the before-and-after comparison useful even when the surrounding system changes.
+
+![An agent output moves through deterministic checks and a separate grader before trace review informs a ship-or-hold decision.](/img/writing/evals-independent-checks.svg)
 
 ## Make the eval the shared quality gate
 

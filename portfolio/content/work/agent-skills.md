@@ -4,10 +4,14 @@ org: Google
 role: Launch and engineering lead
 period: 2025 – present
 summary: Portable skill modules that teach AI agents how to build with the platform across Web, Android, iOS, and Web Services. Installed with one command.
-tags: ["agent skills", "applied ai", "distribution"]
-links: [{"label": "GitHub", "url": "https://github.com/googlemaps/agent-skills"}, {"label": "Docs", "url": "https://developers.google.com/maps/ai/agent-skills"}, {"label": "Video", "url": "https://youtu.be/NEk37sPlgaY"}]
+tags: ["developer experience", "ai", "distribution"]
+links: [{"label": "GitHub", "url": "https://github.com/googlemaps/agent-skills"}, {"label": "Docs", "url": "https://developers.google.com/maps/ai/agent-skills"}]
 image: /img/work/agent-skills.svg
 imageAlt: Terminal panel showing the public one-line install command npx skills add googlemaps/agent-skills
+socialImage: /social/work-agent-skills.png
+shareTitle: Google Maps Platform Agent Skills
+shareSummary: Portable, tested workflows for AI coding agents.
+shareImageAlt: Google Maps Platform Agent Skills beside the public one-command installation artifact.
 featured: true
 order: 3
 ---
@@ -18,9 +22,9 @@ Grounded retrieval (Code Assist) tells an agent what's true. It doesn't teach an
 
 ## What shipped
 
-I led the team and strategy to ship and own end to end user reach outcomes of Google Maps Platform agent skills: portable modules for building across Web, Android, iOS, and Web Services. One command, `npx skills add googlemaps/agent-skills`, installs them in AI Studio, Antigravity, Claude Code, and Replit. The repo also works as a Gemini CLI extension and integrates with Lovable. Each skill is gated by evals before it ships.
+I led the team that launched Google Maps Platform agent skills: portable modules for building across Web, Android, iOS, and Web Services. One command, `npx skills add googlemaps/agent-skills`, installs them in AI Studio, Antigravity, Claude Code, and Replit. The repository also works as a Gemini CLI extension and integrates with Lovable. We use evals as a release gate for each skill.
 
-Skills and Code Assist run as one system: skills teach the workflow, the MCP server grounds the details in retrieved documentation.
+[Skills](https://developers.google.com/maps/ai/agent-skills) and [Code Assist](/work/code-assist/) run as one system. Skills teach the workflow. The MCP server grounds the details in retrieved documentation.
 
 ## What I learned
 

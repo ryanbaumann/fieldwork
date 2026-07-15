@@ -1,12 +1,16 @@
 ---
-title: Agentic Eval Suite & Agent Engine Optimization
+title: Agentic Eval Suite
 org: Google
 role: Strategy & engineering lead
 period: 2024 – present
-summary: Task-based evals that set the launch bar for the platform's AI context products, plus benchmarking of how agents build with the platform across engines.
-tags: ["evals", "context engineering", "growth"]
+summary: Task-based evals that benchmark AI context products against a no-context baseline and inform launch and roadmap decisions.
+tags: ["developer experience", "ai", "evals"]
 image: /img/work/agentic-evals.svg
 imageAlt: Panel showing the eval loop, from task to agent run to scored result to launch decision
+socialImage: /social/work-agentic-evals.png
+shareTitle: Agentic Eval Suite
+shareSummary: Task-based comparisons that turn AI developer-tool quality into a launch decision.
+shareImageAlt: Agentic Eval Suite beside a task-to-launch evaluation loop.
 featured: true
 order: 5
 ---
@@ -17,10 +21,8 @@ order: 5
 
 ## What shipped
 
-My team and I built the agentic eval suite for Google Maps Platform: task-based evaluations that measure grounded code-generation accuracy, tool-call behavior, token cost, and end-to-end task completion across agent harnesses and models. We benchmark context products against a no-context baseline and use the delta to make launch and roadmap decisions.
-
-I also started Agent Engine Optimization: benchmarking end-to-end developer workflows in Claude Code, Codex, and Antigravity, and working with model teams using evals, curated context, and signals from real developer usage.
+My team and I built task-based evals for Google Maps Platform. We benchmark launches against a no-context baseline and use the delta to inform launch and roadmap decisions. The same tasks let us compare retrieval, skills, and agent integrations against one developer job.
 
 ## What I learned
 
-Measurement turns developer experience investments into decisions. Once every piece of context has a baseline and a delta, you stop arguing about taste and put the effort where the number moves.
+Measurement turns developer experience investments into decisions. Once an evaluated change has a baseline and a delta, the team can put the effort where the result moves. The operating method starts with real tasks, not polished demos.

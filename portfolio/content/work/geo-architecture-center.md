@@ -4,10 +4,14 @@ org: Google
 role: Founder and principal author
 period: 2022 – present
 summary: A public catalog that turns repeated enterprise questions into reusable system patterns for Google Maps Platform.
-tags: ["technical writing", "solution architecture"]
+tags: ["developer experience", "architecture", "technical writing"]
 links: [{"label": "Architecture Center", "url": "https://developers.google.com/maps/architecture"}]
 image: /img/work/geo-architecture-center.svg
 imageAlt: Panel representing the Geo Architecture Center's public catalog of solution architectures
+socialImage: /social/work-geo-architecture-center.png
+shareTitle: Geo Architecture Center
+shareSummary: Reusable system patterns for repeated Google Maps Platform architecture questions.
+shareImageAlt: Geo Architecture Center beside its solution-architecture artifact card.
 order: 6
 ---
 

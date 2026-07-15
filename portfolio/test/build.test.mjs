@@ -37,6 +37,7 @@ function fixture() {
     siteUrl: 'https://example.com/',
     canonicalHost: 'example.com',
     defaultShareImage: '/share.svg',
+    defaultShareImageAlt: 'Test Person portfolio preview.',
   }));
   write(manifest, JSON.stringify([
     { name: 'portfolio', title: 'Test Person', description: 'Home', path: '/', dev_build_dir: 'portfolio/dist' },
@@ -197,6 +198,21 @@ test('build omits the analytics script entirely when no measurement id is config
   const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
   assert.doesNotMatch(home, /gtag\/js\?id="/);
   assert.doesNotMatch(home, /Google tag \(gtag\.js\)/);
+});
+
+test('default social images keep their real alt text and resume renders its portrait', () => {
+  const paths = fixture();
+  write(join(paths.staticDir, 'portrait.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460"></svg>');
+  write(join(paths.content, 'pages', 'privacy.md'), `---\ntitle: Privacy\nsummary: Privacy page\n---\nPrivacy details.`);
+  write(join(paths.content, 'pages', 'resume.md'), `---\ntitle: Resume\nsummary: Resume page\nimage: /portrait.svg\nimageAlt: Test Person headshot.\n---\nExperience.`);
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const privacy = readFileSync(join(paths.dist, 'privacy', 'index.html'), 'utf8');
+  const resume = readFileSync(join(paths.dist, 'resume', 'index.html'), 'utf8');
+  const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
+  assert.match(home, /<meta property="og:image:alt" content="Test Person portfolio preview\."/);
+  assert.match(privacy, /<meta property="og:image:alt" content="Test Person portfolio preview\."/);
+  assert.match(resume, /<img class="article-hero profile-portrait" src="\/portrait\.svg" alt="Test Person headshot\."/);
 });
 
 test('build writes a styled 404 page with a link home', () => {

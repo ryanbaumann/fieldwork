@@ -3,7 +3,11 @@ title: Resume
 summary: Selected work across builder platforms, developer tools, evals, open source, and AI coding agents.
 eyebrow: Experience
 image: /img/ryan-baumann-profile.jpg
-imageAlt: Ryan Baumann
+imageAlt: Headshot of Ryan Baumann wearing a blue shirt.
+socialImage: /social/resume.png
+shareTitle: Ryan Baumann Resume
+shareSummary: Selected leadership and hands-on work across developer platforms, tools, evals, open source, and AI coding agents.
+shareImageAlt: Ryan Baumann beside a summary of his Developer Experience Engineering work.
 ---
 
 I lead Developer Experience Engineering and product work for builder platforms. I turn repeated developer problems into shipped tools, evals, open-source libraries, and workflows for AI coding agents. At Google Maps Platform, recent work includes Code Assist, agent skills, agentic evals, architecture guidance, and open-source client libraries.

@@ -4,10 +4,14 @@ org: Mapbox
 role: Partnership & engineering lead
 period: 2018 – 2020
 summary: The OSS partnership that integrated Mapbox with the deck.gl and kepler.gl visualization ecosystem.
-tags: ["open source", "partnerships", "growth"]
-links: [{"label": "Launch post", "url": "https://blog.mapbox.com/launching-custom-layers-with-uber-2a235841a125"}, {"label": "deck.gl", "url": "https://github.com/visgl/deck.gl"}, {"label": "kepler.gl", "url": "https://github.com/keplergl/kepler.gl"}]
+tags: ["open source", "distribution", "partnerships"]
+links: [{"label": "deck.gl", "url": "https://github.com/visgl/deck.gl"}, {"label": "kepler.gl", "url": "https://github.com/keplergl/kepler.gl"}]
 image: /img/work/kepler-mapbox.jpg
 imageAlt: kepler.gl rendering trip data over a Mapbox satellite basemap of the San Francisco Bay Area
+socialImage: /social/work-mapbox-uber-deckgl.png
+shareTitle: Mapbox, deck.gl, and kepler.gl
+shareSummary: An open-source integration that reduced the work needed to combine the projects.
+shareImageAlt: kepler.gl trip data rendered over a Mapbox satellite basemap.
 order: 9
 ---
 

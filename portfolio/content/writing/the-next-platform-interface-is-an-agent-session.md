@@ -4,14 +4,15 @@ noindex: true
 title: The Next Platform Interface Is an Agent Session
 summary: Platforms need to ship context and workflows into the agent sessions where developers now make product decisions.
 date: 2026-07-13
+updated: 2026-07-15
 canonical: https://www.ryanbaumann-portfolio.com/writing/the-next-platform-interface-is-an-agent-session/
-image: /img/work/code-assist.svg
-imageAlt: Code Assist shown as an MCP server connecting AI coding agents to retrieved Google Maps Platform documentation
+image: /img/writing/agent-session-header.svg
+imageAlt: Developer intent moves through current platform context and workflow guidance to working code inside an agent session.
 socialImage: /social/the-next-platform-interface-is-an-agent-session.png
 shareTitle: The Next Platform Interface Is an Agent Session
 shareSummary: Ship context and workflows where developers make decisions.
-shareImageAlt: The Next Platform Interface Is an Agent Session beside a Code Assist artifact
-tags: ["agent experience", "developer platforms", "context engineering"]
+shareImageAlt: The Next Platform Interface Is an Agent Session beside a Code Assist retrieval artifact.
+tags: ["developer experience", "ai", "distribution"]
 order: 2
 ---
 
@@ -42,6 +43,8 @@ This creates a useful separation:
 3. Evals test whether the combined experience improves task completion.
 
 The separation matters because each layer fails differently. Missing context needs better retrieval or source material. A poor sequence of actions needs a better workflow. A confident but wrong result needs an eval case that makes the failure visible.
+
+![Three failure patterns map to three platform responses: a wrong fact needs retrieval, a wrong sequence needs a skill, and a wrong result needs an eval.](/img/writing/agent-session-diagnostic.svg)
 
 ## Distribution starts before the first API call
 

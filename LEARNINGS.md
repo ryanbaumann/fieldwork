@@ -1,5 +1,12 @@
 # Learnings
 
+## 2026-07-15: An editorial system needs contracts by content type
+
+Context: The DevX growth essay established strong copy, evidence, URL, social, and visual conventions, but applying its exact page shape everywhere would have forced decorative images onto utility flows and generic title cards onto evidence-heavy work.
+Learning: Reuse the quality contract, not one layout. Narrative pages need outcome-first copy, attributable claims, purposeful visuals, canonical ownership, and social metadata. Utility flows may omit decorative imagery. Deterministic generators should encode repeated dimensions and source attribution, while content-specific diagrams keep distinct jobs.
+Evidence: This pass corrected claims and dates across the corpus, normalized overlapping tags, added purposeful social cards for every work page, converted generated artifact cards to 16:9, gave two hosted drafts distinct header and inline diagrams, and added tests for default social alt text and the Resume portrait.
+Use next time: Start from the content type and reader action, apply the shared evidence and metadata gates, generate only visuals that explain something, and keep repeated dimensions, sources, and labels in checked-in generators or ledgers.
+
 ## 2026-07-15 — Cloud Build ignores nested markdown files due to recursive ignore pattern
 
 Context: Static site content pages (`/about/`, `/contact/`, and other work/writing detail pages) returned 404 in production, while running successfully locally and passing the local gateway unit/smoke tests.

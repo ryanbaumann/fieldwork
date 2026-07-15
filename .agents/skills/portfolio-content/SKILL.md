@@ -22,9 +22,13 @@ string. Common keys:
 | `org`, `role`, `period`, `tags`, `links` | work | Card + case-study header |
 | `date`, `external` | writing | `external: <url>` = outbound link, no page |
 | `slug`, `aliases` | detail pages | Pin the canonical slug and list old root-relative paths that must permanently redirect to it |
+| `image`, `imageAlt` | narrative pages | Purposeful visible image plus literal alt text |
+| `socialImage`, `shareTitle`, `shareSummary`, `shareImageAlt` | shareable pages | Dedicated 1200×627 social preview and its copy/alt contract |
 | `draft`, `noindex`, `publishAt` | writing | Drafts stay private to `/writer/`; `publishAt` is an explicit UTC timestamp gate |
 | `venue`, `type`, `links` | talks | Row metadata; `type` is free-form |
 | `eyebrow` | pages | Label above the page title |
+
+Keep tags reader-facing and reusable. Prefer the existing vocabulary: `developer experience`, `ai`, `growth`, `distribution`, `evals`, `open source`, `product`, `developer tools`, `architecture`, `research`, `maps`, and a small number of domain-specific terms. Use at most three tags unless a fourth materially improves discovery. Do not create a synonym such as `applied ai` or `agent experience` when an existing tag already carries the meaning.
 
 ## Where things go
 

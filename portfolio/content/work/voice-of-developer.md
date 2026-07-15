@@ -3,10 +3,14 @@ title: AI-Driven Voice of Developer
 org: Google
 role: Creator and program lead
 period: 2023 – present
-summary: An AI-driven product signal program that turns unstructured developer friction from Discord, Stack Overflow, issues, and support into ranked roadmap priorities.
-tags: ["product", "applied ai", "developer research"]
+summary: A product-signal program that groups repeated developer friction into evidence-backed roadmap opportunities.
+tags: ["developer experience", "product", "research"]
 image: /img/work/voice-of-developer.svg
 imageAlt: Panel showing developer signal sources flowing into ranked roadmap priorities
+socialImage: /social/work-voice-of-developer.png
+shareTitle: AI-Driven Voice of Developer
+shareSummary: Repeated developer friction turned into evidence-backed roadmap priorities.
+shareImageAlt: Developer signal sources flowing into ranked roadmap priorities.
 featured: true
 order: 4
 ---

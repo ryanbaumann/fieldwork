@@ -88,24 +88,24 @@ const CARDS = [
   },
   {
     file: 'talks/code-assist-video.svg',
-    eyebrow: 'VIDEO · GOOGLE MAPS PLATFORM',
-    title: 'Code Assist, live',
-    lines: ['grounded code generation in a real agent session'],
+    eyebrow: 'FIRESIDE CHAT · GOOGLE MAPS PLATFORM',
+    title: 'Grounding Agentic Solutions',
+    lines: ['trustworthy reasoning with grounded geographic context'],
     footer: 'youtu.be/L2V58kKIHvc',
   },
   {
     file: 'talks/agent-skills-video.svg',
-    eyebrow: 'VIDEO · GOOGLE MAPS PLATFORM',
-    title: 'Agent skills, introduced',
-    lines: ['production-ready platform code in one install'],
+    eyebrow: 'FIRESIDE CHAT · GOOGLE MAPS PLATFORM',
+    title: 'Build Maps With AI',
+    lines: ['current context · useful workflows · checked results'],
     footer: 'youtu.be/NEk37sPlgaY',
   },
   {
     file: 'writing/this-weeks-learnings.svg',
-    eyebrow: 'LINKEDIN SERIES',
-    title: '#ThisWeeksLearnings',
-    lines: ['what shipping taught me this week'],
-    footer: 'traces read · evals written · opinions revised',
+    eyebrow: 'LINKEDIN FIELD NOTES',
+    title: 'Ryan Baumann on LinkedIn',
+    lines: ['traces reviewed · evals written · products dogfooded'],
+    footer: 'linkedin.com/in/ryanbaumann',
   },
   {
     file: 'writing/vibing-with-maps.svg',
@@ -123,22 +123,60 @@ const CARDS = [
   },
 ];
 
+const FLOWS = [
+  {
+    file: 'writing/agent-session-header.svg',
+    eyebrow: 'PLATFORM INTERFACE',
+    lead: 'Developer intent becomes grounded action',
+    steps: ['Intent', 'Current context', 'Workflow', 'Working code'],
+    footer: 'inside the agent session',
+  },
+  {
+    file: 'writing/agent-session-diagnostic.svg',
+    eyebrow: 'READ THE FIRST FAILURE',
+    lead: 'Match the failure to the layer',
+    steps: ['Wrong fact\nRetrieval', 'Wrong sequence\nSkill', 'Wrong result\nEval'],
+    footer: 'fix one layer, then replay the same task',
+  },
+  {
+    file: 'writing/evals-header.svg',
+    eyebrow: 'QUALITY IS A COMPARISON',
+    lead: 'Measure the developer task, not the demo',
+    steps: ['Field signal', 'Task', 'Baseline', 'Change', 'Delta', 'Decision'],
+    footer: 'ship only when the evidence supports it',
+  },
+  {
+    file: 'writing/evals-independent-checks.svg',
+    eyebrow: 'INDEPENDENT EVALUATION',
+    lead: 'One output, separate checks',
+    steps: ['Agent output', 'Deterministic\nchecks', 'Separate\ngrader', 'Trace review', 'Ship or hold'],
+    footer: 'the optimizer is never its only judge',
+  },
+];
+
+const requestedFiles = new Set(process.argv.slice(2));
+const knownFiles = new Set([...CARDS, ...FLOWS].map(({ file }) => file));
+for (const file of requestedFiles) {
+  if (!knownFiles.has(file)) throw new Error(`Unknown artifact card: ${file}`);
+}
+const selected = ({ file }) => requestedFiles.size === 0 || requestedFiles.has(file);
+
 const escape = (t) => String(t).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
 function card({ eyebrow, title, lines, footer, mono }) {
-  const W = 960;
-  const H = 600;
+  const W = 1200;
+  const H = 675;
   const sans = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
   const monoStack = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
   const lineCount = lines.length;
   const bodyFont = mono ? monoStack : sans;
   
   // Starting Y for vertical centering (shifted slightly up)
-  const contentHeight = 40 /* eyebrow */ + 70 /* title */ + (lineCount * 55) /* lines */;
-  const startY = (H - contentHeight) / 2 - 10;
+  const contentHeight = 40 /* eyebrow */ + 76 /* title */ + (lineCount * 58) /* lines */;
+  const startY = (H - contentHeight) / 2 - 16;
   
   const body = lines
-    .map((line, i) => `<text class="body" x="80" y="${startY + 125 + i * 55}" text-anchor="start" font-family="${bodyFont}" font-size="${mono ? 28 : 34}">${escape(line)}</text>`)
+    .map((line, i) => `<text class="body" x="90" y="${startY + 135 + i * 58}" text-anchor="start" font-family="${bodyFont}" font-size="${mono ? 30 : 36}">${escape(line)}</text>`)
     .join('\n  ');
 
   // Exact tokens from style.css
@@ -182,21 +220,90 @@ function card({ eyebrow, title, lines, footer, mono }) {
   <rect class="border" x="0" y="0" width="${W}" height="${H}" fill="none" stroke-width="2"/>
 
   <!-- Content -->
-  <text class="eyebrow" x="80" y="${startY + 20}" text-anchor="start" font-family="${monoStack}" font-size="18" font-weight="700" letter-spacing="3">${escape(eyebrow)}</text>
-  <text class="title" x="80" y="${startY + 80}" text-anchor="start" font-family="${sans}" font-size="64" font-weight="750" letter-spacing="-2">${escape(title)}</text>
+  <text class="eyebrow" x="90" y="${startY + 20}" text-anchor="start" font-family="${monoStack}" font-size="19" font-weight="700" letter-spacing="3">${escape(eyebrow)}</text>
+  <text class="title" x="90" y="${startY + 88}" text-anchor="start" font-family="${sans}" font-size="70" font-weight="750" letter-spacing="-2">${escape(title)}</text>
   
   ${body}
   
   <!-- Footer -->
-  <line class="border" x1="80" y1="${H - 96}" x2="${W - 80}" y2="${H - 96}" stroke-width="2"/>
-  <text class="footer" x="80" y="${H - 54}" text-anchor="start" font-family="${monoStack}" font-size="20">${escape(footer)}</text>
+  <line class="border" x1="90" y1="${H - 104}" x2="${W - 90}" y2="${H - 104}" stroke-width="2"/>
+  <text class="footer" x="90" y="${H - 58}" text-anchor="start" font-family="${monoStack}" font-size="21">${escape(footer)}</text>
 </svg>
 `;
 }
 
-for (const spec of CARDS) {
+function flowDiagram({ eyebrow, lead, steps, footer }) {
+  const W = 1200;
+  const H = 675;
+  const columns = steps.length >= 5 ? 3 : 2;
+  const gap = columns === 3 ? 55 : 80;
+  const nodeWidth = columns === 3 ? 310 : 460;
+  const nodeHeight = 128;
+  const rowY = [235, 430];
+  const nodeFontSize = columns === 3 ? 34 : 40;
+  const sans = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+  const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+  const positions = steps.map((_, index) => {
+    const row = Math.floor(index / columns);
+    const rowStart = row * columns;
+    const count = Math.min(columns, steps.length - rowStart);
+    const rowWidth = count * nodeWidth + (count - 1) * gap;
+    return {
+      row,
+      x: (W - rowWidth) / 2 + (index - rowStart) * (nodeWidth + gap),
+      y: rowY[row],
+    };
+  });
+  const nodes = steps.map((step, index) => {
+    const { row, x, y } = positions[index];
+    const lines = step.split('\n');
+    const text = lines.map((line, lineIndex) => `<tspan x="${x + nodeWidth / 2}" dy="${lineIndex === 0 ? 0 : 40}">${escape(line)}</tspan>`).join('');
+    const next = positions[index + 1];
+    let arrow = '';
+    if (next?.row === row) {
+      arrow = `<path d="M ${x + nodeWidth + 8} ${y + nodeHeight / 2} H ${next.x - 12}" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>`;
+    } else if (next) {
+      arrow = `<path d="M ${x + nodeWidth / 2} ${y + nodeHeight + 8} C ${x + nodeWidth / 2} ${y + nodeHeight + 66}, ${next.x + nodeWidth / 2} ${next.y - 66}, ${next.x + nodeWidth / 2} ${next.y - 12}" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>`;
+    }
+    return `<g>
+      <rect x="${x}" y="${y}" width="${nodeWidth}" height="${nodeHeight}" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+      <circle cx="${x + 24}" cy="${y + 6}" r="18" fill="var(--accent)"/>
+      <text x="${x + 24}" y="${y + 13}" text-anchor="middle" font-family="${mono}" font-size="20" font-weight="700" fill="var(--surface)">${index + 1}</text>
+      <text x="${x + nodeWidth / 2}" y="${y + (lines.length === 1 ? 80 : 59)}" text-anchor="middle" font-family="${sans}" font-size="${nodeFontSize}" font-weight="700" fill="var(--ink)">${text}</text>${arrow ? `
+      ${arrow}` : ''}
+    </g>`;
+  }).join('\n  ');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escape(`${lead}: ${steps.join(', ')}`)}">
+  <style>
+    :root { --bg: #faf9f6; --surface: #ffffff; --ink: #111827; --faint: #5f6875; --line: #d9dde5; --accent: #3b82f6; --accent-ink: #2563eb; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }
+  </style>
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--line)" stroke-width="1" opacity="0.28"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+  </defs>
+  <rect width="${W}" height="${H}" fill="var(--bg)"/>
+  <rect width="${W}" height="${H}" fill="url(#grid)"/>
+  <rect width="${W}" height="8" fill="var(--accent)"/>
+  <text x="70" y="86" font-family="${mono}" font-size="19" font-weight="700" letter-spacing="3" fill="var(--accent-ink)">${escape(eyebrow)}</text>
+  <text x="70" y="155" font-family="${sans}" font-size="42" font-weight="750" letter-spacing="-1" fill="var(--ink)">${escape(lead)}</text>
+  ${nodes}
+  <text x="${W / 2}" y="630" text-anchor="middle" font-family="${mono}" font-size="30" fill="var(--faint)">${escape(footer)}</text>
+</svg>
+`;
+}
+
+for (const spec of CARDS.filter(selected)) {
   const path = join(OUT, spec.file);
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, card(spec));
+  console.log(`[artifact-cards] wrote portfolio/static/img/${spec.file}`);
+}
+
+for (const spec of FLOWS.filter(selected)) {
+  const path = join(OUT, spec.file);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, flowDiagram(spec));
   console.log(`[artifact-cards] wrote portfolio/static/img/${spec.file}`);
 }

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-15: Site-wide editorial and visual system
+
+- Applied the DevX growth essay's evidence-first voice across work, writing, talks, profile, resume, contact, and site-wide positioning without publishing existing drafts.
+- Removed or narrowed unsupported causal claims, corrected source-backed publication dates, replaced unstable destinations, normalized overlapping AI and developer-experience tags, and added primary links where claims rely on public artifacts.
+- Added dedicated 1200×627 social cards for every work detail page plus About, Resume, and Contact, with literal alt text and checked-in source attribution.
+- Regenerated factual artifact cards at 1200×675, added distinct thesis and mechanism diagrams for both hosted draft essays, and archived the deterministic visual specifications.
+- Fixed default social-image alt text on utility pages, rendered the declared portrait on Resume, and removed raw HTML that appeared as escaped source on the vis.gl talk page.
+
 ## 2026-07-15: Fix recursive markdown ignore in Cloud Build
 
 - Fixed a bug where `.gcloudignore` used a recursive `*.md` pattern, which blocked all portfolio content pages (`about.md`, `contact.md`, and other work/writing/talks markdown files) from being uploaded to Google Cloud Build.
