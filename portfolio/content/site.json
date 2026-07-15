@@ -3,14 +3,14 @@
   "role": "Developer Experience Engineering and product lead",
   "tagline": "BUILDER PLATFORMS \u00b7 DEVELOPER TOOLS \u00b7 AI CODING AGENTS",
   "location": "San Francisco, CA",
-  "heroHeadline": "I build growth systems for builder platforms",
+  "heroHeadline": "Builder platform AI growth",
   "profileHeadline": "Head of DevX Engineering, Google Maps Platform",
   "intro": "I lead Developer Experience Engineering and product work across tools, evals, open source, and the workflows where builders make decisions.",
   "heroStats": [
-    { "value": "Tripled", "label": "OSS Reach growth in one year" },
-    { "value": "1M+", "label": "Weekly downloads of client libraries" },
-    { "value": "15+", "label": "Years building dev platforms" },
-    { "value": "Launched", "label": "Code Assist & Agent Skills" }
+    { "value": "Tripled", "label": "OSS reach" },
+    { "value": "1M+", "label": "Weekly downloads" },
+    { "value": "15+ years", "label": "Platform experience" },
+    { "value": "Launched", "label": "Agent Skills" }
   ],
   "description": "Ryan Baumann leads Developer Experience Engineering and product work for builder platforms, with a focus on developer tools, evals, open source, and AI coding agents.",
   "aboutTeaser": "I lead Developer Experience Engineering and product work, and stay close to the code by reviewing traces, writing evals, and shipping reference apps.",
