@@ -184,6 +184,14 @@ const CARDS = [
     layout: 'artifact',
   },
   {
+    file: 'coding-agent-loop.png',
+    eyebrow: 'AGENT SCRIPTS · LOOP ENGINEERING',
+    title: 'Loop Engineering Coding Agent',
+    summary: 'Route work across a lean agent team, then verify the integrated result.',
+    source: 'portfolio/static/img/scripts/coding-agent-loop.svg',
+    layout: 'artifact',
+  },
+  {
     file: 'code-assist-video.png',
     eyebrow: 'FIRESIDE CHAT · GOOGLE MAPS PLATFORM',
     title: 'Grounding Agentic Solutions With Google Maps Platform',
