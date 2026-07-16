@@ -436,7 +436,7 @@ function loadCollection(name) {
       const raw = readFileSync(join(dir, file), 'utf8');
       const { meta, body } = parseFrontMatter(raw);
       const slug = meta.slug || fileSlug;
-      return { slug, sourceSlug: fileSlug, meta, body, raw };
+      return { slug, sourceSlug: fileSlug, meta, body, raw, collection: name };
     })
     .sort((a, b) => {
       const orderA = a.meta.order ?? Number.MAX_SAFE_INTEGER;
@@ -991,19 +991,32 @@ function detailPage(collection, entry, activeKey) {
 }
 
 function writerDashboard(entries) {
-  const unpublished = entries.filter((entry) => !isPublished(entry));
-  const rows = unpublished.map((entry) => {
-    const status = entry.meta.draft === true ? 'Draft' : `Scheduled ${entry.meta.publishAt}`;
-    return `<article class="writer-entry">
+  const grouped = { pages: [], writing: [], work: [], talks: [], scripts: [] };
+  for (const entry of entries) {
+    const col = entry.collection;
+    if (!grouped[col]) grouped[col] = [];
+    grouped[col].push(entry);
+  }
+
+  const rows = [];
+  for (const col of ['writing', 'work', 'talks', 'scripts', 'pages']) {
+    if (!grouped[col] || grouped[col].length === 0) continue;
+    rows.push(`<h2>${escapeHtml(col.charAt(0).toUpperCase() + col.slice(1))}</h2>`);
+    rows.push(grouped[col].map((entry) => {
+      const isPub = isPublished(entry);
+      const status = entry.meta.draft === true ? 'Draft' : (isPub ? 'Published' : `Scheduled ${entry.meta.publishAt}`);
+      const previewUrl = entry.collection === 'pages' ? `${BASE}${entry.slug}/` : `${BASE}${entry.collection}/${entry.slug}/`;
+      return `<article class="writer-entry">
   <div>
     <p class="eyebrow">${escapeHtml(status)}</p>
-    <h2><a href="${BASE}writing/${entry.slug}/">${escapeHtml(entry.meta.title)}</a></h2>
-    <p>${escapeHtml(entry.meta.summary)}</p>
-    <p class="writer-preview"><a href="${BASE}writing/${entry.slug}/">Open private preview</a></p>
+    <h2><a href="${previewUrl}">${escapeHtml(entry.meta.title)}</a></h2>
+    <p>${escapeHtml(entry.meta.summary || '')}</p>
+    <p class="writer-preview"><a href="${previewUrl}">Open private preview</a></p>
   </div>
   <details class="writer-edit">
     <summary>Edit and review</summary>
     <form class="writer-form" method="post" action="/api/writer/save">
+      <input type="hidden" name="collection" value="${escapeHtml(entry.collection)}" />
       <input type="hidden" name="sourceSlug" value="${escapeHtml(entry.sourceSlug)}" />
       <label>Source Markdown
         <textarea name="markdown" rows="18" required>${escapeHtml(entry.raw)}</textarea>
@@ -1011,6 +1024,7 @@ function writerDashboard(entries) {
       <button class="button" type="submit">Save draft</button>
     </form>
     <form class="writer-form writer-review" method="post" action="/api/writer/review">
+      <input type="hidden" name="collection" value="${escapeHtml(entry.collection)}" />
       <input type="hidden" name="sourceSlug" value="${escapeHtml(entry.sourceSlug)}" />
       <label>Note for the review agent <span>Optional. Tell the agent what changed or what feels uncertain.</span>
         <textarea name="comment" rows="4" maxlength="4000" placeholder="Check the opening claim and whether the examples support it."></textarea>
@@ -1022,6 +1036,7 @@ function writerDashboard(entries) {
   <details class="writer-publish">
     <summary>Publishing controls</summary>
     <form class="writer-form" method="post" action="/api/writer/publish" data-writer-form>
+      <input type="hidden" name="collection" value="${escapeHtml(entry.collection)}" />
       <input type="hidden" name="sourceSlug" value="${escapeHtml(entry.sourceSlug)}" />
       <input type="hidden" name="publishAt" value="${escapeHtml(entry.meta.publishAt || '')}" />
       <label>Publish time in your timezone
@@ -1035,14 +1050,15 @@ function writerDashboard(entries) {
     </form>
   </details>
 </article>`;
-  }).join('\n');
+    }).join('\n'));
+  }
 
   const content = `<section class="writer-dashboard">
   <p class="eyebrow">Private publishing</p>
   <h1>Release dashboard</h1>
   <p class="lede">Edit a draft, save it, ask an agent for a structured review, then publish only when the preview is ready. Every save creates a focused commit on <code>main</code>; the next deploy shows the iteration here.</p>
   <p class="writer-status" hidden role="status"></p>
-  ${rows || '<p class="empty-state">No drafts or scheduled essays.</p>'}
+  ${rows.length > 0 ? rows.join('\n') : '<p class="empty-state">No content found.</p>'}
 </section>
 <script>(()=>{const params=new URLSearchParams(location.search);const changed=params.get('updated')||params.get('saved');const status=document.querySelector('.writer-status');if(changed&&status){status.textContent='Saved '+changed+'. GitHub is starting the next deploy.';status.hidden=false}const review=params.get('review');const issue=params.get('issue');if(review&&status){status.replaceChildren('Review requested for '+review+'. ');if(issue){const link=document.createElement('a');link.href=issue;link.textContent='Open review request';link.rel='noopener';status.append(link)}status.hidden=false}const localValue=(iso)=>{if(!iso)return'';const d=new Date(iso);const part=(value)=>String(value).padStart(2,'0');return d.getFullYear()+'-'+part(d.getMonth()+1)+'-'+part(d.getDate())+'T'+part(d.getHours())+':'+part(d.getMinutes())};document.querySelectorAll('[data-writer-form]').forEach((form)=>{const field=form.elements.publishAtLocal;field.value=localValue(field.dataset.publishAt);form.addEventListener('submit',(event)=>{const action=event.submitter?.value;if(action==='publish-now'&&!window.confirm('Publish this essay now? This commits directly to the publishing branch.')){event.preventDefault();return}if(action!=='schedule')return;const local=field.value;if(!local){event.preventDefault();field.focus();return}const scheduled=new Date(local);if(Number.isNaN(scheduled.valueOf())||scheduled.valueOf()<=Date.now()){event.preventDefault();field.setCustomValidity('Choose a future publish time.');field.reportValidity();return}field.setCustomValidity('');form.elements.publishAt.value=scheduled.toISOString()})})})();</script>`;
 
@@ -1264,15 +1280,24 @@ function contactPageContent(meta) {
 </section>`;
 }
 
-function buildStandalonePages() {
+function loadPages() {
   const dir = join(CONTENT_DIR, 'pages');
-  if (!existsSync(dir)) return;
+  if (!existsSync(dir)) return [];
   const pages = [];
   for (const file of readdirSync(dir)) {
     if (!file.endsWith('.md') || file.startsWith('_')) continue;
-    const slug = file.replace(/\.md$/, '');
-    const { meta, body } = parseFrontMatter(readFileSync(join(dir, file), 'utf8'));
-    pages.push({ slug, meta, body });
+    const sourceSlug = file.replace(/\.md$/, '');
+    const raw = readFileSync(join(dir, file), 'utf8');
+    const { meta, body } = parseFrontMatter(raw);
+    const slug = meta.slug || sourceSlug;
+    pages.push({ slug, sourceSlug, meta, body, raw, collection: 'pages' });
+  }
+  return pages;
+}
+
+function buildStandalonePages(pages) {
+  for (const page of pages) {
+    const { slug, meta, body } = page;
     const customContent = slug === 'resume' ? resumePageContent(meta, body) : slug === 'contact' ? contactPageContent(meta) : null;
     const content = customContent || `<article class="prose">
   <p class="eyebrow">${escapeHtml(meta.eyebrow || site.name)}</p>
@@ -1513,10 +1538,18 @@ for (const collection of COLLECTIONS) {
   }
 }
 
-if (WRITER_MODE) writerDashboard(allCollections.writing);
-else buildHome(collections);
+const allPages = loadPages();
+if (WRITER_MODE) {
+  const allContent = [...allPages];
+  for (const collection of COLLECTIONS) {
+    allContent.push(...allCollections[collection.name]);
+  }
+  writerDashboard(allContent);
+} else {
+  buildHome(collections);
+}
 buildDemosPage();
-buildStandalonePages();
+buildStandalonePages(allPages);
 buildNotFoundPage();
 
 const seenSlugs = new Set();

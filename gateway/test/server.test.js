@@ -95,7 +95,7 @@ test('writer publishing requires the private writer session and same-origin form
     : { ok: true, json: async () => ({ sha: 'abc123', content: Buffer.from(essay).toString('base64') }) };
   server.listen(0);
   const port = server.address().port;
-  const form = { sourceSlug: 'draft', action: 'publish-now', publishAt: '' };
+  const form = { collection: 'writing', sourceSlug: 'draft', action: 'publish-now', publishAt: '' };
 
   try {
     assert.equal((await postForm(port, '/api/writer/publish', form)).res.statusCode, 401);

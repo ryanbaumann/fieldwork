@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Expanded the writer dashboard to support previewing, editing, and requesting agent reviews on all content collections (pages, writing, work, talks, scripts) instead of just drafts.
 - Added a Google OAuth-protected release dashboard for private draft previews, direct Markdown edits, and publish or schedule controls.
 - Added an agent-review request flow with an optional author comment and a GitHub issue containing the required writing, content-review, and design review lanes.
 - Published an `agent-scripts/` collection with a vendor-neutral coding-agent system prompt, orchestrator and worker role overlays, a starter template, and 16 specified behavioral regression scenarios.
