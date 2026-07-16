@@ -126,10 +126,11 @@ const CARDS = [
 const FLOWS = [
   {
     file: 'scripts/coding-agent-loop.svg',
-    eyebrow: 'BOUNDED ENGINEERING LOOP',
-    lead: 'Evidence turns agent work into an outcome',
-    steps: ['Contract', 'Observe', 'Change', 'Verify', 'Integrate', 'Learn or stop'],
-    footer: 'one orchestrator · scoped workers · explicit terminal state',
+    layout: 'routing',
+    eyebrow: 'TOKEN-AWARE ORCHESTRATION',
+    lead: 'Route each job to the least costly capable agent',
+    routes: ['Tools', 'Fast worker', 'Balanced agent', 'Deep reasoning'],
+    footer: 'bounded context · one writer · integrated verification',
   },
   {
     file: 'writing/agent-session-header.svg',
@@ -301,6 +302,47 @@ function flowDiagram({ eyebrow, lead, steps, footer }) {
 `;
 }
 
+function routingDiagram({ eyebrow, lead, routes, footer }) {
+  const W = 1200;
+  const H = 675;
+  const sans = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+  const mono = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+  const routeNodes = routes.map((route, index) => {
+    const y = 216 + index * 86;
+    return `<g>
+      <path d="M 366 358 C 410 358, 410 ${y + 33}, 460 ${y + 33}" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>
+      <rect x="472" y="${y}" width="290" height="66" rx="16" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+      <text x="617" y="${y + 43}" text-anchor="middle" font-family="${sans}" font-size="29" font-weight="700" fill="var(--ink)">${escape(route)}</text>
+      <path d="M 774 ${y + 33} C 820 ${y + 33}, 820 358, 862 358" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>
+    </g>`;
+  }).join('\n  ');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escape(`${lead}: orchestrator routes to ${routes.join(', ')}, then integrated verification`)}">
+  <style>
+    :root { --bg: #faf9f6; --surface: #ffffff; --ink: #111827; --faint: #5f6875; --line: #d9dde5; --accent: #3b82f6; --accent-ink: #2563eb; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }
+  </style>
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--line)" stroke-width="1" opacity="0.28"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+  </defs>
+  <rect width="${W}" height="${H}" fill="var(--bg)"/>
+  <rect width="${W}" height="${H}" fill="url(#grid)"/>
+  <rect width="${W}" height="8" fill="var(--accent)"/>
+  <text x="70" y="86" font-family="${mono}" font-size="19" font-weight="700" letter-spacing="3" fill="var(--accent-ink)">${escape(eyebrow)}</text>
+  <text x="70" y="155" font-family="${sans}" font-size="42" font-weight="750" letter-spacing="-1" fill="var(--ink)">${escape(lead)}</text>
+  <rect x="70" y="254" width="296" height="208" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="218" y="340" text-anchor="middle" font-family="${sans}" font-size="35" font-weight="750" fill="var(--ink)">Orchestrator</text>
+  <text x="218" y="387" text-anchor="middle" font-family="${mono}" font-size="21" fill="var(--faint)">intent · scope · budget</text>
+  ${routeNodes}
+  <rect x="874" y="288" width="256" height="140" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="1002" y="344" text-anchor="middle" font-family="${sans}" font-size="30" font-weight="750" fill="var(--ink)">Integrated</text>
+  <text x="1002" y="383" text-anchor="middle" font-family="${sans}" font-size="30" font-weight="750" fill="var(--ink)">verification</text>
+  <text x="${W / 2}" y="630" text-anchor="middle" font-family="${mono}" font-size="26" fill="var(--faint)">${escape(footer)}</text>
+</svg>
+`;
+}
+
 for (const spec of CARDS.filter(selected)) {
   const path = join(OUT, spec.file);
   mkdirSync(dirname(path), { recursive: true });
@@ -311,6 +353,6 @@ for (const spec of CARDS.filter(selected)) {
 for (const spec of FLOWS.filter(selected)) {
   const path = join(OUT, spec.file);
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, flowDiagram(spec));
+  writeFileSync(path, spec.layout === 'routing' ? routingDiagram(spec) : flowDiagram(spec));
   console.log(`[artifact-cards] wrote portfolio/static/img/${spec.file}`);
 }
