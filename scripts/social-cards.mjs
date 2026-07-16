@@ -78,7 +78,7 @@ const CARDS = [
     file: 'work-agentic-growth.png',
     eyebrow: 'WORK · GOOGLE MAPS PLATFORM',
     title: 'OSS client-library growth',
-    summary: 'From Mar 2025 to Mar 2026, our OSS client libraries grew unique active users 300%.',
+    summary: 'From Mar 2025 to Mar 2026, our OSS client libraries more than doubled unique active users.',
     source: 'portfolio/static/img/work/agentic-growth.svg',
     layout: 'artifact',
   },

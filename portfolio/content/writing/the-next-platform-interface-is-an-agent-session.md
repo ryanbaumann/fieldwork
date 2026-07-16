@@ -26,7 +26,7 @@ When a developer asks an AI coding agent to add a map, the agent makes several p
 
 Training memory alone is a weak contract for that work. APIs change. Samples improve. Recommended patterns move. A platform needs a way to provide current, official context inside the task.
 
-[Google Maps Platform Code Assist](https://developers.google.com/maps/ai/code-assist) addresses that gap through a Google-hosted remote MCP service. I led the team that took it from a GitHub alpha to a product that grounds compatible AI coding agents in official documentation, code samples, and architecture guidance. The [public repository](https://github.com/googlemaps/platform-ai) shows the integration surface, and the [launch walkthrough](https://youtu.be/L2V58kKIHvc) shows it in use.
+[Google Maps Platform Code Assist](https://developers.google.com/maps/ai/code-assist) addresses that gap through a hosted remote MCP service. I led the strategy, and our team took it from a GitHub alpha to a product that grounds compatible AI coding agents in official documentation, code samples, and architecture guidance. The [public repository](https://github.com/googlemaps/platform-ai) shows the integration surface, and the [launch walkthrough](https://youtu.be/L2V58kKIHvc) shows it in use.
 
 The interface is not a new destination. It is a tool call inside the developer's existing agent session.
 

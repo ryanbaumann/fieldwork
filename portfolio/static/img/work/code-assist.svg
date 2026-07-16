@@ -41,5 +41,5 @@
   
   <!-- Footer -->
   <line class="border" x1="90" y1="571" x2="1110" y2="571" stroke-width="2"/>
-  <text class="footer" x="90" y="617" text-anchor="start" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="21">Claude Code · Cursor · Antigravity · Gemini CLI</text>
+  <text class="footer" x="90" y="617" text-anchor="start" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="21">Works with compatible AI coding agents</text>
 </svg>
