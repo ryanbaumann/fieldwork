@@ -5,7 +5,7 @@ date: 2026-07-16
 updated: 2026-07-16
 type: System prompt
 tags: ["ai", "developer tools", "evals"]
-links: [{"label":"Read the prompt","url":"https://github.com/ryanbaumann/portfolio/blob/main/agent-scripts/coding-agent-loop/SYSTEM_PROMPT.md"},{"label":"Browse the package","url":"https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop"},{"label":"Review the evals","url":"https://github.com/ryanbaumann/portfolio/blob/main/agent-scripts/coding-agent-loop/evals/cases.md"}]
+links: [{"label":"Get the prompt","url":"https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop"}]
 image: /img/scripts/coding-agent-loop.svg
 imageAlt: An orchestrator routes jobs to tools, fast workers, balanced agents, or deep reasoning before integrated verification.
 socialImage: /social/coding-agent-loop.png
@@ -51,15 +51,33 @@ The [GitHub package](https://github.com/ryanbaumann/portfolio/tree/main/agent-sc
 
 It lives under `agent-scripts/`, not the repo's `scripts/` folder. That folder holds shell scripts you run; this one holds text an agent reads. Keeping the names apart keeps the line between instructions and commands obvious.
 
-The system prompt is the shared operating contract. The overlays narrow each agent's job without granting more authority. I may also release the workflow as a skill so an agent can load the detailed playbook only when a task needs it.
+The system prompt is the shared operating contract. The overlays narrow each agent's job without granting more authority. The README includes one task packet you can give your existing coding agent to install the contract in its native global instructions and register optional roles where supported.
 
-## How to use it
+## Install it with your agent
 
-1. Paste `SYSTEM_PROMPT.md` into your agent's global instructions field.
-2. Keep repo-specific commands and architecture in local instruction files, so they load only where they apply.
-3. Running multiple agents? Give each the shared prompt plus one role add-on.
-4. Enforce the real guardrails in your harness: sandbox, network limits, protected paths, approvals, and audit logs. A prompt asks for good behavior; it cannot enforce it.
-5. Test it in the exact model, tools, and permissions you run.
+Copy this request into the coding agent you already use:
+
+```text
+Install this coding-agent operating contract globally for every compatible
+agent harness on this computer:
+https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop
+
+Use each harness's native user-level instructions and skills. Install
+SYSTEM_PROMPT.md as the always-on contract and the four files under roles/ as
+optional role skills or equivalent on-demand instructions. Preserve existing
+global guidance, do not change model or permission settings, and verify what
+each harness will load. Report the files changed and any harness you could not
+configure.
+```
+
+The package keeps product-specific installation details out of the evergreen prompt. The resident agent can inspect the current tools and choose their native global instruction and skill locations. Reuse the same request to update an existing installation.
+
+After installation:
+
+1. Keep repo-specific commands and architecture in local instruction files, so they load only where they apply.
+2. Running multiple agents? Give each the shared prompt plus exactly one role add-on.
+3. Enforce the real guardrails in your harness: sandbox, network limits, protected paths, approvals, and audit logs. A prompt asks for good behavior; it cannot enforce it.
+4. Test it in the exact model, tools, and permissions you run.
 
 Configure the actual models and token budgets in the harness. Re-run the suite when the prompt, model, tools, or permissions change.
 

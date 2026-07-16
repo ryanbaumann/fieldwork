@@ -6,10 +6,30 @@ prompt="$root/SYSTEM_PROMPT.md"
 cases="$root/evals/cases.md"
 fail=0
 
+search() {
+  local pattern=$1
+  local file=$2
+  if [[ -z "${CODING_AGENT_LOOP_FORCE_GREP:-}" ]] && command -v rg >/dev/null 2>&1; then
+    rg -q -- "$pattern" "$file"
+  else
+    grep -Eq -- "$pattern" "$file"
+  fi
+}
+
+search_ci() {
+  local pattern=$1
+  local file=$2
+  if [[ -z "${CODING_AGENT_LOOP_FORCE_GREP:-}" ]] && command -v rg >/dev/null 2>&1; then
+    rg -qi -- "$pattern" "$file"
+  else
+    grep -Eqi -- "$pattern" "$file"
+  fi
+}
+
 require() {
   local pattern=$1
   local label=$2
-  if ! rg -q -- "$pattern" "$prompt"; then
+  if ! search "$pattern" "$prompt"; then
     printf 'FAIL missing: %s\n' "$label"
     fail=1
   fi
@@ -35,14 +55,18 @@ else
   printf 'PASS prompt size: %s bytes\n' "$bytes"
 fi
 
-if rg -qi -- 'openai|anthropic|claude|codex|gemini|gpt-[0-9]|deepmind|mistral|llama' "$prompt"; then
+if search_ci 'openai|anthropic|claude|codex|gemini|gpt-[0-9]|deepmind|mistral|llama' "$prompt"; then
   printf 'FAIL evergreen prompt contains vendor or model branding\n'
   fail=1
 else
   printf 'PASS evergreen prompt is vendor-neutral\n'
 fi
 
-case_count=$(rg -c '^### C[0-9]{2} — ' "$cases")
+if [[ -z "${CODING_AGENT_LOOP_FORCE_GREP:-}" ]] && command -v rg >/dev/null 2>&1; then
+  case_count=$(rg -c '^### C[0-9]{2} — ' "$cases")
+else
+  case_count=$(grep -Ec '^### C[0-9]{2} — ' "$cases")
+fi
 if [[ "$case_count" == 16 ]]; then
   printf 'PASS regression specification: %s cases\n' "$case_count"
 else

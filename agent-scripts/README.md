@@ -34,5 +34,10 @@ agent-scripts/<script-name>/
 6. Add the reader-facing entry under `portfolio/content/scripts/` and rebuild
    the portfolio.
 
+When several harnesses can consume the same prompt, include a short task packet
+that users can give their existing agent to install it. Tell that agent to use
+native global instructions, preserve existing guidance, keep optional roles out
+of always-on context, and verify the result.
+
 Prompt text is policy, not enforcement. Sandboxing, network restrictions,
 protected paths, approval gates, and audit logging belong in the agent harness.

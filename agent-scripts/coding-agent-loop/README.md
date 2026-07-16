@@ -4,11 +4,53 @@ A vendor-neutral operating contract for coding agents that need to inspect,
 change, test, review, delegate, recover, and stop without losing user intent or
 repository state.
 
-The prompt is intentionally split into a compact shared constitution and
-optional role overlays. The shared prompt defines authority, action modes,
-safety, the engineering loop, verification, orchestration, worker limits,
-capability routing, failure recovery, memory promotion, and terminal states.
-The overlays make a specific agent narrower. They never grant more authority.
+## Install it with your agent
+
+Give this package URL to the coding agent you already use:
+
+```text
+Install this coding-agent operating contract globally for every compatible
+agent harness on this computer:
+https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop
+
+Use each harness's native user-level instructions and skills. Install
+SYSTEM_PROMPT.md as the always-on contract and the four files under roles/ as
+optional role skills or equivalent on-demand instructions. Preserve existing
+global guidance, do not change model or permission settings, and verify what
+each harness will load. Report the files changed and any harness you could not
+configure.
+```
+
+The agent should inspect the installed tools and their current conventions
+rather than assume paths from this README. That keeps the package useful as
+agent products change. Reuse the same instruction when you want to update the
+installed copy.
+
+If you prefer to install it yourself, put [`SYSTEM_PROMPT.md`](SYSTEM_PROMPT.md)
+in your agent's global instruction file. Keep repository facts and commands in
+repository-local instructions. Add a role overlay only to an agent performing
+that role.
+
+## Use the roles only when the job needs them
+
+Every agent receives [`SYSTEM_PROMPT.md`](SYSTEM_PROMPT.md). A normal,
+single-agent coding task needs nothing else.
+
+For multi-agent work, assign exactly one overlay to each participant:
+
+- **Orchestrator:** owns intent, task boundaries, write ownership, integration,
+  final verification, and the user-facing result.
+- **Worker:** completes one bounded task packet and reports evidence back.
+- **Reviewer:** reads the supplied change independently and does not edit it.
+- **Verifier:** maps acceptance criteria to observed checks after implementation.
+
+Skill-aware harnesses can register the four files as on-demand skills. In a
+harness without skills, attach the matching file from [`roles/`](roles/) to that
+agent's prompt.
+
+The overlays make a job narrower. They never grant permissions that the shared
+contract or the user did not grant. Give every worker a concrete objective,
+done condition, read/write boundaries, verifier, output format, and stop rule.
 
 ## Files
 
@@ -20,22 +62,16 @@ The overlays make a specific agent narrower. They never grant more authority.
 - [`evals/cases.md`](evals/cases.md): regression cases and grading rubric.
 - [`evals/check.sh`](evals/check.sh): deterministic structural contract check.
 
-## Install
-
-Use `SYSTEM_PROMPT.md` as the global coding-agent instruction, or copy the parts
-your harness supports into its system-instruction field. Keep repository facts,
-commands, and architecture in repository-local instructions so they load only
-where relevant.
-
-For multi-agent work, give every agent the shared prompt and exactly one role
-overlay. The harness should also enforce workspace boundaries, network policy,
-protected paths, approvals, and audit logging. A prompt cannot enforce its own
-security guarantees.
+The harness must still enforce workspace boundaries, network policy, protected
+paths, approvals, and audit logging. A prompt cannot enforce its own security
+guarantees.
 
 Do not hard-code model names into the evergreen prompt. Configure routing in the
 harness using measured capability profiles such as fast, balanced, and deep,
 plus the available reasoning effort. Re-run the regression suite whenever the
 prompt, model, tool interface, permissions, or harness changes.
+
+Run the deterministic structural check with `bash evals/check.sh`.
 
 ## Evaluation status
 
