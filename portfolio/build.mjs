@@ -1034,7 +1034,7 @@ function buildHome(collections) {
   const demosSection = homeDemos.length
     ? `
 <section>
-  ${sectionHeader('The lab', 'Working demos, public source', `${BASE}demos/`, 'All demos')}
+  ${sectionHeader('The lab', 'Working demos, open source', `${BASE}demos/`, 'All demos')}
   <p class="section-note">${escapeHtml(site.sectionIntros?.demos || '')}</p>
   <div class="grid demo-grid">
     ${homeDemos.map(demoCard).join('\n')}
@@ -1082,7 +1082,7 @@ function buildHome(collections) {
 </section>
 
 <section>
-  ${sectionHeader('Selected work', 'Shipped tools, and the numbers behind them', `${BASE}work/`, 'All work')}
+  ${sectionHeader('Selected work', 'Shipped tools and results', `${BASE}work/`, 'All work')}
   <div class="grid home-work-grid">${selectedWork.map(workCard).join('\n')}</div>
 </section>
 

@@ -10,10 +10,10 @@
   "description": "Ryan Baumann leads Developer Experience Engineering and product work for builder platforms, with a focus on developer tools, evals, open source, and AI coding agents.",
   "aboutTeaser": "I lead Developer Experience Engineering and product work, and stay close to the code by reviewing traces, writing evals, and shipping reference apps.",
   "sectionIntros": {
-    "work": "Shipped tools, open-source libraries, and product experiments, with the problem and result behind each one.",
-    "writing": "Notes on builder platforms, AI coding agents, evals, open source, and the developer workflows behind them.",
-    "talks": "Demo-first talks about developer tools, AI-assisted development, and the checks that make generated code more reliable.",
-    "demos": "Working demos built with real APIs, real constraints, and public source."
+    "work": "Shipped tools, open-source libraries, and experiments — the problem and result behind each.",
+    "writing": "Notes on builder platforms, AI coding agents, evals, and open source.",
+    "talks": "Demo-first talks on developer tools, AI-assisted development, and reliable generated code.",
+    "demos": "Working demos built with real APIs, real constraints, and open source."
   },
   "links": {
     "github": "https://github.com/ryanbaumann",
