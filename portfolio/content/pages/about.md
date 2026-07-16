@@ -16,7 +16,7 @@ Today I lead Developer Experience Engineering for Google Maps Platform, where my
 
 I stay close to the code by reviewing traces, writing evals, dogfooding products, and shipping the reference apps on this site. The loop is simple: find repeated developer friction, build the smallest useful artifact, test whether it helps, and publish what can be reused. I describe that operating model in [DevX Is a Growth Discipline](/writing/devx-is-a-growth-discipline/).
 
-Between early 2025 and 2026, our open-source ecosystem grew unique active users 300% and API engagement approximately 200%. I helped align our distribution strategy across major UI frameworks and AI agent platforms. Google Maps Platform also sponsors [@vis.gl/react-google-maps](https://www.npmjs.com/package/@vis.gl/react-google-maps), which has more than 1 million weekly downloads.
+Between early 2025 and 2026, our open-source ecosystem grew significantly, more than doubling unique active users with strong growth in API engagement. I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, and technical writing. Google Maps Platform also sponsors [@vis.gl/react-google-maps](https://www.npmjs.com/package/@vis.gl/react-google-maps), which has more than 1 million weekly downloads.
 
 ## Google, 2021 to present
 

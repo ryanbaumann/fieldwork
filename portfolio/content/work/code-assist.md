@@ -22,7 +22,7 @@ Developers increasingly let their agents read the docs for them. When an AI gene
 
 ## What shipped
 
-I led the team that built and shipped [Code Assist](https://developers.google.com/maps/ai/code-assist): an MCP server that grounds AI coding agents in official Google Maps Platform documentation, code samples, and architecture guides through retrieval. We took it from a GitHub alpha to a Google-hosted remote MCP service that works with compatible MCP clients.
+Our team built and shipped [Code Assist](https://developers.google.com/maps/ai/code-assist): an MCP server that grounds AI coding agents in official Google Maps Platform documentation, code samples, and architecture guides through retrieval. I led the strategy and stayed close to the work as we took it from a GitHub alpha to a hosted remote MCP service that works with compatible MCP clients.
 
 With it connected, agents retrieve current official docs instead of relying only on training memory. That gives the agent current API surfaces, code samples, and architecture guidance inside the task.
 

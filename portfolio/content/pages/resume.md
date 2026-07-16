@@ -17,8 +17,8 @@ I lead Developer Experience Engineering and product work for builder platforms. 
 **Head of Developer Experience, Google Maps Platform** (2022 to present)
 
 - Lead Developer Experience Engineering for Google Maps Platform.
-- Helped align our distribution strategy across major UI frameworks and AI agent platforms.
-- Between early 2025 and 2026, our open-source ecosystem's unique active users grew 300% and API engagement grew approximately 200%.
+- Helped lead distribution strategy across major UI frameworks and AI agent platforms, partnering across product, engineering, UX, DevX, DRE, technical writing, and field engineering.
+- Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, with strong growth in API engagement.
 - Led teams behind [Code Assist](https://developers.google.com/maps/ai/code-assist), [agent skills](https://github.com/googlemaps/agent-skills), agentic evals, and the [Geo Architecture Center](https://developers.google.com/maps/architecture).
 
 ## Earlier roles
