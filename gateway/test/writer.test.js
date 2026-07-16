@@ -35,8 +35,8 @@ test('writer publishing rejects invalid schedules and slugs', async () => {
   assert.throws(() => updatePublishingFrontMatter(ESSAY, 'schedule', '2026-07-13T11:59:59Z', now), /valid future publish time/);
   assert.throws(() => updatePublishingFrontMatter(ESSAY, 'schedule', '2026-07-13T12:00:00Z', now), /valid future publish time/);
   await assert.rejects(
-    publishWritingUpdate({ sourceSlug: '../secret', action: 'draft', env: { GITHUB_CONTENT_TOKEN: 'test' } }),
-    /Invalid essay slug/,
+    publishWritingUpdate({ collection: 'writing', sourceSlug: '../secret', action: 'draft', env: { GITHUB_CONTENT_TOKEN: 'test' } }),
+    /Invalid slug/,
   );
 });
 
@@ -51,6 +51,7 @@ test('writer publishing reads and updates one known GitHub content file', async 
     return { ok: true, json: async () => ({}) };
   };
   const result = await publishWritingUpdate({
+    collection: 'writing',
     sourceSlug: 'draft',
     action: 'schedule',
     publishAt: '2026-07-14T12:30:00Z',
@@ -72,6 +73,7 @@ test('writer publishing preserves actionable GitHub branch errors', async () => 
     : { ok: true, json: async () => ({ sha: 'abc123', content: Buffer.from(ESSAY).toString('base64') }) };
   await assert.rejects(
     publishWritingUpdate({
+      collection: 'writing',
       sourceSlug: 'draft',
       action: 'publish-now',
       env: { GITHUB_CONTENT_TOKEN: 'test-token', GITHUB_CONTENT_REPOSITORY: 'owner/repo' },
@@ -87,7 +89,7 @@ test('writer direct edits update only the selected Markdown file', async () => {
     calls.push({ url, options });
     return options.method ? { ok: true } : { ok: true, json: async () => ({ sha: 'abc123' }) };
   };
-  await saveWritingDraft({ sourceSlug: 'draft', markdown: ESSAY, env: { GITHUB_CONTENT_TOKEN: 'token', GITHUB_CONTENT_REPOSITORY: 'owner/repo' }, fetchImpl });
+  await saveWritingDraft({ collection: 'writing', sourceSlug: 'draft', markdown: ESSAY, env: { GITHUB_CONTENT_TOKEN: 'token', GITHUB_CONTENT_REPOSITORY: 'owner/repo' }, fetchImpl });
   assert.match(calls[0].url, /contents\/portfolio\/content\/writing\/draft\.md/);
   assert.equal(JSON.parse(calls[1].options.body).sha, 'abc123');
 });
@@ -99,7 +101,7 @@ test('agent review request carries the saved file, author note, and required rev
     return { ok: true, json: async () => ({ html_url: 'https://github.com/owner/repo/issues/42' }) };
   };
   const result = await requestWritingReview({
-    sourceSlug: 'draft', comment: 'Check the opening claim.',
+    collection: 'writing', sourceSlug: 'draft', comment: 'Check the opening claim.',
     env: { GITHUB_REVIEW_TOKEN: 'review-token', GITHUB_CONTENT_REPOSITORY: 'owner/repo' }, fetchImpl,
   });
   assert.equal(result.issueUrl, 'https://github.com/owner/repo/issues/42');

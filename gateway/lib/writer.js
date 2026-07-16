@@ -1,5 +1,6 @@
 const SOURCE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ACTIONS = new Set(['publish-now', 'schedule', 'draft']);
+const ALLOWED_COLLECTIONS = new Set(['writing', 'work', 'talks', 'scripts', 'pages']);
 
 function validPublishAt(value, now) {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?Z$/);
@@ -50,8 +51,9 @@ export function updatePublishingFrontMatter(markdown, action, publishAt = '', no
   return `---\n${lines.join('\n')}\n---${markdown.slice(end + 4)}`;
 }
 
-export async function publishWritingUpdate({ sourceSlug, action, publishAt, env = process.env, fetchImpl = fetch, now = new Date() }) {
-  if (!SOURCE_SLUG.test(sourceSlug || '')) throw Object.assign(new Error('Invalid essay slug.'), { statusCode: 400 });
+export async function publishWritingUpdate({ collection, sourceSlug, action, publishAt, env = process.env, fetchImpl = fetch, now = new Date() }) {
+  if (!ALLOWED_COLLECTIONS.has(collection)) throw Object.assign(new Error('Invalid collection.'), { statusCode: 400 });
+  if (!SOURCE_SLUG.test(sourceSlug || '')) throw Object.assign(new Error('Invalid slug.'), { statusCode: 400 });
   if (!ACTIONS.has(action)) throw Object.assign(new Error('Unknown publishing action.'), { statusCode: 400 });
 
   const token = env.GITHUB_CONTENT_TOKEN;
@@ -62,7 +64,7 @@ export async function publishWritingUpdate({ sourceSlug, action, publishAt, env 
     throw Object.assign(new Error('Writer repository configuration is invalid.'), { statusCode: 503 });
   }
 
-  const path = `portfolio/content/writing/${sourceSlug}.md`;
+  const path = `portfolio/content/${collection}/${sourceSlug}.md`;
   const url = `https://api.github.com/repos/${repository}/contents/${path}`;
   const headers = {
     Accept: 'application/vnd.github+json',
@@ -73,7 +75,7 @@ export async function publishWritingUpdate({ sourceSlug, action, publishAt, env 
     headers,
     signal: AbortSignal.timeout(10_000),
   });
-  if (!current.ok) throw Object.assign(new Error('Could not load the essay from GitHub.'), { statusCode: current.status === 404 ? 404 : 502 });
+  if (!current.ok) throw Object.assign(new Error('Could not load the content from GitHub.'), { statusCode: current.status === 404 ? 404 : 502 });
   const file = await current.json();
   const markdown = Buffer.from(file.content || '', 'base64').toString('utf8');
   const updated = updatePublishingFrontMatter(markdown, action, publishAt, now);
@@ -83,7 +85,7 @@ export async function publishWritingUpdate({ sourceSlug, action, publishAt, env 
     method: 'PUT',
     headers: { ...headers, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      message: `${commitLabel} ${sourceSlug}`,
+      message: `${commitLabel} ${collection}/${sourceSlug}`,
       content: Buffer.from(updated).toString('base64'),
       sha: file.sha,
       branch,
@@ -102,26 +104,28 @@ export async function publishWritingUpdate({ sourceSlug, action, publishAt, env 
   return { action, sourceSlug, publishAt: action === 'schedule' ? publishAt : null };
 }
 
-export async function saveWritingDraft({ sourceSlug, markdown, env = process.env, fetchImpl = fetch }) {
-  if (!SOURCE_SLUG.test(sourceSlug || '')) throw Object.assign(new Error('Invalid essay slug.'), { statusCode: 400 });
+export async function saveWritingDraft({ collection, sourceSlug, markdown, env = process.env, fetchImpl = fetch }) {
+  if (!ALLOWED_COLLECTIONS.has(collection)) throw Object.assign(new Error('Invalid collection.'), { statusCode: 400 });
+  if (!SOURCE_SLUG.test(sourceSlug || '')) throw Object.assign(new Error('Invalid slug.'), { statusCode: 400 });
   if (typeof markdown !== 'string' || markdown.length > 28_000 || !markdown.startsWith('---\n')) throw Object.assign(new Error('Provide valid Markdown with front matter.'), { statusCode: 422 });
   const token = env.GITHUB_CONTENT_TOKEN;
   const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/Portfolio';
   const branch = env.GITHUB_CONTENT_BRANCH || 'main';
   if (!token) throw Object.assign(new Error('Writer publishing is not configured.'), { statusCode: 503 });
-  const path = `portfolio/content/writing/${sourceSlug}.md`;
+  const path = `portfolio/content/${collection}/${sourceSlug}.md`;
   const url = `https://api.github.com/repos/${repository}/contents/${path}`;
   const headers = { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'X-GitHub-Api-Version': '2022-11-28' };
   const current = await fetchImpl(`${url}?ref=${encodeURIComponent(branch)}`, { headers, signal: AbortSignal.timeout(10_000) });
-  if (!current.ok) throw Object.assign(new Error('Could not load the essay from GitHub.'), { statusCode: current.status === 404 ? 404 : 502 });
+  if (!current.ok) throw Object.assign(new Error('Could not load the content from GitHub.'), { statusCode: current.status === 404 ? 404 : 502 });
   const file = await current.json();
-  const saved = await fetchImpl(url, { method: 'PUT', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: `Edit ${sourceSlug}`, content: Buffer.from(markdown).toString('base64'), sha: file.sha, branch }), signal: AbortSignal.timeout(10_000) });
-  if (!saved.ok) throw Object.assign(new Error(saved.status === 409 ? 'The essay changed in GitHub. Reload and try again.' : 'GitHub did not accept the edit.'), { statusCode: saved.status === 409 ? 409 : 502 });
+  const saved = await fetchImpl(url, { method: 'PUT', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: `Edit ${collection}/${sourceSlug}`, content: Buffer.from(markdown).toString('base64'), sha: file.sha, branch }), signal: AbortSignal.timeout(10_000) });
+  if (!saved.ok) throw Object.assign(new Error(saved.status === 409 ? 'The content changed in GitHub. Reload and try again.' : 'GitHub did not accept the edit.'), { statusCode: saved.status === 409 ? 409 : 502 });
   return { sourceSlug };
 }
 
-export async function requestWritingReview({ sourceSlug, comment, env = process.env, fetchImpl = fetch }) {
-  if (!SOURCE_SLUG.test(sourceSlug || '')) throw Object.assign(new Error('Invalid essay slug.'), { statusCode: 400 });
+export async function requestWritingReview({ collection, sourceSlug, comment, env = process.env, fetchImpl = fetch }) {
+  if (!ALLOWED_COLLECTIONS.has(collection)) throw Object.assign(new Error('Invalid collection.'), { statusCode: 400 });
+  if (!SOURCE_SLUG.test(sourceSlug || '')) throw Object.assign(new Error('Invalid slug.'), { statusCode: 400 });
   if (typeof comment !== 'string' || comment.trim().length > 4_000) throw Object.assign(new Error('Review comment must be 4,000 characters or fewer.'), { statusCode: 422 });
   const token = env.GITHUB_REVIEW_TOKEN;
   const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/Portfolio';
@@ -129,7 +133,7 @@ export async function requestWritingReview({ sourceSlug, comment, env = process.
   if (!token) throw Object.assign(new Error('Agent review is not configured.'), { statusCode: 503 });
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw Object.assign(new Error('Writer repository configuration is invalid.'), { statusCode: 503 });
   const note = comment.trim() || 'Review this draft for publish readiness.';
-  const body = `## Review request\n\nReview \`portfolio/content/writing/${sourceSlug}.md\` on \`${branch}\`.\n\n### Ryan's note\n${note}\n\n### Required review lanes\n- Copy, claims, attribution, and voice: \`.agents/skills/portfolio-writing/SKILL.md\`\n- Publishing audit, links, canonicals, metadata, accessibility, and rendered presentation: \`.agents/skills/portfolio-review/SKILL.md\`\n- Layout and interaction changes, if any: \`.agents/skills/portfolio-design/SKILL.md\`\n\nReturn actionable findings with file and line references. Do not publish or edit the content unless the follow-up explicitly asks you to.`;
+  const body = `## Review request\n\nReview \`portfolio/content/${collection}/${sourceSlug}.md\` on \`${branch}\`.\n\n### Ryan's note\n${note}\n\n### Required review lanes\n- Copy, claims, attribution, and voice: \`.agents/skills/portfolio-writing/SKILL.md\`\n- Publishing audit, links, canonicals, metadata, accessibility, and rendered presentation: \`.agents/skills/portfolio-review/SKILL.md\`\n- Layout and interaction changes, if any: \`.agents/skills/portfolio-design/SKILL.md\`\n\nReturn actionable findings with file and line references. Do not publish or edit the content unless the follow-up explicitly asks you to.`;
   const response = await fetchImpl(`https://api.github.com/repos/${repository}/issues`, {
     method: 'POST',
     headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28' },

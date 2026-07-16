@@ -262,6 +262,7 @@ async function handleWriterPublishRequest(request, response) {
   }
   try {
     const result = await publishWritingUpdate({
+      collection: String(params.get('collection') || ''),
       sourceSlug: String(params.get('sourceSlug') || ''),
       action: String(params.get('action') || ''),
       publishAt: String(params.get('publishAt') || ''),
@@ -285,7 +286,7 @@ async function handleWriterSaveRequest(request, response) {
     const origin = new URL(String(request.headers.origin || ''));
     if (origin.host !== request.headers.host) throw new Error('origin mismatch');
     const params = new URLSearchParams(await readTextBody(request, 32 * 1024));
-    const result = await saveWritingDraft({ sourceSlug: String(params.get('sourceSlug') || ''), markdown: String(params.get('markdown') || '') });
+    const result = await saveWritingDraft({ collection: String(params.get('collection') || ''), sourceSlug: String(params.get('sourceSlug') || ''), markdown: String(params.get('markdown') || '') });
     applySecurityHeaders(response); response.writeHead(303, { Location: `/writer/?saved=${encodeURIComponent(result.sourceSlug)}`, 'Cache-Control': 'no-store' }); response.end();
   } catch (error) { sendJson(request, response, error.statusCode || 502, { error: error.message }); }
 }
@@ -298,7 +299,7 @@ async function handleWriterReviewRequest(request, response) {
     const origin = new URL(String(request.headers.origin || ''));
     if (origin.host !== request.headers.host) throw new Error('origin mismatch');
     const params = new URLSearchParams(await readTextBody(request));
-    const result = await requestWritingReview({ sourceSlug: String(params.get('sourceSlug') || ''), comment: String(params.get('comment') || '') });
+    const result = await requestWritingReview({ collection: String(params.get('collection') || ''), sourceSlug: String(params.get('sourceSlug') || ''), comment: String(params.get('comment') || '') });
     applySecurityHeaders(response);
     response.writeHead(303, { Location: `/writer/?review=${encodeURIComponent(result.sourceSlug)}&issue=${encodeURIComponent(result.issueUrl)}`, 'Cache-Control': 'no-store' });
     response.end();
