@@ -15,7 +15,6 @@ draft: true
 noindex: true
 # For scheduling, set draft/noindex false and add a UTC timestamp:
 # publishAt: 2026-07-14T16:00:00Z
-order: 99
 ---
 
 State the claim in the first paragraph and explain what a developer can do differently after reading.

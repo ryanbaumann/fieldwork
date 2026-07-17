@@ -161,24 +161,6 @@ test('build lists public demos without disclosing private demos', () => {
   assert.doesNotMatch(demos, /Private demo/);
 });
 
-test('build publishes agent scripts in navigation, homepage, index, and sitemap', () => {
-  const paths = fixture();
-  write(join(paths.content, 'scripts', 'coding-agent.md'), `---\ntitle: Loop Engineering Coding Agent\nsummary: A tested operating contract for coding agents.\ntype: System prompt\ndate: 2026-07-16\n---\n## Use it\n\nCopy the prompt.`);
-  const result = build(paths);
-  assert.equal(result.status, 0, result.stderr);
-  const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
-  const index = readFileSync(join(paths.dist, 'scripts', 'index.html'), 'utf8');
-  const detail = readFileSync(join(paths.dist, 'scripts', 'coding-agent', 'index.html'), 'utf8');
-  const sitemap = readFileSync(join(paths.dist, 'sitemap.xml'), 'utf8');
-  assert.match(home, /href="\/scripts\/">Agent Scripts<\/a>/);
-  assert.match(home, /Loop Engineering Coding Agent/);
-  assert.match(index, /Reusable agent instructions/);
-  assert.match(index, /Loop Engineering Coding Agent/);
-  assert.match(detail, /Copy the prompt/);
-  assert.match(detail, /"datePublished":"2026-07-16T00:00:00Z"/);
-  assert.match(detail, /aria-label="Primary"/);
-  assert.match(sitemap, /https:\/\/example\.com\/scripts\/coding-agent\//);
-});
 
 test('build rejects impossible ISO dates and unsafe drafts', () => {
   const paths = fixture();

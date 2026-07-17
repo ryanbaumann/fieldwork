@@ -13,5 +13,4 @@ shareSummary: Grounded platform expertise in any AI coding assistant, and why re
 shareImageAlt: Social card reading Announcing the Code Assist Toolkit beside a grounded-retrieval artifact.
 image: /img/writing/code-assist-launch.svg
 imageAlt: Artifact card reading Announcing Code Assist above grounded platform expertise in any AI assistant.
-order: 3
 ---

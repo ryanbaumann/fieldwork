@@ -13,5 +13,4 @@ shareSummary: Short notes from traces reviewed, evals written, products dogfoode
 shareImageAlt: Social card reading Ryan Baumann on LinkedIn beside a field-notes artifact.
 image: /img/writing/this-weeks-learnings.svg
 imageAlt: Artifact card reading LinkedIn field notes above traces reviewed, evals written, and products dogfooded.
-order: 1
 ---
