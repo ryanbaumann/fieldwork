@@ -13,5 +13,4 @@ shareSummary: What worked, what broke, and why curated context beats raw model k
 shareImageAlt: Social card reading Vibing with Maps: Practical Experiments beside a map-building artifact.
 image: /img/writing/vibing-with-maps.svg
 imageAlt: Artifact card reading Vibing with Maps above practical experiments.
-order: 2
 ---

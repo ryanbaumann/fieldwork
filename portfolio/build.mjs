@@ -36,7 +36,6 @@ if (Number.isNaN(BUILD_TIME.valueOf())) {
 const COLLECTIONS = [
   { name: 'work', label: 'Work', listPage: true, detailPages: true },
   { name: 'writing', label: 'Field Notes', listPage: true, detailPages: true },
-  { name: 'scripts', label: 'Agent Scripts', listPage: true, detailPages: true },
   { name: 'talks', label: 'Talks', listPage: true, detailPages: true },
 ];
 
@@ -465,7 +464,6 @@ function layout({ title, description, content, active = '', canonical, ogImage, 
   const navItems = [
     { href: `${BASE}work/`, label: 'Work', key: 'work' },
     { href: `${BASE}writing/`, label: 'Field Notes', key: 'writing' },
-    { href: `${BASE}scripts/`, label: 'Agent Scripts', key: 'scripts' },
     ...(demos.length ? [{ href: `${BASE}demos/`, label: 'Lab', key: 'demos' }] : []),
     { href: `${BASE}about/`, label: 'About', key: 'about' },
     { href: `${BASE}resume/`, label: 'Resume', key: 'resume' },
@@ -570,7 +568,6 @@ ${content}
     <a href="${site.links.linkedin}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
     ${site.links.x ? `<a href="${site.links.x}" target="_blank" rel="noopener noreferrer">X</a>` : ''}
     ${site.links.substack ? `<a href="${site.links.substack}" target="_blank" rel="noopener noreferrer">Substack</a>` : ''}
-    <a href="${BASE}scripts/">Agent Scripts</a>
     <a href="${BASE}talks/">Talks</a>
     <a href="${BASE}resume/">Resume</a>
     <a href="${BASE}privacy/">Privacy</a>
@@ -716,25 +713,26 @@ function getImageDimensions(imagePath) {
   return { width: 960, height: 600 };
 }
 
-function workCard(entry) {
+function gridCard(collection, entry) {
   const { meta } = entry;
   const imagePath = meta.image ? join(STATIC_DIR, meta.image.replace(/^\//, '')) : '';
   const imageSize = meta.image ? getImageDimensions(imagePath) : null;
-  const url = hasDetailPage(entry) ? entryUrl('work', entry) : rebase(meta.links?.[0]?.url || `${BASE}work/`);
+  const url = hasDetailPage(entry) ? entryUrl(collection, entry) : rebase(meta.links?.[0]?.url || `${BASE}${collection}/`);
   const external = !hasDetailPage(entry) && /^https?:/.test(url);
-  const cardMeta = `<p class="card-meta">${metaLine([meta.org, meta.period])}</p>
+  const formattedDate = meta.date ? formatLongDate(meta.date) : meta.period;
+  const cardMeta = `<p class="card-meta">${metaLine([meta.venue || meta.org, meta.type, formattedDate])}</p>
   <h3>${escapeHtml(meta.title)}</h3>
   <p>${escapeHtml(meta.summary || '')}</p>
   ${meta.tags ? `<p class="card-tags">${meta.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</p>` : ''}`;
   if (meta.image) {
-    return `<a class="card work-card has-thumb" href="${url}" data-analytics-type="work" data-analytics-id="${escapeHtml(entry.slug)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>
+    return `<a class="card grid-card has-thumb" href="${url}" data-analytics-type="${escapeHtml(collection)}" data-analytics-id="${escapeHtml(entry.slug)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>
   <img class="card-thumb" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" width="${imageSize.width}" height="${imageSize.height}" />
   <div class="card-body">
   ${cardMeta}
   </div>
 </a>`;
   }
-  return `<a class="card" href="${url}" data-analytics-type="work" data-analytics-id="${escapeHtml(entry.slug)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>
+  return `<a class="card" href="${url}" data-analytics-type="${escapeHtml(collection)}" data-analytics-id="${escapeHtml(entry.slug)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>
   ${cardMeta}
 </a>`;
 }
@@ -1128,13 +1126,12 @@ function buildHome(collections) {
   const bySlug = (collection, slug) => collections[collection].find((entry) => entry.slug === slug);
   const selectedWork = ['code-assist', 'agent-skills', 'agentic-growth']
     .map((slug) => bySlug('work', slug)).filter(Boolean);
-  const writingEntries = collections.writing.slice(0, 2);
-  const scriptEntries = collections.scripts.slice(0, 2);
+  const writingEntries = collections.writing.slice(0, 3);
   const homeDemos = demos.filter(d => !d.hideOnHome);
   const demosSection = homeDemos.length
     ? `
 <section>
-  ${sectionHeader('The lab', 'Working demos, open source', `${BASE}demos/`, 'All demos')}
+  ${sectionHeader('The lab', '', `${BASE}demos/`, 'All demos')}
   <p class="section-note">${escapeHtml(site.sectionIntros?.demos || '')}</p>
   <div class="grid demo-grid">
     ${homeDemos.map(demoCard).join('\n')}
@@ -1154,8 +1151,8 @@ function buildHome(collections) {
 
   const featured = writingEntries[0];
   const fieldNotesBody = featured
-    ? featuredNote(featured)
-    : `<ul class="rows">${writingEntries.map((entry) => listRow('writing', entry)).join('\n')}</ul>`;
+    ? `${featuredNote(featured)}\n<div class="grid home-work-grid">${writingEntries.slice(1).map((entry) => gridCard('writing', entry)).join('\n')}</div>`
+    : `<div class="grid home-work-grid"></div>`;
 
   const content = `
 <section class="hero">
@@ -1166,7 +1163,7 @@ function buildHome(collections) {
       <p class="hero-location">${escapeHtml(site.location)}</p>
     </div>
   </div>
-  <p class="eyebrow">${escapeHtml(site.tagline)}</p>
+
   <h1>${escapeHtml(site.heroHeadline || site.name)}</h1>
   <p class="lede">${escapeHtml(site.intro)}</p>
   <p class="hero-actions">
@@ -1177,19 +1174,13 @@ function buildHome(collections) {
 </section>
 
 <section>
-  ${sectionHeader('Field Notes', 'Ideas you can use', `${BASE}writing/`, 'All field notes')}
+  ${sectionHeader('Field Notes', 'Learnings from users', `${BASE}writing/`, 'All field notes')}
   ${fieldNotesBody}
 </section>
 
 <section>
-  ${sectionHeader('Agent Scripts', 'Instructions you can fork', `${BASE}scripts/`, 'All agent scripts')}
-  <p class="section-note">${escapeHtml(site.sectionIntros?.scripts || '')}</p>
-  <ul class="rows">${scriptEntries.map((entry) => listRow('scripts', entry)).join('\n')}</ul>
-</section>
-
-<section>
-  ${sectionHeader('Selected work', 'Shipped tools and results', `${BASE}work/`, 'All work')}
-  <div class="grid home-work-grid">${selectedWork.map(workCard).join('\n')}</div>
+  ${sectionHeader('Selected work', '', `${BASE}work/`, 'All work')}
+  <div class="grid home-work-grid">${selectedWork.map((entry) => gridCard('work', entry)).join('\n')}</div>
 </section>
 
 ${demosSection}
@@ -1246,7 +1237,7 @@ function buildCollectionIndex(collection, entries) {
 
   let body;
   if (collection.name === 'work') {
-    body = `<div class="grid">${entries.map(workCard).join('\n')}</div>`;
+    body = `<div class="grid">${entries.map((entry) => gridCard('work', entry)).join('\n')}</div>`;
   } else if (collection.name === 'writing') {
     const owned = entries.filter((entry) => !entry.meta.external);
     const elsewhere = entries.filter((entry) => entry.meta.external);
