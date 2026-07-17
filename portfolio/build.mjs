@@ -874,10 +874,10 @@ function commentsSection() {
     'data-category': comments.category,
     'data-category-id': comments.categoryId,
     'data-mapping': 'pathname',
-    'data-strict': '1',
+    'data-strict': '0',
     'data-reactions-enabled': '1',
     'data-emit-metadata': '0',
-    'data-input-position': 'top',
+    'data-input-position': 'bottom',
     'data-lang': 'en',
     'data-loading': 'lazy',
   };
