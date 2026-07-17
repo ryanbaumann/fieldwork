@@ -249,7 +249,10 @@ const CARDS = [
   },
 ];
 
-const requestedFiles = new Set(process.argv.slice(2));
+const requestedFiles = new Set(process.argv.slice(2).map(f => f.replace(/\.png$/, '.jpg')));
+for (const card of CARDS) {
+  card.file = card.file.replace(/\.png$/, '.jpg');
+}
 const knownFiles = new Set(CARDS.map(({ file }) => file));
 for (const file of requestedFiles) {
   if (!knownFiles.has(file)) throw new Error(`Unknown social card: ${file}`);
@@ -319,16 +322,11 @@ function cardHtml(spec) {
 </body></html>`;
 }
 
-function assertPng(path) {
+function assertJpg(path) {
   const bytes = readFileSync(path);
-  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  if (bytes.length < 24 || !bytes.subarray(0, 8).equals(signature)) {
-    throw new Error(`${relative(ROOT, path)} is not a PNG`);
-  }
-  const width = bytes.readUInt32BE(16);
-  const height = bytes.readUInt32BE(20);
-  if (width !== WIDTH || height !== HEIGHT) {
-    throw new Error(`${relative(ROOT, path)} is ${width}x${height}; expected ${WIDTH}x${HEIGHT}`);
+  const signature = Buffer.from([255, 216, 255]);
+  if (bytes.length < 3 || !bytes.subarray(0, 3).equals(signature)) {
+    throw new Error(`${relative(ROOT, path)} is not a JPEG`);
   }
 }
 
@@ -361,9 +359,9 @@ try {
       await Promise.all([...document.images].map((image) => image.decode()));
       await new Promise((resolveFrame) => requestAnimationFrame(() => requestAnimationFrame(resolveFrame)));
     });
-    await page.screenshot({ path: outputPath, type: 'png' });
-    assertPng(outputPath);
-    console.log(`[social-cards] wrote ${relative(ROOT, outputPath)} (${WIDTH}x${HEIGHT}, image/png)`);
+    await page.screenshot({ path: outputPath, type: 'jpeg', quality: 70 });
+    assertJpg(outputPath);
+    console.log(`[social-cards] wrote ${relative(ROOT, outputPath)} (${WIDTH}x${HEIGHT}, image/jpeg)`);
   }
 
   writeFileSync(

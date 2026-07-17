@@ -8,7 +8,7 @@ tags: ["product", "0→1", "industry solutions"]
 links: [{"label": "Launch blog", "url": "https://cloud.google.com/blog/products/data-analytics/introducing-intelligent-products-essentials-for-manufacturers"}]
 image: /img/work/intelligent-product-essentials.svg
 imageAlt: Panel showing the Intelligent Product Essentials launch facts, zero to launch in nine months with GE Appliances
-socialImage: /social/work-intelligent-product-essentials.png
+socialImage: /social/work-intelligent-product-essentials.jpg
 shareTitle: Intelligent Product Essentials
 shareSummary: A connected-product solution taken from zero to launch with GE Appliances in nine months.
 shareImageAlt: Intelligent Product Essentials beside the zero-to-launch artifact.

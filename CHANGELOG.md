@@ -5,15 +5,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Added an email list: a subscribe form on the writing index and under every field note posts to the new gateway route `/api/subscribe`, which stores the address in a Resend audience (honeypot + rate limit, `503` until `RESEND_AUDIENCE_ID` is configured). Updates go out as Resend broadcasts composed in the dashboard; a `/subscribed/` confirmation page and a privacy-policy section cover the flow. See `docs/EMAIL_LIST_AND_COMMENTS.md`.
-- Added reader comments on field notes via giscus (GitHub Discussions): config-gated in `site.json` (renders nothing until `categoryId` is filled from giscus.app), theme-synced with the site's light/dark toggle, lazy-loaded, and excluded from the private writer preview.
-- Expanded the writer dashboard to support previewing, editing, and requesting agent reviews on all content collections (pages, writing, work, talks, scripts) instead of just drafts.
-- Added a Google OAuth-protected release dashboard for private draft previews, direct Markdown edits, and publish or schedule controls.
-- Added an agent-review request flow with an optional author comment and a GitHub issue containing the required writing, content-review, and design review lanes.
-- Published an `agent-scripts/` collection with a vendor-neutral coding-agent system prompt, orchestrator and worker role overlays, a starter template, and 16 specified behavioral regression scenarios.
-- Added Agent Scripts to the portfolio navigation, homepage, sitemap, metadata, and a dedicated `/scripts/` collection with deterministic artifact and social visuals.
+- Added an `apple-touch-icon.png` and explicit `thumbnail` meta tag to the site `<head>` for better crawler visual citation and brand previews.
+- Enhanced the `sitemap.xml` generator to output `<image:image>` and `<image:loc>` nodes for pages with cover images to optimize visual search indexing.
 
 ### Changed
+- Changed "Google Maps Platform" to "Google Maps" in the job titles and profile headlines across the site (`site.json`, `about.md`, `resume.md`).
+- Optimized above-the-fold Largest Contentful Paint (LCP) by setting hero images to `loading="eager"`.
+- Shifted the social card generator (`social-cards.mjs`) to output compressed `.jpg` files at 70% quality instead of `.png`.
+- Updated the `portfolio-review` skill to mandate optimized JPEG social preview images under 200KB.
+- Converted all existing social preview images to compressed JPEGs, dropping file sizes from up to 1.3MB down to under 200KB, and updated all corresponding references in the content files.
+- Updated `portfolio/build.mjs` to support standard `1200x630` social share images alongside the previous `1200x627` format, maintaining backward compatibility.
+- Injected `meta.summary` as a visible `.lede` paragraph on detail pages and standalone pages to enhance DOM readability and AI discoverability (AEO).
 - Simplified the gateway's three writer form endpoints (publish/save/review) onto one shared handler with the same auth, origin, and redirect behavior, and generalized the contact-form HTML response page for reuse by the subscribe route.
 - Deduplicated the three hero-image render blocks in `portfolio/build.mjs` into a single `heroImage` helper.
 - Fixed the portfolio test script for newer Node 22 minors: `node --test test/` no longer accepts a bare directory, so it now uses an explicit glob (see LEARNINGS.md 2026-07-17).

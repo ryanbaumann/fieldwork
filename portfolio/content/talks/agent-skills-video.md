@@ -7,7 +7,7 @@ summary: A fireside chat about using current context, useful workflows, and chec
 links: [{"label": "Watch", "url": "https://youtu.be/NEk37sPlgaY"}]
 image: /img/talks/agent-skills-video.svg
 imageAlt: Artifact card reading Build Maps With AI above Google Maps Platform fireside chat.
-socialImage: /social/agent-skills-video.png
+socialImage: /social/agent-skills-video.jpg
 shareTitle: Build Maps With AI
 shareSummary: A Google Maps Platform fireside chat about context, workflows, and checks for AI-assisted map building.
 shareImageAlt: Build Maps With AI beside a Google Maps Platform fireside-chat artifact.

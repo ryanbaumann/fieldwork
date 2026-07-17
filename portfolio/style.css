@@ -729,8 +729,8 @@ main > section.hero { margin-bottom: clamp(0.75rem, 2vw, 1.5rem); }
 .hero h1 {
   max-width: 63rem;
   font-size: clamp(2.5rem, 7.2vw, 5rem);
-  line-height: 0.98;
-  letter-spacing: -0.055em;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
 }
 .hero .lede { max-width: 48rem; }
 .hero-actions {
@@ -792,10 +792,10 @@ main > section.hero { margin-bottom: clamp(0.75rem, 2vw, 1.5rem); }
   grid-template-columns: 1fr;
   align-items: center;
   gap: clamp(1.25rem, 3vw, 2rem);
-  padding: 1.25rem 1rem;
-  margin: 0 -1rem;
-  border-radius: 0.75rem;
-  border-block: 1px solid var(--line);
+  padding: 1.25rem;
+  margin: 0;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
   text-decoration: none;
   color: inherit;
   transition: background-color 0.2s ease;
@@ -894,8 +894,8 @@ main > section.hero { margin-bottom: clamp(0.75rem, 2vw, 1.5rem); }
   .header-cta { min-height: 44px; font-size: 0.75rem; padding-inline: 0.65rem; }
   main { padding-top: 1.1rem; }
   main > section { margin-bottom: 2rem; }
-  .hero h1 { font-size: clamp(2.45rem, 12vw, 3.5rem); }
-  .hero .lede { font-size: 1.04rem; line-height: 1.45; }
+  .hero h1 { font-size: clamp(2.45rem, 12vw, 3.5rem); line-height: 1.1; letter-spacing: -0.03em; }
+  .hero .lede { font-size: 1.04rem; line-height: 1.5; }
   .hero { margin-bottom: 1rem; }
 }
 

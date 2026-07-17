@@ -8,7 +8,7 @@ updated: 2026-07-15
 canonical: https://www.ryanbaumann-portfolio.com/writing/devx-is-a-growth-discipline/
 image: /assets/devx-growth-header.png
 imageAlt: A four-stage DevX loop moves from observed friction to a shipped fix, distribution in builder workflows, and rising measured outcomes.
-socialImage: /social/devx-growth-discipline.png
+socialImage: /social/devx-growth-discipline.jpg
 shareTitle: DevX Is a Growth Discipline
 shareSummary: Own the friction, ship the fix, distribute the experience, and measure the outcome.
 shareImageAlt: DevX Is a Growth Discipline, with a product, distribution, and measurement loop beside observed user and API engagement growth.

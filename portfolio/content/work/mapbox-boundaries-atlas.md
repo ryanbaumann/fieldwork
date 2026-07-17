@@ -8,7 +8,7 @@ tags: ["product", "0→1", "enterprise"]
 links: [{"label": "Boundaries", "url": "https://www.mapbox.com/boundaries"}, {"label": "Atlas", "url": "https://www.mapbox.com/atlas"}]
 image: /img/work/mapbox-boundaries-atlas.svg
 imageAlt: Panel showing Boundaries and Atlas as two zero-to-one enterprise mapping products
-socialImage: /social/work-mapbox-boundaries-atlas.png
+socialImage: /social/work-mapbox-boundaries-atlas.jpg
 shareTitle: Mapbox Boundaries and Atlas
 shareSummary: Two enterprise mapping products taken from zero to one.
 shareImageAlt: Mapbox Boundaries and Atlas beside a two-products, zero-to-one artifact.

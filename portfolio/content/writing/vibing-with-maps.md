@@ -7,7 +7,7 @@ date: 2025-04-15
 canonical: https://ryanbaumann.substack.com/p/vibing-with-maps-practical-experiments
 tags: ["ai", "maps", "field notes"]
 external: https://ryanbaumann.substack.com/p/vibing-with-maps-practical-experiments
-socialImage: /social/vibing-with-maps.png
+socialImage: /social/vibing-with-maps.jpg
 shareTitle: Vibing with Maps: Practical Experiments
 shareSummary: What worked, what broke, and why curated context beats raw model knowledge for geo work.
 shareImageAlt: Social card reading Vibing with Maps: Practical Experiments beside a map-building artifact.

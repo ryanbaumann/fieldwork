@@ -8,7 +8,7 @@ updated: 2026-07-15
 canonical: https://www.ryanbaumann-portfolio.com/writing/evals-turn-ai-developer-experience-into-an-operating-system/
 image: /img/writing/evals-header.svg
 imageAlt: A six-stage evaluation flow moves from field signal through a task, baseline, targeted change, measured delta, and launch decision.
-socialImage: /social/evals-turn-ai-developer-experience-into-an-operating-system.png
+socialImage: /social/evals-turn-ai-developer-experience-into-an-operating-system.jpg
 shareTitle: Evals Are How You Know an AI Developer Tool Got Better
 shareSummary: Test whether a context, tool, or prompt improved the developer's actual job.
 shareImageAlt: Evals Are How You Know an AI Developer Tool Got Better beside a task-to-launch evaluation loop.

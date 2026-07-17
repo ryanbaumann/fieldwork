@@ -7,7 +7,7 @@ summary: One sentence on what the talk covers.
 links: [{"label": "Slides", "url": "/decks/my-deck.pdf"}, {"label": "Watch", "url": "https://example.com"}]
 image: /img/talks/talk-title.svg
 imageAlt: A literal description of the talk artifact or real event image.
-socialImage: /social/talk-title.png
+socialImage: /social/talk-title.jpg
 shareTitle: Talk title
 shareSummary: One concrete idea the audience will learn.
 shareImageAlt: A literal description of the social preview.

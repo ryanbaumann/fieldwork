@@ -8,7 +8,7 @@ tags: ["developer experience", "architecture", "technical writing"]
 links: [{"label": "Architecture Center", "url": "https://developers.google.com/maps/architecture"}]
 image: /img/work/geo-architecture-center.svg
 imageAlt: Panel representing the Geo Architecture Center's public catalog of solution architectures
-socialImage: /social/work-geo-architecture-center.png
+socialImage: /social/work-geo-architecture-center.jpg
 shareTitle: Geo Architecture Center
 shareSummary: Reusable system patterns for repeated Google Maps Platform architecture questions.
 shareImageAlt: Geo Architecture Center beside its solution-architecture artifact card.

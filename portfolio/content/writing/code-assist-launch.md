@@ -7,7 +7,7 @@ date: 2025-11-10
 canonical: https://mapsplatform.google.com/resources/blog/announcing-code-assist-toolkit-bring-google-maps-platform-expertise-to-your-ai-coding-assistant/
 tags: ["code assist", "mcp", "developer experience"]
 external: https://mapsplatform.google.com/resources/blog/announcing-code-assist-toolkit-bring-google-maps-platform-expertise-to-your-ai-coding-assistant/
-socialImage: /social/code-assist-launch.png
+socialImage: /social/code-assist-launch.jpg
 shareTitle: Announcing the Code Assist Toolkit
 shareSummary: Grounded platform expertise in any AI coding assistant, and why retrieval beats training-data memory.
 shareImageAlt: Social card reading Announcing the Code Assist Toolkit beside a grounded-retrieval artifact.
