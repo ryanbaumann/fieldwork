@@ -1150,8 +1150,8 @@ function buildHome(collections) {
 
   const featured = writingEntries[0];
   const fieldNotesBody = featured
-    ? featuredNote(featured)
-    : `<ul class="rows">${writingEntries.map((entry) => listRow('writing', entry)).join('\n')}</ul>`;
+    ? `${featuredNote(featured)}\n<ul class="rows">${writingEntries.slice(1).map((entry) => listRow('writing', entry)).join('\n')}</ul>`
+    : `<ul class="rows"></ul>`;
 
   const content = `
 <section class="hero">
