@@ -13,7 +13,6 @@ shareTitle: The Next Platform Interface Is an Agent Session
 shareSummary: Ship context and workflows where developers make decisions.
 shareImageAlt: The Next Platform Interface Is an Agent Session beside a Code Assist retrieval artifact.
 tags: ["developer experience", "ai", "distribution"]
-order: 2
 ---
 
 The next platform interface is an agent session. Developers still use documentation, consoles, SDKs, and samples, but an agent increasingly chooses which of those surfaces to read and how to combine them into working code.

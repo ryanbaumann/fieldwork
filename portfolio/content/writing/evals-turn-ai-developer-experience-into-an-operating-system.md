@@ -13,7 +13,6 @@ shareTitle: Evals Are How You Know an AI Developer Tool Got Better
 shareSummary: Test whether a context, tool, or prompt improved the developer's actual job.
 shareImageAlt: Evals Are How You Know an AI Developer Tool Got Better beside a task-to-launch evaluation loop.
 tags: ["developer experience", "ai", "evals"]
-order: 3
 ---
 
 Evals show whether an AI developer tool got better. Without them, a team can ship context, prompts, tools, and skills, but it cannot tell whether an agent became better at the developer's task.
