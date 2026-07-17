@@ -5,7 +5,7 @@ aliases: ["/writing/devex-is-a-growth-discipline/"]
 summary: DevX teams should own developer friction from discovery through distribution, product improvement, and measurable growth.
 date: 2026-07-14
 updated: 2026-07-15
-canonical: https://www.ryanbaumann-portfolio.com/writing/devx-is-a-growth-discipline/
+canonical: https://ryanbaumann.dev/writing/devx-is-a-growth-discipline/
 image: /assets/devx-growth-header.png
 imageAlt: A four-stage DevX loop moves from observed friction to a shipped fix, distribution in builder workflows, and rising measured outcomes.
 socialImage: /social/devx-growth-discipline.jpg

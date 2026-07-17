@@ -5,7 +5,7 @@ title: The Next Platform Interface Is an Agent Session
 summary: Platforms need to ship context and workflows into the agent sessions where developers now make product decisions.
 date: 2026-07-13
 updated: 2026-07-15
-canonical: https://www.ryanbaumann-portfolio.com/writing/the-next-platform-interface-is-an-agent-session/
+canonical: https://ryanbaumann.dev/writing/the-next-platform-interface-is-an-agent-session/
 image: /img/writing/agent-session-header.svg
 imageAlt: Developer intent moves through current platform context and workflow guidance to working code inside an agent session.
 socialImage: /social/the-next-platform-interface-is-an-agent-session.jpg

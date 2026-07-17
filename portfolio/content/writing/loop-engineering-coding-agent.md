@@ -3,7 +3,7 @@ title: Loop Engineering Coding Agent
 summary: Use a lean orchestrator, lower-cost workers, and an evidence loop to spend agent tokens where they matter.
 date: 2026-07-16
 updated: 2026-07-16
-canonical: https://www.ryanbaumann-portfolio.com/writing/loop-engineering-coding-agent/
+canonical: https://ryanbaumann.dev/writing/loop-engineering-coding-agent/
 aliases: ["/scripts/loop-engineering-coding-agent/"]
 tags: ["ai", "developer tools", "evals", "field notes"]
 links: [{"label":"Get the prompt","url":"https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop"}]

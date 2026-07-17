@@ -140,7 +140,7 @@ const CARDS = [
   },
   {
     file: 'devx-growth-discipline.png',
-    source: 'portfolio/static/social/devx-growth-discipline-final-source.png',
+    source: 'portfolio/static/social/devx-growth-discipline-final-source.jpg',
     layout: 'direct',
   },
   {
@@ -306,7 +306,7 @@ function cardHtml(spec) {
   .eyebrow { margin: 0 0 27px; color: #1d5fd1; font: 700 19px/1.2 ui-monospace, "SFMono-Regular", Consolas, monospace; letter-spacing: 2.4px; }
   h1 { margin: 0; max-width: 530px; font-size: ${titleSize}px; line-height: .99; letter-spacing: -3.4px; font-weight: 760; text-wrap: balance; }
   .summary { margin: 28px 0 0; max-width: 500px; color: #505b6e; font-size: 25px; line-height: 1.35; text-wrap: balance; }
-  .byline { margin-top: auto; color: #697386; font: 600 18px/1.2 ui-monospace, "SFMono-Regular", Consolas, monospace; }
+  .byline { position: absolute; left: 0; bottom: 0; width: 20rem; margin: 0; color: #697386; font: 600 18px/1.2 ui-monospace, "SFMono-Regular", Consolas, monospace; }
   .rule { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 7px; background: #1d5fd1; }
 </style></head><body>
   <main class="card ${escapeHtml(spec.layout)}">
@@ -315,7 +315,7 @@ function cardHtml(spec) {
       <p class="eyebrow">${escapeHtml(spec.eyebrow)}</p>
       <h1>${escapeHtml(spec.title)}</h1>
       <p class="summary">${escapeHtml(spec.summary)}</p>
-      <p class="byline">www.ryanbaumann-portfolio.com</p>
+      <p class="byline">ryanbaumann.dev</p>
     </div>
     <div class="rule"></div>
   </main>

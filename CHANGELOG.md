@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Added a production domain-migration runbook for mapping `ryanbaumann.dev`, preserving deep-link redirects from the old domain, and updating dependent services.
+- Added a site-first Field Notes syndication runbook covering Substack, LinkedIn, and X workflows, consent-safe list migration, UTM attribution, and practical channel experiments.
+- Added permanent `/lab/` and `/labs/` redirects to the canonical `/demos/` route.
 - Added an `apple-touch-icon.png` and explicit `thumbnail` meta tag to the site `<head>` for better crawler visual citation and brand previews.
 - Enhanced the `sitemap.xml` generator to output `<image:image>` and `<image:loc>` nodes for pages with cover images to optimize visual search indexing.
 
 ### Changed
+- Made `https://ryanbaumann.dev/` the canonical site origin across metadata, RSS, sitemap, analytics, Lab apps, deployment checks, generated posts, and documentation; legacy and www hosts now permanently redirect to the matching apex `.dev` URL.
+- Regenerated the portfolio social cards with the new domain, corrected Lab social-image metadata to the published JPEG assets, and expanded production smoke coverage for canonicals, redirects, feeds, sitemaps, and social images.
+- Aligned the contact gateway's accepted intent with the updated “Developer platform discussion” form option.
+- Reworked the site hierarchy around Field Notes first, Contact second, and Ryan’s Lab as the featured project surface, with a quieter theme control and clearer mobile/desktop calls to action.
+- Simplified and refreshed the About, Resume, Contact, Privacy, homepage, and Lab copy; removed the duplicate resume portrait; and corrected stale availability, hosting, and project claims.
+- Kept analytics enabled by default on the canonical production host, documented that behavior on the Privacy page, restricted campaign parameters to allowlisted UTM values, and added confirmed subscription conversion tracking.
+- Migrated Field Notes subscriptions from Resend's retired Audience API to Contacts with a dedicated Segment and Topic, including safe resubscription behavior and updated setup/deployment documentation.
+- Standardized reader-facing references to “Ryan’s Lab” while retaining `/demos/` and `labs:*` as technical route and command names.
 - Changed "Google Maps Platform" to "Google Maps" in the job titles and profile headlines across the site (`site.json`, `about.md`, `resume.md`).
 - Optimized above-the-fold Largest Contentful Paint (LCP) by setting hero images to `loading="eager"`.
 - Shifted the social card generator (`social-cards.mjs`) to output compressed `.jpg` files at 70% quality instead of `.png`.

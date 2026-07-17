@@ -9,6 +9,12 @@ const apps = JSON.parse(readFileSync(resolve(REPO_ROOT, 'apps.json'), 'utf8'))
   .filter((app) => (app.visibility || 'public') === 'public');
 const site = JSON.parse(readFileSync(resolve(REPO_ROOT, 'portfolio/content/site.json'), 'utf8'));
 const baseUrl = (process.env.BASE_URL || site.siteUrl).replace(/\/$/, '');
+const canonicalOrigin = new URL(site.siteUrl).origin;
+const redirectOrigins = [
+  'https://www.ryanbaumann.dev',
+  'https://ryanbaumann-portfolio.com',
+  'https://www.ryanbaumann-portfolio.com',
+];
 const failures = [];
 
 async function check(name, fn) {
@@ -43,6 +49,11 @@ function localAssets(html) {
     .filter((value) => value && !/^(?:https?:)?\/\//i.test(value) && !/^(?:data|mailto|tel|javascript):/i.test(value) && !value.startsWith('#'));
 }
 
+function socialMetadataAssets(html) {
+  return [...html.matchAll(/<meta\s+(?:property|name)=["'](?:og:image|twitter:image)["']\s+content=["']([^"']+)["']/gi)]
+    .map((match) => match[1]);
+}
+
 async function main() {
   console.log(`[smoke-production] testing ${baseUrl}`);
   await waitForHealthy();
@@ -66,6 +77,8 @@ async function main() {
       
       if (app.source?.type !== 'external') {
         servedText.push(html);
+        const expectedCanonical = new URL(app.path, site.siteUrl).toString();
+        if (!html.includes(`<link rel="canonical" href="${expectedCanonical}"`)) throw new Error(`missing canonical ${expectedCanonical}`);
       }
 
       for (const asset of localAssets(html)) {
@@ -77,12 +90,44 @@ async function main() {
           servedText.push(await assetResponse.text());
         }
       }
+
+
+      if (app.source?.type !== 'external') {
+        for (const asset of socialMetadataAssets(html)) {
+          const assetUrl = new URL(asset, pageUrl);
+          if (assetUrl.origin !== canonicalOrigin) throw new Error(`social metadata asset uses non-canonical origin ${assetUrl.origin}`);
+          const assetResponse = await fetch(assetUrl);
+          if (!assetResponse.ok) throw new Error(`social metadata asset ${assetUrl.pathname} returned ${assetResponse.status}`);
+          if (!assetResponse.headers.get('content-type')?.startsWith('image/')) throw new Error(`social metadata asset ${assetUrl.pathname} is not an image`);
+        }
+      }
     });
   }
 
   await check('canonical production URL is emitted', async () => {
     const html = await (await fetch(`${baseUrl}/`)).text();
     if (!html.includes(`<link rel="canonical" href="${site.siteUrl}"`)) throw new Error(`missing canonical ${site.siteUrl}`);
+    if (!html.includes(`const canonicalHost=${JSON.stringify(new URL(site.siteUrl).hostname)}`)) throw new Error('analytics host gate does not use the canonical hostname');
+  });
+
+  await check('feed and sitemap use only the canonical origin', async () => {
+    for (const path of ['/feed.xml', '/sitemap.xml']) {
+      const response = await fetch(`${baseUrl}${path}`);
+      const body = await response.text();
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      if (!body.includes(canonicalOrigin)) throw new Error(`${path} is missing ${canonicalOrigin}`);
+      if (body.includes('ryanbaumann-portfolio.com')) throw new Error(`${path} contains the legacy domain`);
+      if (body.includes('www.ryanbaumann.dev')) throw new Error(`${path} contains the non-canonical www domain`);
+    }
+  });
+
+  await check('www and legacy domains redirect directly to the canonical origin', async () => {
+    const path = '/writing/?utm_source=legacy';
+    for (const origin of redirectOrigins) {
+      const response = await fetch(`${origin}${path}`, { redirect: 'manual' });
+      if (response.status !== 308) throw new Error(`${origin} returned ${response.status}, expected 308`);
+      if (response.headers.get('location') !== `${canonicalOrigin}${path}`) throw new Error(`${origin} returned unexpected Location ${response.headers.get('location')}`);
+    }
   });
 
   await check('writer dashboard is closed without an authenticated session', async () => {

@@ -8,7 +8,7 @@
 // docs/ARCHITECTURE.md rule 4: "Smoke tests are dependency-free."
 //
 // Usage:
-//   BASE_URL=https://www.ryanbaumann-portfolio.com node scripts/smoke.mjs   # test a running instance
+//   BASE_URL=https://ryanbaumann.dev node scripts/smoke.mjs   # test a running instance
 //   node scripts/smoke.mjs                                  # build nothing; boot the
 //                                                            # gateway against ./apps
 //                                                            # (run `node scripts/build-local.mjs`

@@ -228,14 +228,14 @@ test('contact delivery validates intent and marks only provider-confirmed succes
 
     const success = await postForm(port, '/api/contact', {
       ...valid,
-      intent: 'Consulting',
+      intent: 'Developer platform discussion',
     });
     assert.equal(success.res.statusCode, 303);
     assert.equal(success.res.headers.location, '/contact-success/?delivered=1');
     assert.equal(success.body, '');
     assert.equal(delivered.length, 1);
-    assert.equal(delivered[0].subject, '[Consulting] Portfolio contact from Ada Lovelace');
-    assert.match(delivered[0].text, /^Intent: Consulting\nName: Ada Lovelace\nEmail: ada@example\.com\n\n/);
+    assert.equal(delivered[0].subject, '[Developer platform discussion] Portfolio contact from Ada Lovelace');
+    assert.match(delivered[0].text, /^Intent: Developer platform discussion\nName: Ada Lovelace\nEmail: ada@example\.com\n\n/);
 
     const spamRegexMatch = await postForm(port, '/api/contact', {
       ...valid,
@@ -306,14 +306,16 @@ test('contact delivery validates intent and marks only provider-confirmed succes
 test('subscribe route validates email, honors the honeypot, and requires provider config', async () => {
   const previousEnv = {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
-    RESEND_AUDIENCE_ID: process.env.RESEND_AUDIENCE_ID,
+    RESEND_SEGMENT_ID: process.env.RESEND_SEGMENT_ID,
+    RESEND_TOPIC_ID: process.env.RESEND_TOPIC_ID,
   };
   const originalFetch = globalThis.fetch;
   const stored = [];
   process.env.RESEND_API_KEY = 'test-resend-key';
-  process.env.RESEND_AUDIENCE_ID = 'test-audience-id';
+  process.env.RESEND_SEGMENT_ID = 'test-segment-id';
+  process.env.RESEND_TOPIC_ID = 'test-topic-id';
   globalThis.fetch = async (url, options) => {
-    stored.push({ url: String(url), body: JSON.parse(options.body) });
+    stored.push({ url: String(url), method: options.method, body: options.body ? JSON.parse(options.body) : null });
     return { ok: true, status: 201 };
   };
   server.listen(0);
@@ -340,23 +342,39 @@ test('subscribe route validates email, honors the honeypot, and requires provide
     assert.equal(success.res.statusCode, 303);
     assert.equal(success.res.headers.location, '/subscribed/?ok=1');
     assert.equal(stored.length, 1);
-    assert.equal(stored[0].url, 'https://api.resend.com/audiences/test-audience-id/contacts');
-    assert.deepEqual(stored[0].body, { email: 'ada@example.com', unsubscribed: false });
+    assert.equal(stored[0].url, 'https://api.resend.com/contacts');
+    assert.deepEqual(stored[0].body, {
+      email: 'ada@example.com',
+      unsubscribed: false,
+      segments: [{ id: 'test-segment-id' }],
+      topics: [{ id: 'test-topic-id', subscription: 'opt_in' }],
+    });
 
-    globalThis.fetch = async () => ({ ok: false, status: 409 });
+    const retryCalls = [];
+    globalThis.fetch = async (url, options) => {
+      retryCalls.push({ url: String(url), method: options.method, body: options.body ? JSON.parse(options.body) : null });
+      if (retryCalls.length === 1) return { ok: false, status: 409 };
+      return { ok: true, status: 200 };
+    };
     const alreadySubscribed = await postForm(port, '/api/subscribe', { email: 'ada@example.com' }, { 'x-forwarded-for': '4.4.4.3, proxy' });
     assert.equal(alreadySubscribed.res.statusCode, 303);
     assert.equal(alreadySubscribed.res.headers.location, '/subscribed/?ok=1');
+    assert.deepEqual(retryCalls.map((call) => [call.method, call.url]), [
+      ['POST', 'https://api.resend.com/contacts'],
+      ['PATCH', 'https://api.resend.com/contacts/ada%40example.com'],
+      ['PATCH', 'https://api.resend.com/contacts/ada%40example.com/topics'],
+      ['POST', 'https://api.resend.com/contacts/ada%40example.com/segments/test-segment-id'],
+    ]);
 
     globalThis.fetch = async () => ({ ok: false, status: 500 });
     const providerError = await postForm(port, '/api/subscribe', { email: 'ada@example.com' }, { 'x-forwarded-for': '4.4.4.4, proxy' });
     assert.equal(providerError.res.statusCode, 502);
     assert.match(providerError.body, /data-contact-delivery="failure"/);
 
-    delete process.env.RESEND_AUDIENCE_ID;
+    delete process.env.RESEND_TOPIC_ID;
     const keyless = await postForm(port, '/api/subscribe', { email: 'ada@example.com' }, { 'x-forwarded-for': '4.4.4.5, proxy' });
     assert.equal(keyless.res.statusCode, 503);
-    assert.match(keyless.body, /RESEND_AUDIENCE_ID/);
+    assert.match(keyless.body, /RESEND_TOPIC_ID/);
   } finally {
     globalThis.fetch = originalFetch;
     for (const [key, value] of Object.entries(previousEnv)) {
@@ -386,6 +404,21 @@ test('unknown static path serves a styled HTML 404 with a home link', async () =
     assert.doesNotMatch(body, /^Not found\.$/);
   } finally {
     appsByPathLength.splice(0, appsByPathLength.length, ...originalByPath);
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('legacy and www site hosts permanently redirect to the canonical .dev URL', async () => {
+  server.listen(0);
+  const port = server.address().port;
+
+  try {
+    for (const host of ['www.ryanbaumann.dev', 'ryanbaumann-portfolio.com', 'www.ryanbaumann-portfolio.com']) {
+      const { res } = await request(port, '/writing/example/?utm_source=legacy', { Host: host });
+      assert.equal(res.statusCode, 308);
+      assert.equal(res.headers.location, 'https://ryanbaumann.dev/writing/example/?utm_source=legacy');
+    }
+  } finally {
     await new Promise((resolve) => server.close(resolve));
   }
 });
