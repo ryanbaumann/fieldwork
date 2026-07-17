@@ -119,8 +119,8 @@ function validateSocialImage(id, meta) {
     return;
   }
   const { width, height } = getImageDimensions(imagePath);
-  if (/\.(png|jpe?g)$/i.test(meta.socialImage) && (width !== 1200 || height !== 627)) {
-    failValidation(`${id}: raster social image must be 1200x627: ${meta.socialImage}`);
+  if (/\.(png|jpe?g)$/i.test(meta.socialImage) && (width !== 1200 || (height !== 627 && height !== 630))) {
+    failValidation(`${id}: raster social image must be 1200x627 or 1200x630: ${meta.socialImage}`);
   }
 }
 
@@ -210,8 +210,8 @@ function validateSite() {
     if (!existsSync(imagePath)) failValidation(`site.json: defaultShareImage asset not found: ${site.defaultShareImage}`);
     else {
       const { width, height } = getImageDimensions(imagePath);
-      if (/\.(png|jpe?g)$/i.test(site.defaultShareImage) && (width !== 1200 || height !== 627)) {
-        failValidation('site.json: raster defaultShareImage must be 1200x627');
+      if (/\.(png|jpe?g)$/i.test(site.defaultShareImage) && (width !== 1200 || (height !== 627 && height !== 630))) {
+        failValidation('site.json: raster defaultShareImage must be 1200x627 or 1200x630');
       }
     }
   }
@@ -538,6 +538,8 @@ ${ogImageAltTag}
 ${ogImageDetails}
 ${twitterTags}
 ${articleTags ? articleTags + '\n' : ''}<link rel="icon" href="${BASE}favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="${BASE}apple-touch-icon.png" />
+<meta name="thumbnail" content="${BASE}img/ryan-baumann-profile.jpg" />
 <link rel="alternate" type="application/rss+xml" title="${escapeHtml(site.name)} Writing" href="${absoluteUrl('/feed.xml')}" />
 ${robotsTag ? robotsTag + '\n' : ''}${contactDeliveryTag ? contactDeliveryTag + '\n' : ''}${jsonLdTag ? jsonLdTag + '\n' : ''}<script>try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch{}</script>
 <style>${CSS}</style>
@@ -1016,6 +1018,7 @@ function detailPage(collection, entry, activeKey) {
   <p class="eyebrow">${escapeHtml(collection.label)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
   <p class="article-meta">${metaLine([meta.org || meta.venue, meta.role, meta.period || meta.date])}</p>
+  ${meta.summary ? `<p class="lede">${escapeHtml(meta.summary)}</p>` : ''}
   ${linkChips(meta.links)}
   ${heroImage(meta, collection.name)}
   ${markdownToHtml(entry.body)}
@@ -1285,7 +1288,7 @@ function heroImage(meta, sourceDirName, extraClass = '') {
   if (!meta.image) return '';
   const imagePath = meta.image.startsWith('/') ? join(STATIC_DIR, meta.image.slice(1)) : join(CONTENT_DIR, sourceDirName, meta.image);
   const { width, height } = getImageDimensions(imagePath);
-  return `<img class="article-hero${escapeHtml(extraClass)}" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" width="${width}" height="${height}" />`;
+  return `<img class="article-hero${escapeHtml(extraClass)}" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="eager" width="${width}" height="${height}" />`;
 }
 
 function resumePageContent(meta, body) {
@@ -1350,6 +1353,7 @@ function buildStandalonePages(pages) {
     const content = customContent || `<article class="prose">
   <p class="eyebrow">${escapeHtml(meta.eyebrow || site.name)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
+  ${meta.summary ? `<p class="lede">${escapeHtml(meta.summary)}</p>` : ''}
   ${heroImage(meta, 'pages', slug === 'about' ? ' profile-portrait' : '')}
   ${markdownToHtml(body)}
 </article>`;
@@ -1440,7 +1444,11 @@ function sitemapXml(collections) {
       if (entry.meta.noindex) continue;
       const loc = absoluteUrl(entryUrl(col.name, entry));
       const lastmod = entry.meta.updated || entry.meta.date || null;
-      urls.push({ loc, lastmod, priority: '0.6' });
+      let image = null;
+      if (entry.meta.image) {
+        image = entry.meta.image.startsWith('/') ? absoluteUrl(rebase(entry.meta.image)) : loc + entry.meta.image;
+      }
+      urls.push({ loc, lastmod, priority: '0.6', image });
     }
   }
 
@@ -1452,16 +1460,22 @@ function sitemapXml(collections) {
       const slug = file.replace(/\.md$/, '');
       const { meta } = parseFrontMatter(readFileSync(join(pagesDir, file), 'utf8'));
       if (meta.noindex) continue;
-      urls.push({ loc: absoluteUrl(`/${slug}/`), priority: '0.5' });
+      const loc = absoluteUrl(`/${slug}/`);
+      let image = null;
+      if (meta.image) {
+        image = meta.image.startsWith('/') ? absoluteUrl(rebase(meta.image)) : loc + meta.image;
+      }
+      urls.push({ loc, priority: '0.5', image });
     }
   }
 
   const entries = urls.map((u) => {
     const lastmod = u.lastmod ? `\n  <lastmod>${u.lastmod}</lastmod>` : '';
-    return `<url>\n  <loc>${escapeHtml(u.loc)}</loc>${lastmod}\n  <priority>${u.priority}</priority>\n</url>`;
+    const imageNode = u.image ? `\n  <image:image>\n    <image:loc>${escapeHtml(u.image)}</image:loc>\n  </image:image>` : '';
+    return `<url>\n  <loc>${escapeHtml(u.loc)}</loc>${lastmod}${imageNode}\n  <priority>${u.priority}</priority>\n</url>`;
   }).join('\n');
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${entries}\n</urlset>`;
 }
 
 function robotsTxt() {

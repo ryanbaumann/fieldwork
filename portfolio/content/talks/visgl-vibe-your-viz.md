@@ -7,7 +7,7 @@ summary: A thesis for growing the open visualization ecosystem with AI assistanc
 links: [{"label": "Slides", "url": "https://docs.google.com/presentation/d/1Nc2aa6YIAdiUswzYzm4djvJAQYiuSyKupH9jEq3kgyA/edit"}, {"label": "Video", "url": "https://www.youtube.com/watch?v=Cj6JixwzrFw"}]
 image: /img/talks/visgl-vibe-your-viz.svg
 imageAlt: Title card for the Vibe your Viz talk at the vis.gl Summit in Seattle, October 2025
-socialImage: /social/visgl-vibe-your-viz.png
+socialImage: /social/visgl-vibe-your-viz.jpg
 shareTitle: Vibe Your Viz: Growing With AI-Native Makers
 shareSummary: What open-source visualization libraries need from AI coding agents.
 shareImageAlt: Vibe Your Viz talk title beside the vis.gl Summit artifact

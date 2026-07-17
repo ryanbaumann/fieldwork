@@ -1,26 +1,26 @@
 ---
 title: About
 eyebrow: Background
-summary: Ryan Baumann leads Developer Experience Engineering and product work for builder platforms.
+summary: Ryan Baumann leads Developer Experience Engineering and product for builder platforms.
 image: /img/ryan-baumann-profile.jpg
 imageAlt: Headshot of Ryan Baumann wearing a blue shirt.
-socialImage: /social/about.png
+socialImage: /social/about.jpg
 shareTitle: Ryan Baumann
-shareSummary: Developer Experience Engineering leader and practitioner building tools, evals, open source, and AI coding-agent workflows.
-shareImageAlt: Ryan Baumann beside his focus on developer tools, evals, open source, and AI coding agents.
+shareSummary: Developer Experience Engineering leader shipping tools, evals, and workflows for humans and AI coding agents.
+shareImageAlt: Ryan Baumann beside his focus on tools, evals, and AI coding agents.
 ---
 
-I build growth systems for developer platforms. I lead Developer Experience Engineering and product work across tools, context, evals, open source, and the workflows where builders make decisions.
+I build growth systems for developer platforms. I lead DevX engineering & product teams, learning from users at scale & shipping platform capabilities that drive distribution & GTM growth. My mission is to help every human become a builder and create their dream.
 
 Today I lead Developer Experience Engineering for Google Maps Platform, where my team ships [Code Assist](https://developers.google.com/maps/ai/code-assist), [agent skills](https://github.com/googlemaps/agent-skills), evals, architecture guidance, and open-source client libraries.
 
-I stay close to the code by reviewing traces, writing evals, dogfooding products, and shipping the reference apps on this site. The loop is simple: find repeated developer friction, build the smallest useful artifact, test whether it helps, and publish what can be reused. I describe that operating model in [DevX Is a Growth Discipline](/writing/devx-is-a-growth-discipline/).
+I stay in the work by reviewing traces, writing evals, dogfooding products, and shipping reference apps. The loop is simple: find repeated developer friction, build the smallest useful artifact, test whether it helps, and publish what can be reused. I describe that operating model in [DevX Is a Growth Discipline](/writing/devx-is-a-growth-discipline/).
 
 Between early 2025 and 2026, our open-source ecosystem grew significantly, more than doubling unique active users with strong growth in API engagement. I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, and technical writing. Google Maps Platform also sponsors [@vis.gl/react-google-maps](https://www.npmjs.com/package/@vis.gl/react-google-maps), which has more than 1 million weekly downloads.
 
 ## Google, 2021 to present
 
-**Head of Developer Experience, Google Maps Platform** (2022 to present). I lead the organization responsible for the tools, context, evals, open-source libraries, and architecture guidance described in [Work](/work/).
+**Head of Developer Experience, Google Maps** (2022 to present). I lead the team responsible for the tools, evals, open-source libraries, and architecture guidance described in [Work](/work/).
 
 We sit with developers and field teams, find an architecture or adoption blocker that repeats, build the smallest real artifact that addresses it, then publish the result through product, documentation, open source, and partners. [Work](/work/) shows those artifacts and the decisions behind them.
 

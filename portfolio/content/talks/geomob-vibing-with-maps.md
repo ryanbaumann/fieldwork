@@ -7,7 +7,7 @@ summary: Live-coded AI prototyping for geo builders. Three demos from prompt to 
 links: [{"label": "Slides", "url": "https://docs.google.com/presentation/d/1CNP2_Mj3LE1E3crLCKFv9ISWeQ-gQvFFFWP6v5FMWx0/edit"}]
 image: /img/talks/geomob-vibing-with-maps.svg
 imageAlt: Artifact card reading Vibe with Maps above concept to prototype, fast.
-socialImage: /social/geomob-vibing-with-maps.png
+socialImage: /social/geomob-vibing-with-maps.jpg
 shareTitle: Vibe With Maps: Concept to Prototype, Fast
 shareSummary: Three working demos and the context that makes them reliable.
 shareImageAlt: Vibe With Maps talk title beside the GeoMob SF artifact

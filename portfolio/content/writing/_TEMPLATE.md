@@ -6,7 +6,7 @@ updated: 2026-01-15
 canonical: https://www.ryanbaumann-portfolio.com/writing/post-title/
 image: /img/writing/post-title.jpg
 imageAlt: A specific description of the evidence shown in the article image
-socialImage: /social/post-title.png
+socialImage: /social/post-title.jpg
 shareTitle: A concise title for social previews
 shareSummary: One specific claim or reason to read.
 shareImageAlt: A literal description of the social preview image

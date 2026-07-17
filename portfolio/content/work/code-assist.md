@@ -8,7 +8,7 @@ tags: ["developer experience", "ai", "developer tools"]
 links: [{"label": "Docs", "url": "https://developers.google.com/maps/ai/code-assist"}, {"label": "Launch blog", "url": "https://mapsplatform.google.com/resources/blog/announcing-code-assist-toolkit-bring-google-maps-platform-expertise-to-your-ai-coding-assistant/"}]
 image: /img/work/code-assist-docs.png
 imageAlt: Official Code Assist documentation showing its experimental status, MCP grounding, public sources, and retrieval tools
-socialImage: /social/work-code-assist.png
+socialImage: /social/work-code-assist.jpg
 shareTitle: Google Maps Platform Code Assist
 shareSummary: Current official platform context inside AI coding agents.
 shareImageAlt: Google Maps Platform Code Assist beside an official documentation capture.

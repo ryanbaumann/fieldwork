@@ -8,7 +8,7 @@ tags: ["open source", "distribution", "data science"]
 links: [{"label": "mapboxgl-jupyter", "url": "https://github.com/mapbox/mapboxgl-jupyter"}, {"label": "mapboxgl-powerbi", "url": "https://github.com/mapbox/mapboxgl-powerbi"}]
 image: /img/work/mapboxgl-jupyter.jpg
 imageAlt: A Jupyter notebook rendering a Mapbox circle visualization of US healthcare charges with mapboxgl-jupyter
-socialImage: /social/work-mapbox-oss-datascience.png
+socialImage: /social/work-mapbox-oss-datascience.jpg
 shareTitle: mapboxgl-jupyter and mapboxgl-powerbi
 shareSummary: Open-source libraries that put maps inside data-science and analytics workflows.
 shareImageAlt: mapboxgl-jupyter beside a real notebook visualization.

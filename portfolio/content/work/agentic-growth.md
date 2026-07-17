@@ -7,7 +7,7 @@ summary: Between early 2025 and 2026, our open-source ecosystem grew significant
 tags: ["growth", "distribution", "open source"]
 image: /img/work/agentic-growth.svg
 imageAlt: Panel listing the distribution surfaces, including AI Studio, above the react-google-maps download stat
-socialImage: /social/work-agentic-growth.png
+socialImage: /social/work-agentic-growth.jpg
 shareTitle: OSS Client-Library Growth
 shareSummary: Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users.
 shareImageAlt: Open-source client-library growth beside the public react-google-maps download artifact.

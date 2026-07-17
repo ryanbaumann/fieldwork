@@ -38,6 +38,7 @@ Treat review as a bounded evidence loop, not a vibe check. Read the portfolio wr
 - Prefer real screenshots and artifacts. Generated visuals must show a mechanism or evidence, never invent metrics, UI, logos, or product behavior.
 - Iterate with the lower-cost image model; render the approved final prompt with the quality model. Save exact prompts, model IDs, aspect ratio, size, thinking setting, and post-processing in `docs/`.
 - Inspect file signatures with `file`; never trust an extension. Verify physical dimensions and generated HTML `width`/`height` attributes.
+- Ensure social preview images are optimized `.jpg` files, compressed (e.g., JPEG quality 70-80), and ideally under 200KB so preview bots and answer engines can ingest them instantly.
 - Write literal, asset-specific alt text. Do not reuse the header description for the social or inline image.
 - Inspect the rendered page at desktop and narrow mobile widths. Check legibility, crop, padding, hierarchy, dark/light behavior when relevant, and whether the image earns its space.
 
