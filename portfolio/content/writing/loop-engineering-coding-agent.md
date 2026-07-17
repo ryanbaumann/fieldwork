@@ -9,7 +9,7 @@ tags: ["ai", "developer tools", "evals", "field notes"]
 links: [{"label":"Get the prompt","url":"https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop"}]
 image: /img/scripts/coding-agent-loop.svg
 imageAlt: An orchestrator routes jobs to tools, fast workers, balanced agents, or deep reasoning before integrated verification.
-socialImage: /social/coding-agent-loop.png
+socialImage: /social/coding-agent-loop.jpg
 shareTitle: Loop Engineering Coding Agent
 shareSummary: A forkable system prompt for routing coding work across a lean agent team and proving the result.
 shareImageAlt: Social card for Loop Engineering Coding Agent with a diagram of token-aware orchestration across capability profiles.

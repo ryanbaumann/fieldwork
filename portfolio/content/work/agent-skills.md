@@ -8,7 +8,7 @@ tags: ["developer experience", "ai", "distribution"]
 links: [{"label": "GitHub", "url": "https://github.com/googlemaps/agent-skills"}, {"label": "Docs", "url": "https://developers.google.com/maps/ai/agent-skills"}]
 image: /img/work/agent-skills.svg
 imageAlt: Terminal panel showing the public one-line install command npx skills add googlemaps/agent-skills
-socialImage: /social/work-agent-skills.png
+socialImage: /social/work-agent-skills.jpg
 shareTitle: Google Maps Platform Agent Skills
 shareSummary: Portable, tested workflows for AI coding agents.
 shareImageAlt: Google Maps Platform Agent Skills beside the public one-command installation artifact.

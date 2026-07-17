@@ -8,7 +8,7 @@ tags: ["two", "or three", "tags"]
 links: [{"label": "Docs", "url": "https://example.com"}]
 image: /previews/portfolio.jpg
 imageAlt: Ryan Baumann Portfolio preview card
-socialImage: /social/work-project-name.png
+socialImage: /social/work-project-name.jpg
 shareTitle: Project name
 shareSummary: One concrete outcome or reason to open the case study.
 shareImageAlt: A literal description of the social preview.

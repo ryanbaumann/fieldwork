@@ -8,7 +8,7 @@ updated: 2026-07-15
 canonical: https://www.ryanbaumann-portfolio.com/writing/the-next-platform-interface-is-an-agent-session/
 image: /img/writing/agent-session-header.svg
 imageAlt: Developer intent moves through current platform context and workflow guidance to working code inside an agent session.
-socialImage: /social/the-next-platform-interface-is-an-agent-session.png
+socialImage: /social/the-next-platform-interface-is-an-agent-session.jpg
 shareTitle: The Next Platform Interface Is an Agent Session
 shareSummary: Ship context and workflows where developers make decisions.
 shareImageAlt: The Next Platform Interface Is an Agent Session beside a Code Assist retrieval artifact.

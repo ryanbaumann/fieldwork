@@ -7,7 +7,7 @@ summary: A product-signal program that groups repeated developer friction into e
 tags: ["developer experience", "product", "research"]
 image: /img/work/voice-of-developer.svg
 imageAlt: Panel showing developer signal sources flowing into ranked roadmap priorities
-socialImage: /social/work-voice-of-developer.png
+socialImage: /social/work-voice-of-developer.jpg
 shareTitle: AI-Driven Voice of Developer
 shareSummary: Repeated developer friction turned into evidence-backed roadmap priorities.
 shareImageAlt: Developer signal sources flowing into ranked roadmap priorities.

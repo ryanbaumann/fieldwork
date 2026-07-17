@@ -4,7 +4,7 @@ eyebrow: Background
 summary: Ryan Baumann leads Developer Experience Engineering and product for builder platforms.
 image: /img/ryan-baumann-profile.jpg
 imageAlt: Headshot of Ryan Baumann wearing a blue shirt.
-socialImage: /social/about.png
+socialImage: /social/about.jpg
 shareTitle: Ryan Baumann
 shareSummary: Developer Experience Engineering leader shipping tools, evals, and workflows for humans and AI coding agents.
 shareImageAlt: Ryan Baumann beside his focus on tools, evals, and AI coding agents.
@@ -20,7 +20,7 @@ Between early 2025 and 2026, our open-source ecosystem grew significantly, more 
 
 ## Google, 2021 to present
 
-**Head of Developer Experience, Google Maps Platform** (2022 to present). I lead the team responsible for the tools, evals, open-source libraries, and architecture guidance described in [Work](/work/).
+**Head of Developer Experience, Google Maps** (2022 to present). I lead the team responsible for the tools, evals, open-source libraries, and architecture guidance described in [Work](/work/).
 
 We sit with developers and field teams, find an architecture or adoption blocker that repeats, build the smallest real artifact that addresses it, then publish the result through product, documentation, open source, and partners. [Work](/work/) shows those artifacts and the decisions behind them.
 

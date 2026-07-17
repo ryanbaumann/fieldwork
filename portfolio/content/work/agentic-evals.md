@@ -7,7 +7,7 @@ summary: Task-based evals that benchmark AI context products against a no-contex
 tags: ["developer experience", "ai", "evals"]
 image: /img/work/agentic-evals.svg
 imageAlt: Panel showing the eval loop, from task to agent run to scored result to launch decision
-socialImage: /social/work-agentic-evals.png
+socialImage: /social/work-agentic-evals.jpg
 shareTitle: Agentic Eval Suite
 shareSummary: Task-based comparisons that turn AI developer-tool quality into a launch decision.
 shareImageAlt: Agentic Eval Suite beside a task-to-launch evaluation loop.
