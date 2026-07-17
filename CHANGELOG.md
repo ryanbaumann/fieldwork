@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 - Added Agent Scripts to the portfolio navigation, homepage, sitemap, metadata, and a dedicated `/scripts/` collection with deterministic artifact and social visuals.
 
 ### Changed
+- Updated `portfolio/build.mjs` to support standard `1200x630` social share images alongside the previous `1200x627` format, maintaining backward compatibility.
+- Injected `meta.summary` as a visible `.lede` paragraph on detail pages and standalone pages to enhance DOM readability and AI discoverability (AEO).
 - Simplified the gateway's three writer form endpoints (publish/save/review) onto one shared handler with the same auth, origin, and redirect behavior, and generalized the contact-form HTML response page for reuse by the subscribe route.
 - Deduplicated the three hero-image render blocks in `portfolio/build.mjs` into a single `heroImage` helper.
 - Fixed the portfolio test script for newer Node 22 minors: `node --test test/` no longer accepts a bare directory, so it now uses an explicit glob (see LEARNINGS.md 2026-07-17).
