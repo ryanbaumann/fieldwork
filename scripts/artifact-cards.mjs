@@ -20,7 +20,7 @@ const CARDS = [
     eyebrow: 'SHIPPED · GOOGLE MAPS PLATFORM',
     title: 'Code Assist',
     lines: ['agent ▸ tool call ▸ retrieval ▸ official docs'],
-    footer: 'Claude Code · Cursor · Antigravity · Gemini CLI',
+    footer: 'works with compatible MCP clients',
   },
   {
     file: 'work/agent-skills.svg',
@@ -154,6 +154,13 @@ const FLOWS = [
     footer: 'ship only when the evidence supports it',
   },
   {
+    file: 'writing/loop-engineering-evidence.svg',
+    eyebrow: 'LOOP ENGINEERING',
+    lead: 'Every agent task is a controlled cycle',
+    steps: ['Define goal\n+ proof', 'Observe\n+ reproduce', 'Smallest\nchange', 'Nearest\ncheck', 'Integrate\nresults', 'Learn\nor stop'],
+    footer: 'evidence decides what happens next',
+  },
+  {
     file: 'writing/evals-independent-checks.svg',
     eyebrow: 'INDEPENDENT EVALUATION',
     lead: 'One output, separate checks',
@@ -228,14 +235,14 @@ function card({ eyebrow, title, lines, footer, mono }) {
   <rect class="border" x="0" y="0" width="${W}" height="${H}" fill="none" stroke-width="2"/>
 
   <!-- Content -->
-  <text class="eyebrow" x="90" y="${startY + 20}" text-anchor="start" font-family="${monoStack}" font-size="19" font-weight="700" letter-spacing="3">${escape(eyebrow)}</text>
+  <text class="eyebrow" x="90" y="${startY + 20}" text-anchor="start" font-family="${monoStack}" font-size="28" font-weight="700" letter-spacing="2">${escape(eyebrow)}</text>
   <text class="title" x="90" y="${startY + 88}" text-anchor="start" font-family="${sans}" font-size="70" font-weight="750" letter-spacing="-2">${escape(title)}</text>
   
   ${body}
   
   <!-- Footer -->
   <line class="border" x1="90" y1="${H - 104}" x2="${W - 90}" y2="${H - 104}" stroke-width="2"/>
-  <text class="footer" x="90" y="${H - 58}" text-anchor="start" font-family="${monoStack}" font-size="21">${escape(footer)}</text>
+  <text class="footer" x="90" y="${H - 58}" text-anchor="start" font-family="${monoStack}" font-size="28">${escape(footer)}</text>
 </svg>
 `;
 }
@@ -275,8 +282,8 @@ function flowDiagram({ eyebrow, lead, steps, footer }) {
     }
     return `<g>
       <rect x="${x}" y="${y}" width="${nodeWidth}" height="${nodeHeight}" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
-      <circle cx="${x + 24}" cy="${y + 6}" r="18" fill="var(--accent)"/>
-      <text x="${x + 24}" y="${y + 13}" text-anchor="middle" font-family="${mono}" font-size="20" font-weight="700" fill="var(--surface)">${index + 1}</text>
+      <circle cx="${x + 24}" cy="${y + 6}" r="22" fill="var(--accent)"/>
+      <text x="${x + 24}" y="${y + 15}" text-anchor="middle" font-family="${mono}" font-size="26" font-weight="700" fill="var(--surface)">${index + 1}</text>
       <text x="${x + nodeWidth / 2}" y="${y + (lines.length === 1 ? 80 : 59)}" text-anchor="middle" font-family="${sans}" font-size="${nodeFontSize}" font-weight="700" fill="var(--ink)">${text}</text>${arrow ? `
       ${arrow}` : ''}
     </g>`;
@@ -294,7 +301,7 @@ function flowDiagram({ eyebrow, lead, steps, footer }) {
   <rect width="${W}" height="${H}" fill="var(--bg)"/>
   <rect width="${W}" height="${H}" fill="url(#grid)"/>
   <rect width="${W}" height="8" fill="var(--accent)"/>
-  <text x="70" y="86" font-family="${mono}" font-size="19" font-weight="700" letter-spacing="3" fill="var(--accent-ink)">${escape(eyebrow)}</text>
+  <text x="70" y="86" font-family="${mono}" font-size="28" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">${escape(eyebrow)}</text>
   <text x="70" y="155" font-family="${sans}" font-size="42" font-weight="750" letter-spacing="-1" fill="var(--ink)">${escape(lead)}</text>
   ${nodes}
   <text x="${W / 2}" y="630" text-anchor="middle" font-family="${mono}" font-size="30" fill="var(--faint)">${escape(footer)}</text>
@@ -329,16 +336,15 @@ function routingDiagram({ eyebrow, lead, routes, footer }) {
   <rect width="${W}" height="${H}" fill="var(--bg)"/>
   <rect width="${W}" height="${H}" fill="url(#grid)"/>
   <rect width="${W}" height="8" fill="var(--accent)"/>
-  <text x="70" y="86" font-family="${mono}" font-size="19" font-weight="700" letter-spacing="3" fill="var(--accent-ink)">${escape(eyebrow)}</text>
+  <text x="70" y="86" font-family="${mono}" font-size="28" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">${escape(eyebrow)}</text>
   <text x="70" y="155" font-family="${sans}" font-size="42" font-weight="750" letter-spacing="-1" fill="var(--ink)">${escape(lead)}</text>
   <rect x="70" y="254" width="296" height="208" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
-  <text x="218" y="340" text-anchor="middle" font-family="${sans}" font-size="35" font-weight="750" fill="var(--ink)">Orchestrator</text>
-  <text x="218" y="387" text-anchor="middle" font-family="${mono}" font-size="21" fill="var(--faint)">intent · scope · budget</text>
+  <text x="218" y="370" text-anchor="middle" font-family="${sans}" font-size="35" font-weight="750" fill="var(--ink)">Orchestrator</text>
   ${routeNodes}
   <rect x="874" y="288" width="256" height="140" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
   <text x="1002" y="344" text-anchor="middle" font-family="${sans}" font-size="30" font-weight="750" fill="var(--ink)">Integrated</text>
   <text x="1002" y="383" text-anchor="middle" font-family="${sans}" font-size="30" font-weight="750" fill="var(--ink)">verification</text>
-  <text x="${W / 2}" y="630" text-anchor="middle" font-family="${mono}" font-size="26" fill="var(--faint)">${escape(footer)}</text>
+  <text x="${W / 2}" y="630" text-anchor="middle" font-family="${mono}" font-size="28" fill="var(--faint)">${escape(footer)}</text>
 </svg>
 `;
 }

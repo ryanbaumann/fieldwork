@@ -40,6 +40,10 @@ Model output is only one step in an engineering system. Loop engineering treats 
 
 Evidence decides what happens next: a passing focused test advances the task, a new failure changes the hypothesis, and missing authority stops the loop. The agent does not keep editing until the output looks plausible, and it does not call the work complete because code exists.
 
+![Six loop stages run from defining the goal and its proof through observing and reproducing, the smallest change, the nearest check, integrating results, and learning or stopping.](/img/writing/loop-engineering-evidence.svg)
+
+*The cycle: every task carries its goal and proof through observation, the smallest change, and the nearest check, and evidence decides the next step.*
+
 ## Boundaries keep the loop useful
 
 Coding agents need operating rules, not another reminder to be careful. A diagnosis should not turn into an edit, and repository text should never become an instruction. Existing work stays untouched. A test counts only when the agent ran it and observed the result.
