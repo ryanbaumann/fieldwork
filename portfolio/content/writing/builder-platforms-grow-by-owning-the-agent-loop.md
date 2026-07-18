@@ -16,7 +16,7 @@ draft: false
 noindex: false
 ---
 
-The best model will change. So will the agent wrapped around it. A builder platform cannot anchor its strategy to either one. It needs to own the feedback loop that keeps its critical developer journeys working as models and agents change.
+The best model will change: and so will the agent wrapped around it. A builder platform cannot anchor its strategy to either one. It needs to own the feedback loop that keeps its critical developer journeys working as models and agents change.
 
 This is a growth problem, not just an AI quality problem. When a developer asks an agent to build with your platform, that session becomes part of your activation funnel. I see it in the traces our team reviews: when the agent chooses the wrong API, misses an authentication step, or produces code that does not compile, the developer experiences that failure as your platform.
 
@@ -74,7 +74,7 @@ Do not collect raw source code or private conversations by default. Keep only th
 
 ## Distribution makes the learning compound
 
-Our team is running a version of this loop for Google Maps Platform through [portable agent skills](/work/agent-skills/) and a [task-based eval suite](/work/agentic-evals/). I led the strategy for both, we use eval results to guide launch and distribution decisions, and we are still learning what works.
+Our team is running a version of this loop for Google Maps Platform through [portable agent skills](/work/agent-skills/) and a [task-based eval suite](/work/agentic-evals/). We use eval results to guide launch and distribution decisions, and we are still learning what works.
 
 Ship versioned context in a portable form, and run the same tasks in the tools, prompts, and execution boundaries developers receive. Treat every new model or harness as another row in the test matrix, not a reason to restart the strategy.
 
