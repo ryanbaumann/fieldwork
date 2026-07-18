@@ -23,7 +23,7 @@ Treat review as a bounded evidence loop, not a vibe check. Read the portfolio wr
 - Credit team work accurately. Default to "Our team built… I led the strategy," not solo credit, but do not dilute genuinely individual work. Remove or qualify anything the evidence does not support.
 - Generalize third-party tools: name first-party surfaces (AI Studio), never enumerate competitor AI products. Flag employer product-marketing tone that reads as selling the platform or looking for work elsewhere.
 - Verify that the opening states the thesis, each section advances it, and the ending tells the reader what to do.
-- Search the changed prose for banned voice patterns such as passive self-credit, hype adjectives, resume bullets, and em dashes; then perform a human-quality read because style cannot be proven by a regex.
+- Search the changed prose for banned voice patterns such as passive self-credit, hype adjectives, resume bullets, and em dashes. Also flag three or more adjacent sentences that repeat the same subject-verb structure, especially glossary definitions and metric sequences. Read the copy aloud for varied rhythm and conversational flow because style cannot be proven by a regex, and compare the rhythm against the hand-written calibration reference linked in the writing skill.
 
 ## 3. Audit links and URL ownership
 
@@ -40,7 +40,7 @@ Treat review as a bounded evidence loop, not a vibe check. Read the portfolio wr
 - Inspect file signatures with `file`; never trust an extension. Verify physical dimensions and generated HTML `width`/`height` attributes.
 - Ensure social preview images are optimized `.jpg` files, compressed (e.g., JPEG quality 70-80), and ideally under 200KB so preview bots and answer engines can ingest them instantly.
 - Write literal, asset-specific alt text. Do not reuse the header description for the social or inline image.
-- Inspect the rendered page at desktop and narrow mobile widths. Check legibility, crop, padding, hierarchy, dark/light behavior when relevant, and whether the image earns its space.
+- Inspect the rendered page at desktop and narrow mobile widths. Check legibility, crop, padding, hierarchy, dark/light behavior when relevant, and whether the image earns its space. For diagrams, verify that each visual carries one idea, retained labels remain readable at article width, boxes have visible internal padding, and no connector, arrowhead, icon, or border collides with text. Remove microcopy before shrinking it.
 
 ## 5. Run the maker/checker loop
 
