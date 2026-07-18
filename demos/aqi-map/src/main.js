@@ -1,5 +1,8 @@
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+import { installAnalytics } from '../../shared/analytics.mjs';
 import './styles.css';
+
+installAnalytics(import.meta.env.VITE_ANALYTICS_MEASUREMENT_ID);
 
 // Everything here runs on one referrer-restricted browser key, the same
 // pattern as the other Google Maps Platform demos in this repo: the key

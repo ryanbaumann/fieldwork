@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 - Enhanced the `sitemap.xml` generator to output `<image:image>` and `<image:loc>` nodes for pages with cover images to optimize visual search indexing.
 
 ### Changed
+- Restored Work, Talks, and Resume to the primary header navigation, corrected the homepage introduction, made writing and talk rows fully clickable across their image, title, summary, and metadata, and repaired the Ryan’s Lab card destination on `/work/`.
+- Extended the portfolio's privacy-limited Google Analytics configuration to every hosted Ryan’s Lab workspace app while keeping external experiments outside the shared build.
 - Made `https://ryanbaumann.dev/` the canonical site origin across metadata, RSS, sitemap, analytics, Lab apps, deployment checks, generated posts, and documentation; legacy and www hosts now permanently redirect to the matching apex `.dev` URL.
 - Regenerated the portfolio social cards with the new domain, corrected Lab social-image metadata to the published JPEG assets, and expanded production smoke coverage for canonicals, redirects, feeds, sitemaps, and social images.
 - Aligned the contact gateway's accepted intent with the updated “Developer platform discussion” form option.

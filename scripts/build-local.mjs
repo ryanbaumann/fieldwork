@@ -120,6 +120,10 @@ export function resolveAppPaths(entry, repoRoot = REPO_ROOT) {
 // safe to default to a placeholder here; a real deploy sets the real one
 // via env before calling this script.
 export function buildTimeOverrides(app, env) {
+  const overrides = {};
+  if (app.source?.type === 'workspace' && app.name !== 'portfolio' && env.ANALYTICS_MEASUREMENT_ID) {
+    overrides.VITE_ANALYTICS_MEASUREMENT_ID = env.ANALYTICS_MEASUREMENT_ID;
+  }
   if (app.name === 'portfolio-writer') {
     return {
       PORTFOLIO_WRITER_MODE: 'true',
@@ -127,12 +131,12 @@ export function buildTimeOverrides(app, env) {
     };
   }
   if (app.name === 'isochrones' && env.VITE_ISOCHRONES_GMP_API_KEY) {
-    return { VITE_GMP_API_KEY: env.VITE_ISOCHRONES_GMP_API_KEY };
+    overrides.VITE_GMP_API_KEY = env.VITE_ISOCHRONES_GMP_API_KEY;
   }
   if (app.name === 'strava-explorer' && !env.VITE_STRAVA_CLIENT_ID) {
-    return { VITE_STRAVA_CLIENT_ID: 'smoke-test-placeholder-client-id' };
+    overrides.VITE_STRAVA_CLIENT_ID = 'smoke-test-placeholder-client-id';
   }
-  return {};
+  return overrides;
 }
 
 function buildApp(app, childEnv) {

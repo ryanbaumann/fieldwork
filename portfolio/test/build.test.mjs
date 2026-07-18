@@ -163,6 +163,39 @@ test('build lists public demos without disclosing private demos', () => {
   assert.doesNotMatch(demos, /Private demo/);
 });
 
+test('shared primary navigation includes work, talks, and resume', () => {
+  const paths = fixture();
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
+  const primaryNav = home.match(/<nav class="site-nav" aria-label="Primary">([\s\S]*?)<\/nav>/)?.[1] || '';
+  assert.match(primaryNav, /href="\/work\/"[^>]*>Work<\/a>/);
+  assert.match(primaryNav, /href="\/talks\/"[^>]*>Talks<\/a>/);
+  assert.match(primaryNav, /href="\/resume\/"[^>]*>Resume<\/a>/);
+});
+
+test('clickable writing and talk rows link the image, title, and summary as one target', () => {
+  const paths = fixture();
+  write(join(paths.staticDir, 'row.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675"></svg>');
+  write(join(paths.content, 'writing', 'linked.md'), `---\ntitle: Linked essay\nsummary: Click anywhere on this row\ndate: 2026-07-13\nimage: /row.svg\nimageAlt: Example row image.\n---\nEssay body.`);
+  write(join(paths.content, 'talks', 'linked.md'), `---\ntitle: Linked talk\nsummary: Click anywhere on this talk\ndate: 2026-07-12\nimage: /row.svg\nimageAlt: Example talk image.\n---\nTalk body.`);
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const writing = readFileSync(join(paths.dist, 'writing', 'index.html'), 'utf8');
+  const talks = readFileSync(join(paths.dist, 'talks', 'index.html'), 'utf8');
+  assert.match(writing, /<li>\s*<a class="row" href="\/writing\/linked\/"[\s\S]*?<img class="row-thumb"[\s\S]*?Linked essay[\s\S]*?Click anywhere on this row[\s\S]*?<\/a>\s*<\/li>/);
+  assert.match(talks, /<li>\s*<a class="row" href="\/talks\/linked\/"[\s\S]*?<img class="row-thumb"[\s\S]*?Linked talk[\s\S]*?Click anywhere on this talk[\s\S]*?<\/a>\s*<\/li>/);
+});
+
+test('bodyless work cards honor their declared internal destination', () => {
+  const paths = fixture();
+  write(join(paths.content, 'work', 'lab.md'), `---\ntitle: Demo lab\nsummary: Working demos\nexternal: /demos/\n---`);
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const work = readFileSync(join(paths.dist, 'work', 'index.html'), 'utf8');
+  assert.match(work, /<a class="card" href="\/demos\/"[^>]*>[\s\S]*?Demo lab[\s\S]*?<\/a>/);
+});
+
 
 test('build rejects impossible ISO dates and unsafe drafts', () => {
   const paths = fixture();

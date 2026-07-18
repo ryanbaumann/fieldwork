@@ -1,4 +1,5 @@
 import './style.css';
+import { installAnalytics } from '../../shared/analytics.mjs';
 import * as strava from './strava.js';
 import * as gmp from './gmp.js';
 import { readUrlState as readUrlStateImpl, buildUrlParams } from './urlState.js';
@@ -20,6 +21,8 @@ import { debug, warn, error } from './log.js';
 import { toLatLngLiteral } from './latlng.js';
 import { haversineKm, calculateElevationLoss } from './geo.js';
 import { formatDistance, formatElevation, formatSpeed, formatDuration, MILES_PER_KM, FEET_PER_METER } from './units.js';
+
+installAnalytics(import.meta.env.VITE_ANALYTICS_MEASUREMENT_ID);
 
 // --- Module-Level Variables ---
 let currentActivityId = null; // Keep track of the currently displayed activity ID

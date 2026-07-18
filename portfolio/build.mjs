@@ -463,8 +463,10 @@ const CSS = readFileSync(join(ROOT, 'style.css'), 'utf8');
 function layout({ title, description, content, active = '', canonical, ogImage, ogImageAlt, shareTitle, shareSummary, ogType, articleDate, articleUpdated, robots, jsonLd, contactDelivery }) {
   const navItems = [
     { href: `${BASE}work/`, label: 'Work', key: 'work' },
+    { href: `${BASE}talks/`, label: 'Talks', key: 'talks' },
     ...(demos.length ? [{ href: `${BASE}demos/`, label: 'Ryan\u2019s Lab', key: 'demos' }] : []),
     { href: `${BASE}about/`, label: 'About', key: 'about' },
+    { href: `${BASE}resume/`, label: 'Resume', key: 'resume' },
   ];
   const nav = navItems
     .map((item) => `<a href="${item.href}"${item.key === active ? ' aria-current="page"' : ''}>${item.label}</a>`)
@@ -731,7 +733,11 @@ function gridCard(collection, entry) {
   const { meta } = entry;
   const imagePath = meta.image ? join(STATIC_DIR, meta.image.replace(/^\//, '')) : '';
   const imageSize = meta.image ? getImageDimensions(imagePath) : null;
-  const url = hasDetailPage(entry) ? entryUrl(collection, entry) : rebase(meta.links?.[0]?.url || `${BASE}${collection}/`);
+  const url = meta.external
+    ? rebase(meta.external)
+    : hasDetailPage(entry)
+      ? entryUrl(collection, entry)
+      : rebase(meta.links?.[0]?.url || `${BASE}${collection}/`);
   const external = !hasDetailPage(entry) && /^https?:/.test(url);
   const formattedDate = meta.date ? formatLongDate(meta.date) : meta.period;
   const cardMeta = `<p class="card-meta">${metaLine([meta.venue || meta.org, meta.type, formattedDate])}</p>
@@ -756,22 +762,28 @@ function listRow(collection, entry) {
   const url = entryUrl(collection, entry);
   const external = Boolean(meta.external);
   const clickable = external || hasDetailPage(entry);
-  const title = clickable
-    ? `<a href="${url}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(meta.title)}${external ? ' ↗' : ''}</a>`
-    : escapeHtml(meta.title);
+  const title = `${escapeHtml(meta.title)}${external ? ' ↗' : ''}`;
   const imagePath = meta.image ? join(STATIC_DIR, meta.image.replace(/^\//, '')) : '';
   const imageSize = meta.image ? getImageDimensions(imagePath) : null;
   const thumb = meta.image
     ? `<img class="row-thumb" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" width="${imageSize.width}" height="${imageSize.height}" />`
     : '';
-  return `<li class="row" data-analytics-type="${escapeHtml(collection)}" data-analytics-id="${escapeHtml(entry.slug)}">
-  ${thumb}
+  const rowContent = `${thumb}
   <div>
     <p class="row-title">${title}</p>
     <p class="row-summary">${escapeHtml(meta.summary || '')}</p>
     ${linkChips(clickable ? [] : meta.links)}
   </div>
-  <p class="row-meta">${metaLine([meta.venue || meta.org, meta.type, meta.date || meta.period])}</p>
+  <p class="row-meta">${metaLine([meta.venue || meta.org, meta.type, meta.date || meta.period])}</p>`;
+  if (clickable) {
+    return `<li>
+  <a class="row" href="${url}" data-analytics-type="${escapeHtml(collection)}" data-analytics-id="${escapeHtml(entry.slug)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>
+  ${rowContent}
+  </a>
+</li>`;
+  }
+  return `<li class="row">
+  ${rowContent}
 </li>`;
 }
 

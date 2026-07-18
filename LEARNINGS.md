@@ -2,6 +2,13 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-07-17 - Navigation and card affordances need structural regression tests
+
+Context: A homepage hierarchy pass removed Resume from the primary header and left Talks out, while collection rows made only the title clickable even though their image and summary looked like one interactive result.
+Learning: Global navigation destinations and card-sized interaction targets are product behavior, not styling details. Test the rendered primary nav and require a single semantic anchor to wrap every clickable result so pointer, keyboard, and analytics behavior stay aligned.
+Evidence: Portfolio build tests now assert Work, Talks, and Resume in the primary nav, verify that writing and talk row anchors contain the image, title, summary, and metadata, and confirm that bodyless work cards honor their declared internal destination.
+Use next time: When restructuring the header or collection layouts, update hierarchy without deleting established destinations, and verify both the complete rendered anchor boundary and its final `href` before accepting the visual change.
+
 ## 2026-07-17 - Pin every portfolio GCP command to its authorized project
 
 Context: The local gcloud default can point at an unrelated Google Cloud project even when the repository's deployment variables correctly name the portfolio project.

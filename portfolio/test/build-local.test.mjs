@@ -30,6 +30,18 @@ test('build-local exposes only browser-public configuration to app builds', () =
   );
 });
 
+test('build-local gives every hosted demo the portfolio analytics measurement id', () => {
+  const env = { ANALYTICS_MEASUREMENT_ID: 'G-TEST123' };
+  assert.deepEqual(
+    buildTimeOverrides({ name: 'aqi-map', source: { type: 'workspace' } }, env),
+    { VITE_ANALYTICS_MEASUREMENT_ID: 'G-TEST123' },
+  );
+  assert.deepEqual(
+    buildTimeOverrides({ name: 'external-demo', source: { type: 'external' } }, env),
+    {},
+  );
+});
+
 test('build-local derives nested demo sources from dev_build_dir', () => {
   assert.deepEqual(
     resolveAppPaths({ name: 'aqi-map', dev_build_dir: 'demos/aqi-map/dist' }, '/repo'),

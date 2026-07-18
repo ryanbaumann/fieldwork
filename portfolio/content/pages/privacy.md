@@ -20,9 +20,9 @@ Comments on field notes, where enabled, are GitHub Discussions rendered by the o
 
 ## Portfolio analytics
 
-Google Analytics is on by default on the production portfolio. It measures page paths, a sanitized internal referrer, approved campaign tags (`utm_source`, `utm_medium`, `utm_campaign`, and `utm_content`), and low-cardinality actions such as selecting a content item, subscribing, or completing the contact form. Advertising storage and personalization signals are disabled.
+Google Analytics is on by default on the production portfolio and the Ryan’s Lab applications hosted with it. It measures page paths, a sanitized internal referrer, approved campaign tags (`utm_source`, `utm_medium`, `utm_campaign`, and `utm_content`), and low-cardinality actions such as selecting a content item, subscribing, or completing the contact form. Advertising storage and personalization signals are disabled.
 
-Arbitrary query parameters are excluded. Analytics events must not contain names, email addresses, form text, OAuth values, activity IDs, place names, coordinates, route geometry, photos, or raw errors. Google may still receive normal request and device information, including an IP address and browser details, under [Google’s privacy policy](https://policies.google.com/privacy). Browser privacy controls and content blockers may limit this collection. Ryan’s Lab applications remain outside the portfolio analytics scope unless an individual app says otherwise.
+Arbitrary query parameters are excluded. Analytics events must not contain names, email addresses, form text, OAuth values, activity IDs, place names, coordinates, route geometry, photos, or raw errors. Google may still receive normal request and device information, including an IP address and browser details, under [Google’s privacy policy](https://policies.google.com/privacy). Browser privacy controls and content blockers may limit this collection. Experiments hosted outside this portfolio follow their own analytics and privacy practices.
 
 ## Ryan’s Lab
 

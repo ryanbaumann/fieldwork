@@ -1,5 +1,8 @@
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+import { installAnalytics } from '../../shared/analytics.mjs';
 import './styles.css';
+
+installAnalytics(import.meta.env.VITE_ANALYTICS_MEASUREMENT_ID);
 
 const API_KEY = import.meta.env.VITE_GMP_API_KEY;
 const RING_COLORS = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6'];

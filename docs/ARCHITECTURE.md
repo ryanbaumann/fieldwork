@@ -91,6 +91,13 @@ plain-HTTP gateway development URL.
    Its only tie to this repo is optional: when `../apps.json` exists, the
    build renders the Ryan’s Lab section and nav item; when it doesn't, they
    disappear cleanly.
+8. **Hosted apps share privacy-limited analytics.** The root build passes the
+   public `ANALYTICS_MEASUREMENT_ID` to each workspace demo. A shared browser
+   helper loads GA4 only on the canonical production host (or an explicit
+   debug session), removes arbitrary query parameters and cross-origin
+   referrers from page views, and disables advertising storage and signals.
+   Map interactions, coordinates, OAuth values, activity data, and form text
+   are never analytics fields. External Lab destinations remain separate.
 
 ## Build
 
