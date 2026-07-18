@@ -3,7 +3,7 @@ title: Google Maps Platform Code Assist MCP
 org: Google
 role: Product and engineering lead
 period: 2024 – present
-summary: A Google-hosted MCP service that gives AI coding agents current official Google Maps Platform documentation and samples.
+summary: A hosted MCP service that gives AI coding agents current official Google Maps Platform documentation and samples.
 tags: ["developer experience", "ai", "developer tools"]
 links: [{"label": "Docs", "url": "https://developers.google.com/maps/ai/code-assist"}, {"label": "Launch blog", "url": "https://mapsplatform.google.com/resources/blog/announcing-code-assist-toolkit-bring-google-maps-platform-expertise-to-your-ai-coding-assistant/"}]
 image: /img/work/code-assist-docs.png

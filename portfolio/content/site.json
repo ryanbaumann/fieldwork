@@ -10,7 +10,7 @@
   "description": "Ryan Baumann leads Developer Experience at Google Maps Platform, building tools, evals, and reference apps for humans and AI coding agents.",
   "aboutTeaser": "I lead Developer Experience Engineering and product. I stay close to the code by reviewing traces, writing evals, and shipping apps.",
   "sectionIntros": {
-    "work": "Shipped tools, open-source libraries, and experiments — the problem and result behind each.",
+    "work": "Shipped tools, open-source libraries, and experiments, with the problem and result behind each.",
     "writing": "Notes on builder platforms, AI coding agents, evals, and open source.",
     "talks": "Demo-first talks on developer tools, AI-assisted development, and reliable generated code.",
     "demos": "Ryan\u2019s Lab is where I learn in public through working reference apps and experiments."
