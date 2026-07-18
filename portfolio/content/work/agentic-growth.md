@@ -3,7 +3,7 @@ title: OSS client libraries more than doubled active reach in one year
 org: Google
 role: Open-source and distribution lead
 period: 2024 – present
-summary: Between early 2025 and 2026, our open-source ecosystem grew significantly, more than doubling unique active users with strong growth in API engagement.
+summary: Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, with strong growth in API engagement.
 tags: ["growth", "distribution", "open source"]
 image: /img/work/agentic-growth.svg
 imageAlt: Panel listing the distribution surfaces, including AI Studio, above the react-google-maps download stat
@@ -21,7 +21,7 @@ Developer acquisition is moving into agent sessions. We needed to meet builders 
 
 ## What shipped
 
-Between early 2025 and 2026, our open-source ecosystem grew significantly, more than doubling unique active users with strong growth in API engagement. I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, DevX, DRE, technical writing, and field engineering.
+Between early 2025 and 2026, the open-source ecosystem more than doubled its unique active users, and API engagement grew with it. I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, DevX, DRE, technical writing, and field engineering.
 
 We treated open source, agent context, product integrations, and measurement as one system. Google Maps Platform also sponsors [@vis.gl/react-google-maps](https://www.npmjs.com/package/@vis.gl/react-google-maps), which has more than 1 million weekly downloads.
 

@@ -18,7 +18,7 @@ order: 1
 
 DevX is a growth discipline. The job is not to publish more documentation. The job is to find the friction that stops a builder, fix it in the product or experience, put that fix where people work, and prove that it improved an outcome.
 
-Between early 2025 and 2026, our open-source ecosystem grew significantly, more than doubling unique active users with strong growth in API engagement. During that period, I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, and technical writing. We treated product, distribution, and measurement as one system without confusing presence in a workflow with proof of adoption.
+Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, with strong growth in API engagement. During that period, I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, and technical writing. We treated product, distribution, and measurement as one system without confusing presence in a workflow with proof of adoption.
 
 ## Own the friction
 
@@ -28,7 +28,7 @@ Our [Voice of Developer program](/work/voice-of-developer/) groups repeated fric
 
 When builders work through coding agents instead of reading every platform layer themselves, DevX has to design for the person making the decision and the agent acting inside the task.
 
-## Distribution is key
+## Ship the fix where builders work
 
 A great experience has no impact if builders never encounter it. Documentation is one distribution surface, not the whole strategy. The path also needs to appear in the editor, agent, search result, sample, template, or tool where the work begins.
 
@@ -44,4 +44,4 @@ Evals do not replace user research. An eval delta tests whether the experience c
 
 ![An agent evaluation loop moves from a representative task through an agent trace and rubric comparison to a ship-or-hold decision, then repeats using telemetry and research.](/assets/devx-eval-loop.png)
 
-This is the discipline: own the friction, solve it, improve the product, ship the better experience into the workflow, and measure the impact. Then run the loop again.
+This is the discipline: own the friction, solve it, improve the product, ship the better experience into the workflow, and measure the impact. Then run the loop again. We are still experimenting with every part of it, and that is the point.

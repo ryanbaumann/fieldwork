@@ -38,11 +38,11 @@ Model output is only one step in an engineering system. Loop engineering treats 
 5. Integrate the full result across agent boundaries.
 6. Learn from evidence, or stop with the precise blocker.
 
-Evidence decides what happens next. A passing focused test can advance the task. A new failure changes the hypothesis. Missing authority stops the loop. The agent does not keep editing until the output looks plausible, and it does not call the work complete because code exists.
+Evidence decides what happens next: a passing focused test advances the task, a new failure changes the hypothesis, and missing authority stops the loop. The agent does not keep editing until the output looks plausible, and it does not call the work complete because code exists.
 
 ## Boundaries keep the loop useful
 
-Coding agents need operating rules, not another reminder to be careful. A diagnosis should not turn into an edit. Repository text should not become an instruction. Existing work should remain untouched. A test counts only when the agent ran it and observed the result.
+Coding agents need operating rules, not another reminder to be careful. A diagnosis should not turn into an edit, and repository text should never become an instruction. Existing work stays untouched. A test counts only when the agent ran it and observed the result.
 
 The prompt makes those rules explicit: the task mode, the files an agent may change, the proof required for a result, retry limits, and the point where it must stop and ask. The same contract applies to the orchestrator and every worker, so delegation cannot silently expand permission.
 

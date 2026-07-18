@@ -18,6 +18,6 @@ AI agents that answer real-world questions need fresh spatial context, not stati
 
 This Google Maps Platform fireside chat covers trustworthy real-world reasoning with grounded geographic context for AI agents.
 
-The platform lesson is simple: ground the agent in current spatial data, make the reasoning path inspectable, and evaluate whether the result answers the user's real task.
+The lesson: ground the agent in current spatial data, make the reasoning path inspectable, and check whether the result answers the user's real task.
 
 [Watch the fireside chat](https://youtu.be/L2V58kKIHvc).
