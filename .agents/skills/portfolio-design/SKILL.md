@@ -14,6 +14,7 @@ description: How Ryan designs. Use before changing style.css, page layouts in bu
 5. **Show, don't tell.** Every narrative page carries at least one real image. Real screenshots first (previews, product shots). When no honest screenshot exists, generate an SVG artifact card with `scripts/artifact-cards.mjs`; cards state only facts already in the entry (real commands, real published stats). Never mock a product UI or fabricate a screenshot. Utility flows such as contact, privacy, confirmation, and error pages may omit imagery when it would be decorative.
 6. **No aspect ratio distortion or Cumulative Layout Shift (CLS).** Every responsive image must have `height: auto;` in CSS and exact `width` and `height` attributes in the HTML matching the physical image dimensions. For dynamic detail pages, query image dimensions at build time to populate these attributes.
 7. **Strict 16:9 Landscape Rule.** All generated infographics, inline images, hero graphics, and social previews must be exactly 16:9 widescreen landscape (e.g., 1200x675). Never use vertical, square, or portrait aspect ratios. Social thumbnails must be cropped exactly to 1200x627.
+8. **Diagrams explain one idea with as few words as possible.** Put supporting detail in the body or caption, not as microcopy inside the image. At 1200x675, default to at least 28px for retained labels, no more than two short lines per box, and visible padding on every side. Keep arrows and icons outside text bounds, terminate connectors at box edges with clear space, and never route a line through a label. Render each diagram at its actual desktop and narrow article widths; if essential text cannot remain readable on mobile, simplify the visual or add an explicit full-size/tap affordance.
 
 ## Tokens (style.css `:root`)
 
@@ -44,7 +45,7 @@ description: How Ryan designs. Use before changing style.css, page layouts in bu
 
 ## Review gate
 
-Run the `portfolio-review` skill for every public visual change. Verify file signatures and dimensions rather than trusting extensions, inspect desktop and mobile renders, and use an independent visual reviewer. For generated essay visuals, archive the final prompt and settings; the header, social preview, and inline evidence image must have distinct jobs.
+Run the `portfolio-review` skill for every public visual change. Verify file signatures and dimensions rather than trusting extensions, inspect desktop and mobile renders, and use an independent visual reviewer. Check text-box padding, line wrapping, arrow endpoints, and icon clearance in the rendered image, not just the source coordinates. For generated essay visuals, archive the final prompt and settings; the header, social preview, and inline evidence image must have distinct jobs.
 
 ## Lessons
 

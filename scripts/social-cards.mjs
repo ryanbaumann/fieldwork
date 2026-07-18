@@ -144,6 +144,14 @@ const CARDS = [
     layout: 'direct',
   },
   {
+    file: 'developer-platforms-need-to-own-the-agent-feedback-loop.png',
+    eyebrow: 'FIELD NOTES · DEVELOPER EXPERIENCE',
+    title: 'Own the Agent Feedback Loop',
+    summary: 'Context · Evals · Distribution · Outcomes',
+    source: 'portfolio/static/img/writing/agent-feedback-loop-header.svg',
+    layout: 'artifact',
+  },
+  {
     file: 'the-next-platform-interface-is-an-agent-session.png',
     eyebrow: 'WRITING · AGENT EXPERIENCE',
     title: 'The Next Platform Interface Is an Agent Session',
