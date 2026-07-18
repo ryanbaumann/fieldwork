@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Added the private Field Note “Builder Platforms Grow by Owning the Agent Loop,” with four original diagrams explaining the DevX growth loop, training stack, and eval design.
 - Added a production domain-migration runbook for mapping `ryanbaumann.dev`, preserving deep-link redirects from the old domain, and updating dependent services.
-- Added a site-first Field Notes syndication runbook covering Substack, LinkedIn, and X workflows, consent-safe list migration, UTM attribution, and practical channel experiments.
+- Added a site-first Field Notes syndication runbook covering manual Substack excerpts, Buffer-managed LinkedIn, X, and future channel drafts, consent-safe list migration, UTM attribution, practical channel experiments, and a phased path to private writer integration.
 - Added permanent `/lab/` and `/labs/` redirects to the canonical `/demos/` route.
 - Added an `apple-touch-icon.png` and explicit `thumbnail` meta tag to the site `<head>` for better crawler visual citation and brand previews.
 - Enhanced the `sitemap.xml` generator to output `<image:image>` and `<image:loc>` nodes for pages with cover images to optimize visual search indexing.

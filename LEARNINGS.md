@@ -2,6 +2,13 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-07-18 - Separate content ownership, social orchestration, and publishing approval
+
+Context: Field Notes needed a manageable path from one canonical post to Substack, LinkedIn, X, and possible future social channels.
+Learning: Keep the portfolio as the canonical archive, use Buffer as the multi-network approval queue, and keep Substack manual until it offers a supported ongoing publishing API. Generate channel-specific drafts, but require an explicit approval action before any external post is created. Direct per-network integrations add credential, API-review, versioning, and retry complexity before the publishing cadence proves that work is necessary.
+Evidence: Substack documents RSS archive import and manual copy-and-paste, not an ongoing post-creation API. LinkedIn's Posts API requires OAuth permissions and versioned requests. X charges for API writes. Buffer supports LinkedIn, X, and other networks through one API and can retain API-created posts as drafts awaiting approval.
+Use next time: Start new social channels in the shared approval calendar. Add a server-side `/writer/` integration only when measured copying work is the bottleneck, keep credentials out of the public repository and browser, and make draft creation explicit and idempotent.
+
 ## 2026-07-18 - Primary content belongs in primary navigation
 
 Context: Field Notes appeared as a special header button beside Contact while the rest of the site destinations lived in the primary navigation. On mobile, that split forced the navigation onto a second full-height row and obscured the intended content hierarchy.

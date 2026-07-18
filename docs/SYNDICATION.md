@@ -21,10 +21,16 @@ canonical post on this site.
 6. Compare channel-native reach with site sessions, subscriptions, and
    contact completions.
 
-Manual distribution is the right first version. Substack does not offer an
-official write API. LinkedIn automation requires an approved app and OAuth.
-X posting requires a developer app and paid API usage. Automation only pays
-after the manual loop shows which channels and formats are worth maintaining.
+Use one approval queue for social distribution. Buffer is the first choice
+because it supports LinkedIn profiles and Pages, X, and additional networks
+from one calendar. Its API can create posts as drafts when a channel requires
+approval, so generation and publishing remain separate decisions. Start in the
+Buffer dashboard. Add an API integration only after the manual loop proves
+that copying reviewed kits is the bottleneck.
+
+Keep Substack outside that queue. Substack documents archive imports from RSS
+and manual copy-and-paste, but not an ongoing post-creation API. Publish its
+excerpt or Note manually after the Field Note is live.
 
 ## Channel format
 
@@ -34,7 +40,67 @@ after the manual loop shows which channels and formats are worth maintaining.
 | LinkedIn | A native feed post with a strong opening, the social image, and a tracked link. | Followers stay native to LinkedIn, while the complete argument and subscription conversion happen on the site. A LinkedIn newsletter is optional duplicate distribution, not the email-list source of truth. |
 | X | A concise post or short thread with the tracked link in the closing post. | Keeps the workflow fast. Use the API only if manual publishing becomes a proven bottleneck. |
 
-Official capability references: [Substack post import](https://support.substack.com/hc/en-us/articles/360037830351-How-do-I-import-my-posts-from-another-platform-such-as-Mailchimp-WordPress-Medium-or-Ghost), [LinkedIn newsletters](https://www.linkedin.com/help/linkedin/answer/a524002), [LinkedIn RSS content sharing for Pages](https://www.linkedin.com/help/linkedin/answer/a6806906), and [X post creation](https://docs.x.com/x-api/posts/manage-tweets/introduction).
+Official capability references: [Substack post import](https://support.substack.com/hc/en-us/articles/360037830351-How-do-I-import-my-posts-from-another-platform-such-as-Mailchimp-WordPress-Medium-or-Ghost), [LinkedIn newsletters](https://www.linkedin.com/help/linkedin/answer/a524002), [LinkedIn's Posts API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api), [X API pricing](https://docs.x.com/x-api/getting-started/pricing), [Buffer's supported channels and draft approval](https://support.buffer.com/article/859-does-buffer-have-an-api), and [Buffer draft creation](https://developers.buffer.com/examples/create-draft-post.html).
+
+## One manageable social queue
+
+Connect Ryan's LinkedIn profile and X account to Buffer first. Add another
+network only when the same Field Note has a real audience there. Do not create
+separate publishing code for each network.
+
+Each destination keeps its own copy. A shared link and image are reusable, but
+the opening, length, and call to action are channel-specific. Queue the
+LinkedIn post and X post together, then approve or revise each one in Buffer.
+Record the published URLs beside the Field Note. Buffer is the operational
+queue, not the content archive or analytics source of truth.
+
+If the dashboard becomes repetitive, add a server-side Buffer integration to
+the private `/writer/` app:
+
+1. Generate a reviewed syndication kit from the published Field Note.
+2. Show the exact LinkedIn and X copy before it leaves the site.
+3. On explicit approval, create Buffer drafts for selected channels.
+4. Review timing, previews, mentions, and image crops in Buffer.
+5. Publish from Buffer and save the resulting channel URLs in the writer
+   record.
+
+The integration must use a server-side credential stored in Secret Manager.
+It must never place a Buffer, LinkedIn, or X token in Markdown, client-side
+JavaScript, a `VITE_` variable, logs, or a pull request. Sending a draft is an
+external side effect and always requires an explicit browser action. Retrying
+must use a stable idempotency record so one click cannot create duplicate
+drafts.
+
+Use a small record per Field Note rather than adding publication state to the
+public post front matter:
+
+```json
+{
+  "slug": "loop-engineering-coding-agent",
+  "campaign": "fn_loop_engineering_202607",
+  "channels": {
+    "substack": { "status": "manual", "url": null },
+    "linkedin": { "status": "draft", "variant": "post_hook_a", "url": null },
+    "x": { "status": "draft", "variant": "thread_hook_a", "url": null }
+  }
+}
+```
+
+Store this private operational state outside the public repository if it may
+contain unpublished copy. The repository is public, and the private writer
+route does not make committed source confidential.
+
+## Rollout decision
+
+1. **Now:** use the existing syndication kit, publish Substack manually, and
+   manage LinkedIn and X in Buffer's dashboard.
+2. **After three to five Field Notes:** compare the time spent copying posts,
+   correction rate, and channel-attributed subscriptions. Add channels only
+   when they earn ongoing effort.
+3. **If copying is the bottleneck:** add draft creation from `/writer/` to
+   Buffer. Do not add direct LinkedIn or X integrations.
+4. **If approval is the bottleneck:** keep the dashboard workflow. More API
+   code will not solve an editorial decision.
 
 ## Attribution and creative comparisons
 
@@ -113,6 +179,5 @@ and honest channel attribution.
 ## Later automation
 
 After the workflow is proven, add a private `/writer/` syndication panel that
-generates the reviewed kit and stores publication URLs. Automate LinkedIn and
-X posting only if manual publishing is the actual bottleneck. Keep Substack
-manual until it offers an official write API.
+generates the reviewed kit, creates approval-required Buffer drafts, and stores
+publication URLs. Keep Substack manual until it offers an official write API.
