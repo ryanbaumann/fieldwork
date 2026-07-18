@@ -11,6 +11,7 @@ shareTitle: Own the Agent Feedback Loop
 shareSummary: A DevX strategy for making critical developer journeys work across changing models and agent harnesses.
 shareImageAlt: Social card for Own the Agent Feedback Loop with a compact context, eval, outcome, and distribution loop.
 tags: ["developer experience", "ai", "evals"]
+order: 1
 draft: false
 noindex: false
 ---
@@ -57,7 +58,7 @@ For each critical developer journey, define the checks that can be objective:
 
 Add human judgment where the task needs it. For qualities like UI taste and system simplicity, start with a human-written rubric, and calibrate any model grader against repeated human review. A judge that agrees with itself is not evidence that it agrees with developers.
 
-![A critical user journey passes through deterministic checks and calibrated judgment before a ship, improve, or hold decision, while a separate held-out set helps protect the measurement.](/img/writing/agent-feedback-loop-evals.svg)
+![A critical developer journey passes through deterministic checks and calibrated judgment before a ship, improve, or hold decision, while a separate held-out set helps protect the measurement.](/img/writing/agent-feedback-loop-evals.svg)
 
 *The eval: deterministic checks and calibrated judgment lead to a ship, improve, or hold decision. Held-out tasks stay outside tuning.*
 

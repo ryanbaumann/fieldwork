@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
-  <title id="title">A critical user journey needs objective checks, calibrated judgment, and held-out tasks</title>
-  <desc id="desc">A critical user journey splits into deterministic checks and calibrated human judgment before a ship, improve, or hold decision. Private held-out tasks help protect the measurement by remaining outside the tuning loop.</desc>
+  <title id="title">A critical developer journey needs objective checks, calibrated judgment, and held-out tasks</title>
+  <desc id="desc">A critical developer journey splits into deterministic checks and calibrated human judgment before a ship, improve, or hold decision. Private held-out tasks help protect the measurement by remaining outside the tuning loop.</desc>
   <style>
     :root { --bg: #faf9f6; --surface: #ffffff; --ink: #111827; --faint: #5f6875; --line: #d9dde5; --accent: #3b82f6; --accent-ink: #2563eb; }
     @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }
@@ -17,9 +17,9 @@
   <text x="70" y="84" class="mono" font-size="24" font-weight="700" letter-spacing="3" fill="var(--accent-ink)">EVAL CONTRACT</text>
   <text x="70" y="145" class="sans" font-size="42" font-weight="750" letter-spacing="-1" fill="var(--ink)">Start with what can be proven</text>
 
-  <g aria-label="Critical user journey">
+  <g aria-label="Critical developer journey">
     <rect x="62" y="254" width="270" height="132" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
-    <text x="197" y="309" text-anchor="middle" class="sans" font-size="32" font-weight="720" fill="var(--ink)">Critical user</text>
+    <text x="197" y="309" text-anchor="middle" class="sans" font-size="32" font-weight="720" fill="var(--ink)">Developer</text>
     <text x="197" y="349" text-anchor="middle" class="sans" font-size="32" font-weight="720" fill="var(--ink)">journey</text>
   </g>
   <path d="M344 320H388V254H420" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>

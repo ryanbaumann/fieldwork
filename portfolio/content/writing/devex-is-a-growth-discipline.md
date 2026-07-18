@@ -13,7 +13,7 @@ shareTitle: DevX Is a Growth Discipline
 shareSummary: Own the friction, ship the fix, distribute the experience, and measure the outcome.
 shareImageAlt: DevX Is a Growth Discipline, with a product, distribution, and measurement loop beside observed user and API engagement growth.
 tags: ["developer experience", "growth", "distribution", "ai"]
-order: 1
+order: 2
 ---
 
 DevX is a growth discipline. The job is not to publish more documentation. The job is to find the friction that stops a builder, fix it in the product or experience, put that fix where people work, and prove that it improved an outcome.
