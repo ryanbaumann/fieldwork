@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">A critical user journey needs objective checks, calibrated judgment, and held-out tasks</title>
+  <desc id="desc">A critical user journey splits into deterministic checks and calibrated human judgment before a ship, improve, or hold decision. Private held-out tasks help protect the measurement by remaining outside the tuning loop.</desc>
+  <style>
+    :root { --bg: #faf9f6; --surface: #ffffff; --ink: #111827; --faint: #5f6875; --line: #d9dde5; --accent: #3b82f6; --accent-ink: #2563eb; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }
+    .sans { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
+  </style>
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="var(--line)" stroke-width="1" opacity=".28"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="var(--accent)"/></marker>
+  </defs>
+  <rect width="1200" height="675" fill="var(--bg)"/>
+  <rect width="1200" height="675" fill="url(#grid)"/>
+  <rect width="1200" height="8" fill="var(--accent)"/>
+  <text x="70" y="84" class="mono" font-size="19" font-weight="700" letter-spacing="3" fill="var(--accent-ink)">EVAL CONTRACT</text>
+  <text x="70" y="145" class="sans" font-size="42" font-weight="750" letter-spacing="-1" fill="var(--ink)">Start with what can be proven</text>
+
+  <g aria-label="Critical user journey">
+    <rect x="66" y="240" width="250" height="112" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <text x="191" y="284" text-anchor="middle" class="sans" font-size="27" font-weight="720" fill="var(--ink)">Critical user</text>
+    <text x="191" y="318" text-anchor="middle" class="sans" font-size="27" font-weight="720" fill="var(--ink)">journey</text>
+  </g>
+  <path d="M328 296H372M372 296V240H404M372 296V384H404" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <g aria-label="Deterministic checks">
+    <rect x="416" y="184" width="332" height="136" rx="18" fill="var(--surface)" stroke="var(--accent)" stroke-width="3"/>
+    <text x="582" y="229" text-anchor="middle" class="sans" font-size="29" font-weight="730" fill="var(--ink)">Deterministic checks</text>
+    <text x="582" y="269" text-anchor="middle" class="mono" font-size="17" fill="var(--faint)">install · compile · tests</text>
+    <text x="582" y="294" text-anchor="middle" class="mono" font-size="17" fill="var(--faint)">API · security · cost</text>
+  </g>
+  <g aria-label="Calibrated human judgment">
+    <rect x="416" y="344" width="332" height="136" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <text x="582" y="390" text-anchor="middle" class="sans" font-size="27" font-weight="730" fill="var(--ink)">Calibrated judgment</text>
+    <text x="582" y="430" text-anchor="middle" class="mono" font-size="17" fill="var(--faint)">taste · simplicity · clarity</text>
+    <text x="582" y="456" text-anchor="middle" class="sans" font-size="17" fill="var(--faint)">human rubric first</text>
+  </g>
+
+  <path d="M760 252H798M760 412H798M798 252V412M798 332H830" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>
+  <g aria-label="Ship, improve, or hold decision">
+    <rect x="842" y="265" width="292" height="136" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <text x="988" y="311" text-anchor="middle" class="sans" font-size="28" font-weight="730" fill="var(--ink)">Decision</text>
+    <text x="988" y="353" text-anchor="middle" class="mono" font-size="19" fill="var(--faint)">ship · improve · hold</text>
+  </g>
+
+  <g aria-label="Private held-out tasks help protect measurement by remaining outside tuning">
+    <rect x="66" y="533" width="1068" height="78" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2" stroke-dasharray="8 8"/>
+    <text x="94" y="565" class="mono" font-size="16" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">PRIVATE HELD-OUT TASKS</text>
+    <text x="94" y="592" class="sans" font-size="18" fill="var(--faint)">Measure generalization. Keep these cases and answers outside the tuning loop.</text>
+  </g>
+  <text x="600" y="650" text-anchor="middle" class="mono" font-size="19" fill="var(--faint)">audit the eval before blaming the model</text>
+</svg>

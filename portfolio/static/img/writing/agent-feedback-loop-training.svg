@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Pretraining, post-training, and the production harness do different jobs</title>
+  <desc id="desc">Pretraining creates broad capability, post-training can shape behavior with supervised examples and preference or verifiable rewards, and the model works inside a runtime harness containing platform context, tools, and an execution environment.</desc>
+  <style>
+    :root { --bg: #faf9f6; --surface: #ffffff; --ink: #111827; --faint: #5f6875; --line: #d9dde5; --accent: #3b82f6; --accent-ink: #2563eb; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }
+    .sans { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
+  </style>
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="var(--line)" stroke-width="1" opacity=".28"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="var(--accent)"/></marker>
+  </defs>
+  <rect width="1200" height="675" fill="var(--bg)"/>
+  <rect width="1200" height="675" fill="url(#grid)"/>
+  <rect width="1200" height="8" fill="var(--accent)"/>
+  <text x="70" y="84" class="mono" font-size="19" font-weight="700" letter-spacing="3" fill="var(--accent-ink)">THE MINIMUM TRAINING SCIENCE</text>
+  <text x="70" y="145" class="sans" font-size="42" font-weight="750" letter-spacing="-1" fill="var(--ink)">Capability, behavior, and execution are separate</text>
+
+  <g aria-label="Pretraining creates broad capability">
+    <rect x="66" y="214" width="292" height="322" rx="20" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <text x="94" y="253" class="mono" font-size="16" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">1 · PRETRAINING</text>
+    <text x="94" y="307" class="sans" font-size="30" font-weight="730" fill="var(--ink)">Broad capability</text>
+    <text x="94" y="350" class="sans" font-size="21" fill="var(--faint)"><tspan x="94">Patterns learned from</tspan><tspan x="94" dy="29">large bodies of text</tspan><tspan x="94" dy="29">and code</tspan></text>
+    <rect x="94" y="455" width="236" height="52" rx="26" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/>
+    <text x="212" y="488" text-anchor="middle" class="sans" font-size="21" font-weight="680" fill="var(--ink)">Base model</text>
+  </g>
+  <path d="M370 375H408" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <g aria-label="Post-training shapes behavior">
+    <rect x="420" y="214" width="336" height="322" rx="20" fill="var(--surface)" stroke="var(--accent)" stroke-width="3"/>
+    <text x="448" y="253" class="mono" font-size="16" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">2 · POST-TRAINING</text>
+    <text x="448" y="307" class="sans" font-size="30" font-weight="730" fill="var(--ink)">Shaped behavior</text>
+    <rect x="448" y="342" width="280" height="66" rx="13" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/>
+    <text x="588" y="383" text-anchor="middle" class="sans" font-size="22" font-weight="680" fill="var(--ink)">Supervised examples</text>
+    <text x="588" y="434" text-anchor="middle" class="mono" font-size="16" font-weight="700" fill="var(--faint)">and/or</text>
+    <rect x="448" y="455" width="280" height="66" rx="13" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/>
+    <text x="588" y="481" text-anchor="middle" class="sans" font-size="18" font-weight="680" fill="var(--ink)">Preference or</text>
+    <text x="588" y="505" text-anchor="middle" class="sans" font-size="18" font-weight="680" fill="var(--ink)">verifiable rewards</text>
+  </g>
+  <path d="M768 375H806" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <g aria-label="Runtime harness contains platform context, tools, and an execution environment">
+    <rect x="818" y="192" width="316" height="366" rx="22" fill="none" stroke="var(--accent)" stroke-width="3"/>
+    <text x="846" y="232" class="mono" font-size="16" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">RUNTIME HARNESS</text>
+    <rect x="844" y="258" width="264" height="94" rx="16" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <text x="976" y="298" text-anchor="middle" class="sans" font-size="25" font-weight="720" fill="var(--ink)">Trained model</text>
+    <text x="976" y="328" text-anchor="middle" class="sans" font-size="18" fill="var(--faint)">takes actions inside</text>
+    <rect x="844" y="375" width="264" height="48" rx="12" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <text x="976" y="406" text-anchor="middle" class="sans" font-size="20" font-weight="670" fill="var(--ink)">Platform context</text>
+    <rect x="844" y="437" width="126" height="48" rx="12" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <text x="907" y="468" text-anchor="middle" class="sans" font-size="20" font-weight="670" fill="var(--ink)">Tools</text>
+    <rect x="982" y="437" width="126" height="48" rx="12" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <text x="1045" y="456" text-anchor="middle" class="sans" font-size="17" font-weight="670" fill="var(--ink)"><tspan x="1045">Execution</tspan><tspan x="1045" dy="20">environment</tspan></text>
+  </g>
+  <text x="600" y="626" text-anchor="middle" class="mono" font-size="22" fill="var(--faint)">better tasks + better verifiers = a better learning signal</text>
+</svg>
