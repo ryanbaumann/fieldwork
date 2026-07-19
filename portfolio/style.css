@@ -231,7 +231,7 @@ main > section { margin-bottom: clamp(2rem, 5vw, 3.5rem); }
 .lede { font-size: 1.2rem; line-height: 1.55; max-width: var(--prose); color: var(--ink); }
 .hero { padding-block: clamp(0.5rem, 3vw, 1.5rem); }
 .hero h1 {
-  max-width: 46rem;
+  max-width: 100%;
 }
 .hero-meta { color: var(--muted); font-size: 0.95rem; }
 .profile-image {
@@ -726,18 +726,18 @@ html[data-theme="dark"] {
 }
 
 .hero {
-  max-width: 58rem;
+  max-width: var(--max);
   padding-top: 0;
   padding-bottom: clamp(0.25rem, 2vw, 1rem);
 }
 main > section.hero { margin-bottom: clamp(0.75rem, 2vw, 1.5rem); }
 .hero h1 {
-  max-width: 63rem;
-  font-size: clamp(2.5rem, 6vw, 4.25rem);
+  max-width: 100%;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
   line-height: 1.05;
   letter-spacing: -0.04em;
 }
-.hero .lede { max-width: 48rem; }
+.hero .lede { max-width: 100%; }
 .hero-actions {
   display: flex;
   align-items: center;
