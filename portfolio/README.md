@@ -1,7 +1,7 @@
 # Ryan Baumann Portfolio
 
 Ryan Baumann's site: [work](https://ryanbaumann.dev/work/),
-Field Notes, talks, and Ryan’s Lab, from 15+ years building developer platforms
+Field Notes, talks, and Labs, from 15+ years building developer platforms
 as a growth engine, currently as Head of Developer Experience at Google Maps
 Platform. Served at the root of
 [ryanbaumann.dev](https://ryanbaumann.dev/).
@@ -34,7 +34,7 @@ style.css           the entire design system, inlined at build time
 serve.mjs           tiny preview server
 ```
 
-The homepage Ryan’s Lab section and nav item are fed by `../apps.json` (the
+The homepage Labs section and nav item are fed by `../apps.json` (the
 gateway's app manifest) when it exists. In a standalone deployment of this
 folder they simply disappear.
 
