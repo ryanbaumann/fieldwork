@@ -1210,7 +1210,7 @@ function buildHome(collections) {
   const demosSection = homeDemos.length
     ? `
 <section>
-  ${sectionHeader('', 'Ryan’s Lab', `${BASE}demos/`, 'Explore Labs')}
+  ${sectionHeader('', 'Ryan’s Lab', `https://ryanbaumann.dev/labs/atlas/`, 'Explore Labs')}
   <p class="section-note">${escapeHtml(site.sectionIntros?.demos || '')}</p>
   <div class="grid demo-grid">
     ${homeDemos.map(demoCard).join('\n')}
