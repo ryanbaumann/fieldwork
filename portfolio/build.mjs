@@ -465,7 +465,7 @@ function layout({ title, description, content, active = '', canonical, ogImage, 
     { href: `${BASE}writing/`, label: 'Field Notes', key: 'writing' },
     { href: `${BASE}work/`, label: 'Work', key: 'work' },
     { href: `${BASE}talks/`, label: 'Talks', key: 'talks' },
-    ...(demos.length ? [{ href: `${BASE}demos/`, label: 'Ryan\u2019s Lab', key: 'demos' }] : []),
+    ...(demos.length ? [{ href: `${BASE}demos/`, label: 'Labs', key: 'demos' }] : []),
     { href: `${BASE}about/`, label: 'About', key: 'about' },
     { href: `${BASE}resume/`, label: 'Resume', key: 'resume' },
   ];
@@ -575,7 +575,7 @@ ${content}
     ${site.links.x ? `<a href="${site.links.x}" target="_blank" rel="noopener noreferrer">X</a>` : ''}
     ${site.links.substack ? `<a href="${site.links.substack}" target="_blank" rel="noopener noreferrer">Substack</a>` : ''}
     <a href="${BASE}talks/">Talks</a>
-    ${demos.length ? `<a href="${BASE}demos/">Ryan\u2019s Lab</a>` : ''}
+    ${demos.length ? `<a href="${BASE}demos/">Labs</a>` : ''}
     <a href="${BASE}resume/">Resume</a>
     <a href="${BASE}privacy/">Privacy</a>
     <a href="${BASE}contact/">Contact</a>
@@ -869,7 +869,7 @@ function subscribeSection() {
   return `<section class="subscribe" aria-labelledby="subscribe-title">
   <p class="eyebrow">Email list</p>
   <h2 id="subscribe-title">Get new field notes by email</h2>
-  <p>One email when a new essay, talk, or Ryan’s Lab project ships. No noise, and every send has a one-click unsubscribe.</p>
+  <p>One email when a new essay, talk, or Labs project ships. No noise, and every send has a one-click unsubscribe.</p>
   <form class="subscribe-form" action="${BASE}api/subscribe" method="post">
     <label for="subscribe-email">Email address</label>
     <div class="subscribe-controls">
@@ -1210,7 +1210,7 @@ function buildHome(collections) {
   const demosSection = homeDemos.length
     ? `
 <section>
-  ${sectionHeader('Ryan\u2019s Lab', '', `${BASE}demos/`, 'Explore Ryan\u2019s Lab')}
+  ${sectionHeader('Labs', '', `${BASE}demos/`, 'Explore Labs')}
   <p class="section-note">${escapeHtml(site.sectionIntros?.demos || '')}</p>
   <div class="grid demo-grid">
     ${homeDemos.map(demoCard).join('\n')}
@@ -1290,17 +1290,17 @@ ${demosSection}
 function buildDemosPage() {
   if (!demos.length) return;
   const content = `<section>
-  <p class="eyebrow">Ryan\u2019s Lab</p>
-  <h1>Ryan\u2019s Lab</h1>
+  <p class="eyebrow">Labs</p>
+  <h1>Labs</h1>
   <p class="lede">${escapeHtml(site.sectionIntros?.demos || '')}</p>
   <div class="grid demo-grid">
     ${demos.map(demoCard).join('\n')}
   </div>
-  <p class="section-note">Ryan’s Lab combines open-source reference apps hosted with this portfolio and selected external experiments. <a href="${site.links.github}/Portfolio" target="_blank" rel="noopener noreferrer">Read the portfolio source</a>.</p>
+  <p class="section-note">Labs combines open-source reference apps hosted with this portfolio and selected external experiments. <a href="${site.links.github}/Portfolio" target="_blank" rel="noopener noreferrer">Read the portfolio source</a>.</p>
 </section>`;
 
   writePage(join('demos', 'index.html'), layout({
-    title: `Ryan\u2019s Lab - ${site.name}`,
+    title: `Labs - ${site.name}`,
     description: site.sectionIntros?.demos || site.description,
     content,
     active: 'demos',
@@ -1469,7 +1469,7 @@ function buildNotFoundPage() {
     <a class="button button-primary" href="${BASE}">Home</a>
     <a href="${BASE}work/">Work</a>
     <a href="${BASE}writing/">Field Notes</a>
-    ${demos.length ? `<a href="${BASE}demos/">Ryan\u2019s Lab</a>` : ''}
+    ${demos.length ? `<a href="${BASE}demos/">Labs</a>` : ''}
   </p>
 </section>`;
   writePage('404.html', layout({
