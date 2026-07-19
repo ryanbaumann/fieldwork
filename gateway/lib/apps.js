@@ -51,7 +51,9 @@ function loadRedirects(dir) {
     throw new Error(`Invalid redirects.json at ${redirectsPath}.`);
   }
   for (const [source, target] of Object.entries(redirects)) {
-    if (!/^\/[a-z0-9/-]+\/$/.test(source) || source.includes('//') || !/^\/[a-z0-9/-]+\/$/.test(target) || target.includes('//')) {
+    const validSource = /^\/[a-z0-9/-]+\/$/.test(source) && !source.includes('//');
+    const validTarget = target.startsWith('http://') || target.startsWith('https://') || (/^\/[a-z0-9/-]+\/$/.test(target) && !target.includes('//'));
+    if (!validSource || !validTarget) {
       throw new Error(`Invalid redirect in ${redirectsPath}: ${source} -> ${target}`);
     }
   }
