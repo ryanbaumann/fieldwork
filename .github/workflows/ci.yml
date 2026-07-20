@@ -169,4 +169,4 @@ jobs:
 
       - name: Secret Scanner (Gitleaks)
         run: |
-          docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest git --source=/repo --verbose --redact
+          docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest detect --source=/repo --verbose --redact
