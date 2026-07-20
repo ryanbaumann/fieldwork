@@ -1,39 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Win the decision, survive the execution: Win the decision
-at the frontier tier, Survive execution
-at the cheapest tier, Prove both
-with evals">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="The same developer journey stepping down a staircase of tiers from Frontier to Balanced to Open, with the cost circle shrinking at each cheaper tier.">
   <style>
     :root { --bg: #faf9f6; --surface: #ffffff; --ink: #111827; --faint: #5f6875; --line: #d9dde5; --accent: #3b82f6; --accent-ink: #2563eb; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }
-  </style>
+    @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }</style>
   <defs>
     <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--line)" stroke-width="1" opacity="0.28"/></pattern>
-    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+    <marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
   </defs>
   <rect width="1200" height="675" fill="var(--bg)"/>
   <rect width="1200" height="675" fill="url(#grid)"/>
   <rect width="1200" height="8" fill="var(--accent)"/>
-  <text x="70" y="86" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="28" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">TWO READERS, ONE PLATFORM</text>
-  <text x="70" y="155" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="42" font-weight="750" letter-spacing="-1" fill="var(--ink)">Win the decision, survive the execution</text>
-  <g>
-      <rect x="100" y="235" width="460" height="128" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
-      <circle cx="124" cy="241" r="22" fill="var(--accent)"/>
-      <text x="124" y="250" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="26" font-weight="700" fill="var(--surface)">1</text>
-      <text x="330" y="294" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="40" font-weight="700" fill="var(--ink)"><tspan x="330" dy="0">Win the decision</tspan><tspan x="330" dy="40">at the frontier tier</tspan></text>
-      <path d="M 568 299 H 628" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>
-    </g>
-  <g>
-      <rect x="640" y="235" width="460" height="128" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
-      <circle cx="664" cy="241" r="22" fill="var(--accent)"/>
-      <text x="664" y="250" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="26" font-weight="700" fill="var(--surface)">2</text>
-      <text x="870" y="294" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="40" font-weight="700" fill="var(--ink)"><tspan x="870" dy="0">Survive execution</tspan><tspan x="870" dy="40">at the cheapest tier</tspan></text>
-      <path d="M 870 371 C 870 429, 600 364, 600 418" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrow)"/>
-    </g>
-  <g>
-      <rect x="370" y="430" width="460" height="128" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
-      <circle cx="394" cy="436" r="22" fill="var(--accent)"/>
-      <text x="394" y="445" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="26" font-weight="700" fill="var(--surface)">3</text>
-      <text x="600" y="489" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="40" font-weight="700" fill="var(--ink)"><tspan x="600" dy="0">Prove both</tspan><tspan x="600" dy="40">with evals</tspan></text>
-    </g>
-  <text x="600" y="630" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="30" fill="var(--faint)">completion rate · run-to-run variance · tokens per journey</text>
+  <rect x="1" y="1" width="1198" height="673" fill="none" stroke="var(--line)" stroke-width="2"/>
+  
+  <text x="70" y="86" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="28" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">THE EXECUTION SCOREBOARD</text>
+  <text x="70" y="152" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="46" font-weight="750" letter-spacing="-1" fill="var(--ink)">Win when the task drops a tier</text>
+  <text x="120" y="224" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="26" font-weight="700" fill="var(--faint)">same journey</text>
+  <text x="120" y="252" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="20" fill="var(--faint)">cost per run shrinks as it drops a tier</text>
+  <rect x="120" y="300" width="250" height="256" rx="16" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <circle cx="245" cy="308" r="44" fill="var(--accent)" opacity="0.16"/>
+    <circle cx="245" cy="308" r="44" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+    <text x="245" y="526" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" font-weight="750" fill="var(--ink)">Frontier</text>
+  <rect x="452" y="372" width="250" height="184" rx="16" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <circle cx="577" cy="380" r="30" fill="var(--accent)" opacity="0.16"/>
+    <circle cx="577" cy="380" r="30" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+    <text x="577" y="526" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" font-weight="750" fill="var(--ink)">Balanced</text>
+  <rect x="784" y="444" width="250" height="112" rx="16" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+    <circle cx="909" cy="452" r="18" fill="var(--accent)" opacity="0.16"/>
+    <circle cx="909" cy="452" r="18" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+    <text x="909" y="526" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" font-weight="750" fill="var(--ink)">Open</text>
+  <path d="M 299 308 C 457 300, 457 372, 535 380" fill="none" stroke="var(--accent)" stroke-width="3" marker-end="url(#tip)"/>
+  <path d="M 617 380 C 789 372, 789 444, 879 452" fill="none" stroke="var(--accent)" stroke-width="3" marker-end="url(#tip)"/>
+  <text x="600" y="628" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="27" fill="var(--faint)">a journey that passes one tier lower is a real win</text>
 </svg>

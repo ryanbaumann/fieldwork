@@ -44,6 +44,8 @@ Use this framework for any social post, article headline, demo name, section tit
 - **Make the visual obvious at small size.** Use high contrast, one focal point, minimal text, and a clear before/after, tradeoff, or focal contrast. Avoid fake shock, exaggerated faces, cluttered diagrams, and meme language.
 - **Earn the click immediately.** The first paragraph must answer the promise made by the title or social card. If the piece cannot pay off the hook honestly, weaken the hook or cut the piece.
 - **Iterate before polishing.** Draft at least 10 title/social-card/social-post variants for important pieces, then keep the one with the clearest misconception, strongest artifact, and most honest stakes.
+- **Grade the voice, don't trust the first draft.** For a headline Field Note, write three genuinely distinct full drafts (for example analytical, scene-led, and staccato), then have an independent reviewer grade them on authentic voice, rhythm, freedom from AI-isms, and punchiness before the lead picks and finalizes. Competent-but-generated is the failure mode; catch it with a second reader, not a self-check.
+- **Give each post its own visual.** Draw bespoke, low-text art per post (one distinct scene that carries one idea) rather than reusing the shared box-and-arrow flow template for every piece; keep the house chrome for family resemblance but change the central geometry so a post's images read as its own.
 
 ### Ryan-specific guardrails
 
@@ -97,3 +99,5 @@ canonical control or write API. For ongoing syndication:
 - Enumerated lists of third-party or competitor AI tools ("AI Studio and other compatible agent environments," not a name-brand list).
 - Employer product-marketing tone that reads like he is selling the platform or looking for work elsewhere.
 - A claim that a current system, method, or playbook is finished or figured out. The voice is a practitioner learning in public.
+- The stock self-credit line "I lead the strategy and review the traces" (or any close variant). It reads as trite and inauthentic. Credit the team and cite a real artifact instead.
+- The "it's not X, it's Y" antithesis flip used as filler. Keep it to at most two load-bearing turns per piece (the title thesis and the single payoff line); more than that reads as an AI tell.
