@@ -21,6 +21,36 @@ description: How Ryan writes. Use whenever drafting or editing any prose for thi
 - **A dev brand, not a product pitch.** This is Ryan's portfolio, not an employer's marketing page. Describe shipped work and link public artifacts, but do not adopt a product-marketing tone or over-brand every noun. Prefer "hosted MCP service" to "Google-hosted MCP service" when the brand is not the point. Keep legitimate public links; cut salesy product-name enumerations and internal product framings.
 - **Cut, don't polish.** If a piece of content is not differentiated, cut it. Don't spend time making weak content sound better.
 
+
+## Social, titles, headlines, and naming
+
+Use this framework for any social post, article headline, demo name, section title, talk title, social card copy, or link preview. The goal is honest curiosity that earns attention and improves recall, not viral cosplay.
+
+### The retention loop
+
+1. **Name the misconception or false certainty first.** Start from the thing a smart builder likely believes, assumes, or overlooks. Examples: “More docs do not automatically create better activation,” “The map is not the product,” “A bigger model is not the same as a better agent loop.”
+2. **Turn that misconception into a question or tension.** Make the reader want the explanation: “What if the fastest path to adoption is fewer docs and better traces?” Avoid vague curiosity gaps. The question must point to a real answer in the piece.
+3. **Resolve with a causal explanation.** Explain the mechanism, tradeoff, or before/after path. Use “because,” “so,” and “instead of” to make the learning stick.
+4. **Swap the A-track and B-track.** Draft the obvious framing first, then identify the hidden lesson underneath it. Lead with the hidden lesson and let the obvious topic support it. If the A-track is “we launched a demo,” the stronger B-track may be “developers trust a platform faster when the first successful trace is visible.”
+5. **Make the reader do one small mental move.** Ask them to compare, predict, diagnose, or notice a contradiction before the explanation lands. Retention improves when the copy gently confronts what they thought they knew.
+
+### Packaging rules
+
+- **One idea per package.** A title, thumbnail, or social post should be readable in one glance and summarize one promise. Cut secondary clauses unless they raise stakes.
+- **Concrete stakes beat abstraction.** Prefer a visible consequence, artifact, or tradeoff over a category label: “The OAuth bug was not in OAuth” beats “Debugging auth flows.”
+- **Title and image do different jobs.** Do not repeat the same words in both. Let the title carry the question or claim; let the image show the artifact, contrast, scale, before/after, or human consequence.
+- **Make the visual obvious at small size.** Use high contrast, one focal point, minimal text, and a clear before/after or tension. Avoid fake shock, exaggerated faces, cluttered diagrams, and meme language that does not match Ryan’s voice.
+- **Earn the click immediately.** The first paragraph must answer the promise made by the title or social card. If the piece cannot pay off the hook honestly, weaken the hook or cut the piece.
+- **Iterate packaging before polishing prose.** Generate 10 title/social-card variants, then keep the one with the clearest misconception, strongest artifact, and most honest stakes.
+
+### Ryan-specific guardrails
+
+- Adapt high-retention patterns to Ryan’s builder voice: plainspoken, evidence-led, humble, and useful to practitioners.
+- Never imitate a named creator, meme format, shocked expression, giveaway framing, or manufactured drama.
+- Never use curiosity that withholds a basic fact the reader needs. Curiosity should expose a useful gap in understanding, not trick the reader.
+- Keep promises bounded by evidence. If the title says “changed,” “worked,” “failed,” or “grew,” the body needs a public artifact, metric, or clearly framed experience behind it.
+- Prefer durable learning over cleverness. A good headline makes the reader remember the mechanism, not just click the link.
+
 ## Structure for work entries
 
 Three sections, in order, each 1–2 short paragraphs:

@@ -2,6 +2,13 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-07-19 - Curiosity works when it corrects a real assumption
+
+Context: Ryan wanted the copywriting skill to make social posts, headlines, titles, names, and preview images more interesting while preserving the portfolio's evidence-led tone.
+Learning: High-retention packaging should begin with the reader's plausible misconception, turn it into a specific question or tension, then quickly resolve the mechanism with evidence. The strongest hook often appears after swapping the obvious topic for the underlying lesson. Visual previews should carry one concrete contrast or artifact at small size, while the title carries the claim or question.
+Evidence: Learning research on misconception-based multimedia shows that directly engaging prior beliefs can improve conceptual change, and creator packaging analysis consistently emphasizes clear promise, trust, simple visuals, title-image alignment, and iteration.
+Use next time: For any public title, social draft, article headline, demo name, or preview card, draft the obvious framing first, find the hidden lesson, state the honest tension, and verify the opening paragraph pays off the promise immediately.
+
 ## 2026-07-18 - Social automation should stop at an editable draft
 
 Context: A new Field Note needed to create useful LinkedIn and X starting points without granting a merge workflow authority to publish externally.
