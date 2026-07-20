@@ -2,6 +2,13 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-07-20 - Parallel-service deploy checks need an explicit compatibility boundary
+
+Context: The new `fieldwork` Cloud Run revision deployed and passed its direct production smoke, but the deploy job then compared the still-legacy public origin's `portfolio` root manifest name against the renamed checkout and failed.
+Learning: During a parallel-service migration, keep candidate-service verification strict and scope any compatibility override to the known legacy identity at the public-origin boundary. Do not weaken route, asset, canonical, redirect, auth, or secret checks.
+Evidence: The failed deploy passed the new revision smoke and every public-origin assertion except the expected root app name; a tested `ROOT_APP_COMPAT_NAME` override changes only that expected root name for the public-origin step.
+Use next time: Model transitional identities explicitly, document their removal condition beside the override, and delete the compatibility setting immediately after the domain cutover passes the strict public smoke.
+
 ## 2026-07-20 - Brand migrations need identity layers and compatibility gates
 
 Context: Renaming the repository and deployment from Portfolio and `trails-ninja` to Fieldwork also affected public metadata, social assets, package names, source links, writer defaults, CI guards, image storage, and Cloud Run, while every existing website path needed to remain valid.
@@ -12,9 +19,9 @@ Use next time: Inventory page paths, redirects, metadata, images, repository lin
 ## 2026-07-20 - Mobile navigation should prioritize instead of overflow
 
 Context: The header exposed every desktop destination on narrow screens, requiring horizontal scrolling and an extra JavaScript overflow control.
-Learning: Mobile navigation is a hierarchy decision. Keep the three primary reader destinations visible in one row, move secondary destinations to a complete footer, and verify the rendered header width rather than relying on a scroll affordance.
-Evidence: At 360 pixels, the rendered header shows Notes, Work, and About, its scroll width equals its client width, and Resume remains available from About and the footer.
-Use next time: Define desktop and mobile destination priority explicitly, retain 44-pixel targets, and add a structural test for links that must remain present or absent.
+Learning: When every primary destination matters, a full-width second navigation row preserves completeness and legible tap targets better than squeezing links beside the brand.
+Evidence: At 320 and 360 pixels, the rendered header shows Notes, Work, Talks, Labs, and About with 44-pixel targets, its scroll width equals its client width, and Resume remains available from About and the footer.
+Use next time: Define desktop and mobile destination priority explicitly, retain 44-pixel targets, and verify both route completeness and rendered overflow at the narrowest supported viewport.
 
 ## 2026-07-19 - Gitleaks Action v3 licensing breaks CI/CD workflows
 
