@@ -16,7 +16,7 @@ draft: false
 noindex: false
 ---
 
-The best model will change: and so will the agent wrapped around it. A builder platform cannot anchor its strategy to either one. It needs to own the feedback loop that keeps its critical developer journeys working as models and agents change.
+The best model will change. So will the agent wrapped around it. A builder platform cannot anchor its strategy to either one. It needs to own the feedback loop that keeps its critical developer journeys working as models and agents change.
 
 This is a growth problem, not just an AI quality problem. When a developer asks an agent to build with your platform, that session becomes part of your activation funnel. I see it in the traces our team reviews: when the agent chooses the wrong API, misses an authentication step, or produces code that does not compile, the developer experiences that failure as your platform.
 
@@ -39,7 +39,7 @@ Evals test the context. Distribution puts the tested path in more hands, while o
 
 ## Why verifiers matter
 
-Pretraining gives a model broad capability. Post-training turns that capability toward a job, through [human demonstrations and preferences](https://arxiv.org/abs/2203.02155) or through rewards, and coding makes some rewards unusually concrete: a compiler can check the build, tests can check specified behavior, and static analysis can catch some security and API errors. Reinforcement learning from verifiable rewards, or RLVR, trains directly against those checks.
+Pretraining gives a model broad capability. Post-training turns that capability toward a job through [human demonstrations and preferences](https://arxiv.org/abs/2203.02155) or through rewards. Coding makes some rewards unusually concrete. A compiler can check the build, tests can check behavior, and static analysis can catch security and API errors. Reinforcement learning from verifiable rewards, or RLVR, trains directly against those checks.
 
 ![Pretraining produces a base model, post-training can shape it with supervised examples and preference or verifiable rewards, and the model operates inside a harness with platform context, tools, and an execution environment.](/img/writing/agent-feedback-loop-training.svg)
 
@@ -68,13 +68,13 @@ Keep a meaningful slice of tasks and answers out of the context and tuning loop.
 
 A builder platform needs a first-party measurement path, either through a surface it owns or a partner harness with clear permission and privacy boundaries. The point is to govern what gets measured and shared, not to replace every coding agent.
 
-Record the exact model, harness, context, execution environment, verifier, and run budget, then connect the run to a product outcome. A passing eval only says the path can work. From there, activation marks first value; retention shows whether it lasted; expansion shows the platform earning more of the developer's work.
+Record the exact model, harness, context, execution environment, verifier, and run budget, then connect the run to a product outcome. A passing eval only says the path can work. Activation proves the developer found value, and retention confirms they stayed. Expansion follows when the platform earns more of their work.
 
 Do not collect raw source code or private conversations by default. Keep only the signals that can change a product decision, and review traces through an explicit privacy and security process.
 
 ## Distribution makes the learning compound
 
-Our team is running a version of this loop for Google Maps Platform through [portable agent skills](/work/agent-skills/) and a [task-based eval suite](/work/agentic-evals/). We use eval results to guide launch and distribution decisions, and we are still learning what works.
+Our team is running a version of this loop for Google Maps Platform through [portable agent skills](/work/agent-skills/) and a [task-based eval suite](/work/agentic-evals/). I lead the strategy and review the traces to help guide our launch decisions. We are still learning what works.
 
 Ship versioned context in a portable form, and run the same tasks in the tools, prompts, and execution boundaries developers receive. Treat every new model or harness as another row in the test matrix, not a reason to restart the strategy.
 

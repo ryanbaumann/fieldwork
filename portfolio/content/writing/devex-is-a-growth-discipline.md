@@ -1,7 +1,6 @@
 ---
 title: DevX Is Not a Docs Team
 slug: devx-is-a-growth-discipline
-aliases: ["/writing/devex-is-a-growth-discipline/"]
 summary: The growth loop starts when DevX owns repeated developer friction, ships the fix, distributes the better path, and measures whether behavior changed.
 date: 2026-07-14
 updated: 2026-07-20
@@ -16,9 +15,9 @@ tags: ["developer experience", "growth", "distribution", "ai"]
 order: 2
 ---
 
-DevX teams often get pulled into publishing more docs. That is often the wrong scoreboard. The job is to find the friction that stops a builder, fix it in the product or experience, put the better path where people work, and prove that behavior changed.
+Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, driving strong growth in API engagement. We moved those metrics by treating DevX as a growth discipline, not a docs queue. I helped lead distribution strategy across major UI frameworks and AI agent platforms alongside our product, engineering, UX, and technical writing teams. We treated product, distribution, and measurement as one system, because presence in a workflow is not proof of adoption.
 
-That is why I think DevX is a growth discipline, not a docs queue. Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, with strong growth in API engagement. During that period, I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, and technical writing. We treated product, distribution, and measurement as one system without confusing presence in a workflow with proof of adoption.
+Documentation requests often pull DevX teams away from the real scoreboard. But the job is not just to publish more docs. It is to find the friction that stops a builder, fix it in the product or experience, put the better path where people work, and prove that behavior changed.
 
 ## Own the friction
 
@@ -30,17 +29,17 @@ When builders work through coding agents instead of reading every platform layer
 
 ## Ship the fix where builders work
 
-A great experience has no impact if builders never encounter it. Documentation is one distribution surface, not the whole strategy. The path also needs to appear in the editor, agent, search result, sample, template, or tool where the work begins.
+A great experience has no impact if builders never encounter it. Documentation is only one distribution surface, not the whole strategy. The right path also needs to appear in the editor, agent, search result, sample, template, or tool where the work actually begins.
 
-Client libraries distribute executable product behavior. [Code Assist](/work/code-assist/) distributes [current official documentation and samples](https://developers.google.com/maps/ai/code-assist) inside compatible MCP clients. [Agent skills](/work/agent-skills/) distribute [versioned, repeatable workflows](https://github.com/googlemaps/agent-skills) across Web, Android, iOS, and Web Services. We use task-based evals as a release gate for each skill.
+Instead of relying on documentation alone, we distribute executable product behavior directly into developer workflows. Client libraries encapsulate the logic, while [Code Assist](/work/code-assist/) delivers [current official documentation and samples](https://developers.google.com/maps/ai/code-assist) straight to compatible MCP clients. For repetitive tasks, our [Agent skills](/work/agent-skills/) bundle [versioned workflows](https://github.com/googlemaps/agent-skills) across Web, Android, iOS, and Web Services. Before shipping, we gate each skill with a task-based eval to ensure it works.
 
 Distribution cannot be an afterthought. Design the experience so it can travel, then make it the default in the workflows that already have reach.
 
 ## Measure and own outcomes
 
-Traditional feedback loops are slow. Interviews, support themes, and developer surveys remain useful, but they do not always turn into a clear product decision quickly. [Agent evaluations](/work/agentic-evals/) shorten one part of that loop. A coding agent attempts a representative task. Its trace shows where it stalled or chose the wrong path. A rubric scores the result against a no-context baseline and informs a ship-or-hold decision.
+Traditional feedback loops are slow. While interviews, support themes, and developer surveys remain essential, they rarely translate into immediate product decisions. We shorten this loop using [Agent evaluations](/work/agentic-evals/). When a coding agent attempts a representative task, its trace reveals exactly where the journey stalls or branches wrong. A rubric then scores that result against a no-context baseline, giving us a clear ship-or-hold decision before we launch.
 
-Evals do not replace user research. An eval delta tests whether the experience can complete the task. Product telemetry shows whether builders found it, completed the journey, and returned. Direct research explains why people behaved that way. Together, those signals let a DevX team test a specific hypothesis without pretending one score explains the user.
+Evals do not replace user research, because no single score explains a human builder. An eval delta confirms that the experience can complete the task mechanically. Product telemetry tells us whether builders actually found that path, finished the journey, and returned. Finally, direct research explains why people behaved that way. Together, these signals let a DevX team test specific hypotheses and measure the real outcome.
 
 ![An agent evaluation loop moves from a representative task through an agent trace and rubric comparison to a ship-or-hold decision, then repeats using telemetry and research.](/assets/devx-eval-loop.png)
 

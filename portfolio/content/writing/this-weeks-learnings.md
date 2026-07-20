@@ -1,16 +1,16 @@
 ---
 draft: true
 noindex: true
-title: Ryan Baumann on LinkedIn
-summary: Short notes from traces reviewed, evals written, products dogfooded, and opinions revised, published on my LinkedIn profile.
+title: I Learn in Public on LinkedIn
+summary: I publish short notes on my LinkedIn profile from traces I review, evals I write, apps I ship, and opinions I revise.
 date: 2026-07-12
 canonical: https://www.linkedin.com/in/ryanbaumann/
 tags: ["developer experience", "ai", "field notes"]
 external: https://www.linkedin.com/in/ryanbaumann/
 socialImage: /social/this-weeks-learnings.jpg
-shareTitle: Ryan Baumann on LinkedIn
-shareSummary: Short notes from traces reviewed, evals written, products dogfooded, and opinions revised.
-shareImageAlt: Social card reading Ryan Baumann on LinkedIn beside a field-notes artifact.
+shareTitle: I Learn in Public on LinkedIn
+shareSummary: I share short notes from traces I review, evals I write, apps I ship, and opinions I revise.
+shareImageAlt: Social card reading I Learn in Public on LinkedIn beside a field-notes artifact.
 image: /img/writing/this-weeks-learnings.svg
-imageAlt: Artifact card reading LinkedIn field notes above traces reviewed, evals written, and products dogfooded.
+imageAlt: Artifact card reading LinkedIn field notes, Ryan Baumann on LinkedIn, and traces reviewed, evals written, products dogfooded.
 ---

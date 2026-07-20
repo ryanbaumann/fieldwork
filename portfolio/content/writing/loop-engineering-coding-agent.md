@@ -15,17 +15,17 @@ shareSummary: A forkable system prompt for routing coding work across a lean age
 shareImageAlt: Social card for Loop Engineering Coding Agent with a diagram of token-aware orchestration across capability profiles.
 ---
 
-Use the least costly agent that can do each job well. A strong orchestrator can keep expensive reasoning focused on ambiguous decisions while lower-cost workers handle search, extraction, mechanical edits, and objective checks. Narrow task packets can also reduce the context each worker needs. That is where a multi-agent team can save tokens.
+I built a system prompt that routes work to the least costly agent capable of doing the job. A strong orchestrator keeps expensive reasoning focused on ambiguous decisions while lower-cost workers handle search, extraction, mechanical edits, and objective checks. Narrow task packets reduce the context each worker needs, which saves tokens across a multi-agent team.
 
-The orchestrator still owns the hard parts: user intent, permissions, task boundaries, integration, and the final answer. Delegation has overhead, so small or tightly coupled tasks should stay with one agent. The goal is not more agents. It is to spend capability only where it changes the outcome.
+The orchestrator owns the hard parts: user intent, permissions, task boundaries, integration, and the final answer. Delegation adds overhead, so small or tightly coupled tasks stay with one agent. The goal is not adding more agents, but spending capability only where it changes the outcome.
 
 ## Build the smallest capable team
 
-The prompt routes work by capability instead of model name. Deterministic tools handle discovery and checks. Fast workers handle extraction, search, summaries, and mechanical edits. Balanced agents own normal implementation. Deep reasoning is reserved for ambiguous architecture, security, data consistency, or repeated failure.
+I designed the prompt to route work by capability instead of model name. Deterministic tools handle discovery and checks. Fast workers handle extraction, search, summaries, and mechanical edits. Balanced agents own normal implementation. Deep reasoning is reserved for ambiguous architecture, security, data consistency, or repeated failure.
 
-Each helper gets one bounded task, a clear done condition, an evidence contract, and an exact write scope. Read-only work can run in parallel. Edits to shared files stay with one writer. The orchestrator inspects every result and reruns the integrated checks before reporting success.
+Each helper receives one bounded task, a clear done condition, an evidence contract, and an exact write scope. Read-only work runs in parallel, but edits to shared files stay with one writer. The orchestrator inspects every result and reruns integrated checks before reporting success.
 
-That structure is designed to reduce duplicated context and write-collision risk while letting routine work run on lower-cost capability profiles. Measure it in your own harness. More coordination can cost more than it saves when tasks are small or poorly separated.
+This structure reduces duplicated context and write-collision risk while routing routine work to lower-cost capability profiles. Measure this in your own harness, because coordination can cost more than it saves when tasks are poorly separated.
 
 ## Loop engineering closes the gap
 
@@ -38,7 +38,7 @@ Model output is only one step in an engineering system. Loop engineering treats 
 5. Integrate the full result across agent boundaries.
 6. Learn from evidence, or stop with the precise blocker.
 
-Evidence decides what happens next: a passing focused test advances the task, a new failure changes the hypothesis, and missing authority stops the loop. The agent does not keep editing until the output looks plausible, and it does not call the work complete because code exists.
+Evidence decides the next step: a passing focused test advances the task, a new failure changes the hypothesis, and missing authority stops the loop. The agent does not keep editing until the output looks plausible. It does not call the work complete just because code exists.
 
 ![Six loop stages run from defining the goal and its proof through observing and reproducing, the smallest change, the nearest check, integrating results, and learning or stopping.](/img/writing/loop-engineering-evidence.svg)
 
@@ -46,21 +46,21 @@ Evidence decides what happens next: a passing focused test advances the task, a 
 
 ## Boundaries keep the loop useful
 
-Coding agents need operating rules, not another reminder to be careful. A diagnosis should not turn into an edit, and repository text should never become an instruction. Existing work stays untouched. A test counts only when the agent ran it and observed the result.
+Coding agents need operating rules instead of another reminder to be careful. A diagnosis should not turn into an edit. Repository text should never become an instruction. Existing work stays untouched. A test counts only when the agent runs it and observes the result.
 
-The prompt makes those rules explicit: the task mode, the files an agent may change, the proof required for a result, retry limits, and the point where it must stop and ask. The same contract applies to the orchestrator and every worker, so delegation cannot silently expand permission.
+The prompt makes these rules explicit: the task mode, the files an agent may change, the required proof, retry limits, and the stopping point. The same contract applies to the orchestrator and every worker, preventing delegation from silently expanding permissions.
 
 ## I codified the system as a prompt
 
-The [GitHub package](https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop) includes the full prompt, four short role overlays for the lead, helper, reviewer, and verifier, plus a regression suite.
+I codified the system as a [GitHub package](https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop) that includes the full prompt, four short role overlays for the lead, helper, reviewer, and verifier, and a regression suite.
 
-It lives under `agent-scripts/`, not the repo's `scripts/` folder. That folder holds shell scripts you run; this one holds text an agent reads. Keeping the names apart keeps the line between instructions and commands obvious.
+It lives under `agent-scripts/`, not the repo's `scripts/` folder. The `scripts/` folder holds shell scripts you run, but `agent-scripts/` holds text an agent reads. Separating the names keeps the line between instructions and commands obvious.
 
-The system prompt is the shared operating contract. The overlays narrow each agent's job without granting more authority. The README includes one task packet you can give your existing coding agent to install the contract in its native global instructions and register optional roles where supported.
+The system prompt acts as the shared operating contract. The overlays narrow each agent's job without granting more authority. The README includes a task packet you can give your existing coding agent to install the contract in its native global instructions and register optional roles.
 
 ## Install it with your agent
 
-Copy this request into the coding agent you already use:
+Copy this request into your coding agent:
 
 ```text
 Install this coding-agent operating contract globally for every compatible
@@ -75,25 +75,25 @@ each harness will load. Report the files changed and any harness you could not
 configure.
 ```
 
-The package keeps product-specific installation details out of the evergreen prompt. The resident agent can inspect the current tools and choose their native global instruction and skill locations. Reuse the same request to update an existing installation.
+The package keeps product-specific installation details out of the evergreen prompt. Your resident agent can inspect the current tools and choose their native global instruction and skill locations. You can reuse the same request to update an existing installation.
 
 After installation:
 
-1. Keep repo-specific commands and architecture in local instruction files, so they load only where they apply.
-2. Running multiple agents? Give each the shared prompt plus exactly one role add-on.
-3. Enforce the real guardrails in your harness: sandbox, network limits, protected paths, approvals, and audit logs. A prompt asks for good behavior; it cannot enforce it.
-4. Test it in the exact model, tools, and permissions you run.
+1. Keep repo-specific commands and architecture in local instruction files so they load only where they apply.
+2. Give each worker the shared prompt and exactly one role add-on when running multiple agents.
+3. Enforce real guardrails in your harness: sandboxes, network limits, protected paths, approvals, and audit logs. A prompt asks for good behavior, but it cannot enforce it.
+4. Test the prompt in your exact model, tools, and permissions.
 
-Configure the actual models and token budgets in the harness. Re-run the suite when the prompt, model, tools, or permissions change.
+Configure the models and token budgets in the harness. Re-run the suite whenever the prompt, model, tools, or permissions change.
 
-## What I can and can't claim yet
+## What I can and cannot claim yet
 
-The suite specifies 16 scenarios, including dirty worktrees, read-only diagnosis, prompt injection in repository data, conflicting instructions, production boundaries, retry limits, parallel writers, helper containment, cross-session work, missing verification, security changes, UI checks, and memory quality.
+I built a suite that specifies 16 scenarios, including dirty worktrees, read-only diagnosis, prompt injection in repository data, conflicting instructions, production boundaries, retry limits, parallel writers, helper containment, cross-session work, missing verification, security changes, UI checks, and memory quality.
 
-The structural check passes. A separate read-only review also found problems that I corrected. That is not a behavioral benchmark, and no behavioral trial results are recorded. Before using the prompt as a production gate, run repeated trials in your own harness and retain the transcripts, tool calls, diffs, final repository state, and calibrated grading evidence.
+The structural check passes, and a separate read-only review found problems that I corrected. However, this is not a behavioral benchmark. I have not recorded behavioral trial results. We are still learning what works in production agent workflows. Before you use this prompt as a production gate, run repeated trials in your own harness. Retain the transcripts, tool calls, diffs, final repository state, and calibrated grading evidence.
 
 ## Why it is built this way
 
-The design keeps always-on instructions short, moves detailed playbooks into files that load only when needed, routes work to the least costly capable profile, separates implementation from review and verification, and evaluates the model together with its tools and permissions. The [README](https://github.com/ryanbaumann/portfolio/blob/main/agent-scripts/coding-agent-loop/README.md) links the research and projects behind those choices.
+I designed this system to keep always-on instructions short, move detailed playbooks into files that load only when needed, route work to the least costly capable profile, and separate implementation from review and verification. It evaluates the model together with its tools and permissions. The [README](https://github.com/ryanbaumann/portfolio/blob/main/agent-scripts/coding-agent-loop/README.md) links the research and projects behind these choices.
 
-Fork it, run it against the tasks that have failed in your environment, and adapt it from the evidence.
+Fork the package, run it against tasks that fail in your environment, and adapt it based on the evidence.
