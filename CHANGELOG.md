@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Added the Field Note “The Model That Picks Your Platform Doesn't Write the Code” on tiered coding agents and where a developer platform's DevX strategy should focus, with a header flow diagram, an inline two-readers diagram, and a generated social card.
 - Added OAuth-admin staging of editable, unpublished LinkedIn and X drafts beside each Field Note, plus first-attempt merge staging for newly added drafts, with tracked starter copy, opt-out metadata, side-effect-free workflow reruns, and secret-safe configuration.
 - Completed the Writer edit flow with focused direct-branch saves, in-dashboard errors, and a GitHub merge link when a protected workflow uses a separate publishing branch.
 - Paginated the Writer dashboard's Field Notes section to five entries at a time with accessible previous, next, and page-status controls.
