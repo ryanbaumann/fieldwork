@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Rewrote the "The Model That Picks Your Platform Doesn't Write the Code" Field Note to open on the cheap-execution stakes (GLM 5.2, Kimi K3) and the moat question, cut AI-tell phrasing, and replaced its two templated flow diagrams with bespoke per-post art (a one-decides-many-build asymmetry header and a descending-tier staircase). Recorded the copy-and-image taste rules in the portfolio-writing skill and LEARNINGS.
+- Showed four Field Notes on the homepage (one featured plus three) so a new post no longer pushes an entry off the page.
+
 ### Added
 - Added the Field Note “The Model That Picks Your Platform Doesn't Write the Code” on tiered coding agents and where a developer platform's DevX strategy should focus, with a header flow diagram, an inline two-readers diagram, and a generated social card.
 - Added OAuth-admin staging of editable, unpublished LinkedIn and X drafts beside each Field Note, plus first-attempt merge staging for newly added drafts, with tracked starter copy, opt-out metadata, side-effect-free workflow reruns, and secret-safe configuration.

@@ -2,6 +2,13 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-07-20 - Field Note copy and image taste: cut AI tells, draft three, make art per-post
+
+Context: A Field Note draft read as competent but generated. Ryan's specific corrections: too many "it's not X, it's Y" antithesis flips; the self-credit line "I lead the strategy and review the traces" is trite and inauthentic (he does not want it, in this or any post); openings should lead with the reader's stakes, not a personal scene; punchier and shorter beats thorough. Separately, the generated diagrams all looked identical because every post reuses the same numbered box-and-arrow flow template, with too much text.
+Learning: For copy, hold the "not X, but Y" shape to at most two load-bearing uses (the title thesis and the one payoff line) and never as filler; never use "I lead the strategy and review the traces" or resume-bullet self-credit; open on the stakes; prefer cutting to polishing. To pick voice, write three genuinely distinct drafts (analytical, scene-led, staccato) and have an independent reviewer grade them 1-10 on authentic voice, rhythm, freedom from AI-isms, and punchiness, then the lead makes the final call. For images, draw bespoke low-text art per post (a distinct scene that carries one idea) instead of the shared flow template, so a post's visuals read as its own; keep the house chrome (grid, accent bar, theme vars) for family resemblance but change the central geometry. Encode custom art as a `CUSTOM` entry with a dedicated render function in `scripts/artifact-cards.mjs`, and remember to add it to the CLI `knownFiles` allowlist.
+Evidence: "The Model That Picks Your Platform Doesn't Write the Code" was rebuilt this way: three drafts graded (analytical draft won 34/38), a one-decides-many-build asymmetry header and a descending-tier staircase inline replaced two templated flow diagrams. See `scripts/artifact-cards.mjs` `asymmetryDiagram`/`tierdropDiagram`.
+Use next time: Run the three-draft grade for any headline Field Note, apply the reviewer's line fixes, and give each post at least one purpose-built visual instead of another flow card.
+
 ## 2026-07-20 - Social-card generation in remote agent sandboxes: shadow the Playwright browsers dir, do not reinstall
 
 Context: Regenerating a Field Note social card with `node scripts/social-cards.mjs` in a Claude Code remote session failed because the pinned Playwright wanted `chromium_headless_shell-1228` while the sandbox preinstalls r1194 under `/opt/pw-browsers` (with the older `chrome-linux/headless_shell` layout) and blocks `playwright install`.
