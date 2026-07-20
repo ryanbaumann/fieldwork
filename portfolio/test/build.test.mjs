@@ -176,6 +176,14 @@ test('build lists public demos without disclosing private demos', () => {
   assert.doesNotMatch(demos, /Private demo/);
 });
 
+test('homepage Labs action opens the Labs collection instead of a featured demo', () => {
+  const paths = fixture();
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
+  assert.match(home, /<a class="more" href="\/labs\/">Explore Labs/);
+});
+
 test('shared primary navigation leads with Field Notes and keeps core destinations', () => {
   const paths = fixture();
   const result = build(paths);

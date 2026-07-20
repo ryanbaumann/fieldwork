@@ -155,3 +155,10 @@ Context: Auditing the portfolio for Search Engine Optimization (SEO) and Answer 
 Learning: AEO prioritizes visible DOM elements over raw metadata (e.g., `<meta>` tags and JSON-LD). Rendering summaries in the visible body text (like a `.lede` paragraph right under the headline) dramatically improves discoverability for AI models (like Perplexity or Google AI Overviews). Additionally, the standard for Open Graph images is 1200x630 pixels. Expanding the build script's image validation to accept both 1200x627 and 1200x630 allows a smooth migration to standard sizes without breaking the build on existing 1200x627 assets.
 Evidence: Modified `portfolio/build.mjs` to render `meta.summary` in a `<p class="lede">` paragraph for detail pages and standalone pages, and updated image validation on lines 122 and 213. Ran `node build.mjs` and the smoke tests (`node scripts/smoke.mjs`), which successfully passed.
 Use next time: Always render summary metadata visibly in the DOM to assist AI engine indexers. When updating layout/image validation standards, support legacy sizes concurrently to prevent build blockages during migration.
+
+## 2026-07-20 - Collection calls to action must point to the collection owner
+
+Context: The homepage Labs section rendered several cards, but its “Explore Labs” action was hard-coded to one external Atlas experiment instead of the local Labs collection route.
+Learning: A collection-level call to action should resolve to the collection’s canonical route. Individual external destinations belong on their own cards.
+Evidence: The homepage builder now targets `/labs/`, which follows the existing permanent redirect to the canonical `/demos/` collection, while Atlas keeps its external URL in `apps.json`.
+Use next time: Derive section-level destinations from the collection route and cover the rendered `href` with a build test when a featured item can be external.

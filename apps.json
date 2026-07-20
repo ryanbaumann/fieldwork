@@ -59,7 +59,7 @@
   {
     "name": "aqi-map",
     "title": "Air Quality Map",
-    "description": "Live air-quality heatmap with click-to-inspect pollutant detail, straight from the Air Quality API.",
+    "description": "A location-first air-quality check with live US AQI, particle pollution, and practical health guidance.",
     "path": "/aqi-map/",
     "dev_build_dir": "demos/aqi-map/dist",
     "source": { "type": "workspace", "package": "demos/aqi-map", "output": "dist" },
@@ -70,8 +70,8 @@
   },
   {
     "name": "isochrones",
-    "title": "Isochrones",
-    "description": "How far can you get in 10, 20, 30 minutes? Live-regenerating reachability bands for delivery, commute, and response planning.",
+    "title": "Meet in the Middle",
+    "description": "Set two starting points and find real coffee, food, drinks, or parks inside both travel-time areas.",
     "path": "/isochrones/",
     "dev_build_dir": "demos/isochrones/dist",
     "source": { "type": "workspace", "package": "demos/isochrones", "output": "dist" },

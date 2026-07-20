@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Air Quality Map: a Google Maps Platform demo</title>
-    <meta name="description" content="Live air quality heatmap and point conditions from the Google Maps Platform Air Quality API on a 2D Google map." />
+    <title>Air quality near you: a Google Maps Platform demo</title>
+    <meta name="description" content="Check current US AQI, particle pollution, and health guidance near you with Google Maps Platform Air Quality data." />
     <link rel="canonical" href="https://ryanbaumann.dev/aqi-map/" />
-    <meta property="og:title" content="Air Quality Map" />
-    <meta property="og:description" content="Live air-quality heatmap with pollutant detail from Google Maps Platform." />
+    <meta property="og:title" content="Air quality near you" />
+    <meta property="og:description" content="Check current AQI, particle pollution, and health guidance before you head outside." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://ryanbaumann.dev/aqi-map/" />
     <meta property="og:image" content="https://ryanbaumann.dev/social/aqi-map.jpg" />
@@ -16,63 +16,107 @@
     <meta property="og:image:height" content="627" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Air Quality Map" />
-    <meta name="twitter:description" content="Live air-quality heatmap with pollutant detail from Google Maps Platform." />
+    <meta name="twitter:title" content="Air quality near you" />
+    <meta name="twitter:description" content="Check current AQI, particle pollution, and health guidance before you head outside." />
     <meta name="twitter:image" content="https://ryanbaumann.dev/social/aqi-map.jpg" />
     <meta name="twitter:image:alt" content="Air Quality Map showing a live air-quality heatmap and local conditions" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌫️</text></svg>" />
   </head>
   <body>
     <div id="app">
-      <aside class="panel" aria-label="Air quality controls">
-        <a class="home-link" href="/" aria-label="Back to Ryan Baumann home">&larr; Ryan Baumann</a>
-        <p class="eyebrow">Google Maps Platform demo</p>
-        <h1>Air Quality</h1>
-        <p class="lede">Live air-quality heatmap from the Air Quality API. Click anywhere on the map for local conditions.</p>
-        <nav class="portfolio-links" aria-label="Explore Ryan Baumann's portfolio">
-          <a href="/work/">How it was built</a>
-          <a href="/contact/?intent=platform">Build with Ryan</a>
-          <a href="https://github.com/ryanbaumann/Portfolio/tree/main/demos/aqi-map" target="_blank" rel="noopener">View Source</a>
-        </nav>
+      <aside class="panel" aria-label="Air quality controls" data-collapsed="false">
+        <div class="mobile-sheet-bar">
+          <span class="sheet-grabber" aria-hidden="true"></span>
+          <strong>Air quality near you</strong>
+          <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="true" aria-label="Hide air quality details">Hide</button>
+        </div>
 
-        <section class="card">
-          <label for="place-search">Find a place</label>
-          <div id="search-slot"></div>
+        <div class="panel-content">
+          <header class="panel-header">
+            <a class="home-link" href="/" aria-label="Back to Ryan Baumann home">&larr; Ryan Baumann</a>
+            <p class="eyebrow">Google Maps Platform demo</p>
+            <h1>Air quality near you</h1>
+            <p class="lede">Check smoke and particle pollution before you head outside. Pick any point for current conditions and practical guidance.</p>
+          </header>
 
-          <label for="layer-select">Heatmap layer</label>
-          <select id="layer-select">
-            <option value="UAQI_RED_GREEN">Universal AQI</option>
-            <option value="US_AQI">US AQI (EPA)</option>
-            <option value="PM25_INDEX">PM2.5 index</option>
-          </select>
+          <section class="card controls-card">
+            <button id="locate-button" class="primary-button" type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+              Use my location
+            </button>
 
-          <label for="opacity-input">Heatmap opacity <span id="opacity-label">70%</span></label>
-          <input id="opacity-input" type="range" min="10" max="100" step="5" value="70" />
+            <label for="place-search">Or search a city, address, or ZIP</label>
+            <div id="search-slot"></div>
 
-          <div class="legend" aria-hidden="true">
-            <div id="legend-bar" class="legend-bar"></div>
-            <div class="legend-labels"><span id="legend-min"></span><span id="legend-max"></span></div>
-          </div>
-          <p id="status" role="status" aria-live="polite"></p>
-        </section>
+            <div class="control-grid">
+              <label for="layer-select">Map layer
+                <select id="layer-select">
+                  <option value="US_AQI">US AQI</option>
+                  <option value="PM25_INDEX">PM2.5 particles</option>
+                  <option value="UAQI_RED_GREEN">Universal AQI</option>
+                </select>
+              </label>
 
-        <section id="conditions" class="card conditions" hidden aria-live="polite">
-          <h2>Local conditions</h2>
-          <div class="aqi-headline">
-            <span id="aqi-value" class="aqi-value">–</span>
-            <div>
-              <p id="aqi-category" class="aqi-category"></p>
-              <p id="aqi-index-name" class="aqi-index-name"></p>
+              <label for="opacity-input">Overlay <span id="opacity-label">70%</span>
+                <input id="opacity-input" type="range" min="10" max="100" step="5" value="70" />
+              </label>
             </div>
-          </div>
-          <p id="aqi-pollutant" class="aqi-pollutant"></p>
-          <ul id="pollutant-list" class="pollutant-list"></ul>
-          <p id="aqi-time" class="aqi-time"></p>
-        </section>
 
-        <footer class="credits">
-          Data: <a href="https://developers.google.com/maps/documentation/air-quality" rel="noopener">Google Maps Platform Air Quality API</a>
-        </footer>
+            <div class="legend" aria-hidden="true">
+              <div id="legend-bar" class="legend-bar"></div>
+              <div class="legend-labels"><span id="legend-min"></span><span id="legend-max"></span></div>
+            </div>
+            <p id="status" role="status" aria-live="polite">Use your location, search, or tap the map.</p>
+          </section>
+
+          <section id="conditions" class="card conditions" hidden aria-live="polite">
+            <div class="conditions-heading">
+              <div>
+                <p class="eyebrow">Current conditions</p>
+                <h2 id="location-label">Selected location</h2>
+              </div>
+              <span id="aqi-time" class="aqi-time"></span>
+            </div>
+            <div class="aqi-headline">
+              <span id="aqi-value" class="aqi-value">–</span>
+              <div>
+                <p id="aqi-category" class="aqi-category"></p>
+                <p id="aqi-index-name" class="aqi-index-name"></p>
+              </div>
+            </div>
+
+            <section class="guidance" aria-labelledby="guidance-title">
+              <h3 id="guidance-title">What to do</h3>
+              <p id="general-guidance"></p>
+              <details id="sensitive-guidance-wrap" hidden>
+                <summary>Guidance for sensitive groups</summary>
+                <div id="sensitive-guidance" class="sensitive-list"></div>
+              </details>
+            </section>
+
+            <div class="pollutant-heading">
+              <h3>What is in the air</h3>
+              <p id="aqi-pollutant" class="aqi-pollutant"></p>
+            </div>
+            <ul id="pollutant-list" class="pollutant-list"></ul>
+            <details id="pollutant-details" class="pollutant-details" hidden>
+              <summary>About the dominant pollutant</summary>
+              <p id="pollutant-effects"></p>
+              <p id="pollutant-sources"></p>
+            </details>
+            <p class="google-attribution">Google Maps</p>
+          </section>
+
+          <nav class="portfolio-links" aria-label="Explore Ryan Baumann's portfolio">
+            <a href="/work/">How it was built</a>
+            <a href="/contact/?intent=platform">Build with Ryan</a>
+            <a href="https://github.com/ryanbaumann/Portfolio/tree/main/demos/aqi-map" target="_blank" rel="noopener">View Source</a>
+          </nav>
+
+          <footer class="credits">
+            Conditions and health guidance from the <a href="https://developers.google.com/maps/documentation/air-quality" rel="noopener">Google Maps Platform Air Quality API</a>. Not medical advice.
+          </footer>
+        </div>
       </aside>
 
       <main class="map-shell">

@@ -4,23 +4,12 @@ import './styles.css';
 
 installAnalytics(import.meta.env.VITE_ANALYTICS_MEASUREMENT_ID);
 
-// Everything here runs on one referrer-restricted browser key, the same
-// pattern as the other Google Maps Platform demos in this repo: the key
-// needs Maps JavaScript API, Places API, and Air Quality API enabled.
 const API_KEY = import.meta.env.VITE_GMP_API_KEY;
 const AIR_QUALITY_HOST = 'https://airquality.googleapis.com/v1';
 const DEFAULT_CENTER = { lat: 37.7749, lng: -122.4194 };
+const SOLUTION_ID = 'gmp_git_agentskills_v1';
 
-// Heatmap tile layers served by the Air Quality API. Legend gradients
-// mirror each palette's meaning: Universal AQI counts up to good (100 =
-// excellent), US AQI counts up to bad (301+ = hazardous).
 const LAYERS = {
-  UAQI_RED_GREEN: {
-    indexCode: 'uaqi',
-    gradient: 'linear-gradient(90deg, #d7191c, #f07c26, #f7d038, #a6d96a, #1a9641)',
-    min: '0 · Poor',
-    max: '100 · Excellent',
-  },
   US_AQI: {
     indexCode: 'usa_epa',
     gradient: 'linear-gradient(90deg, #00e400, #ffff00, #ff7e00, #ff0000, #8f3f97, #7e0023)',
@@ -28,25 +17,38 @@ const LAYERS = {
     max: '301+ · Hazardous',
   },
   PM25_INDEX: {
-    indexCode: 'uaqi',
+    indexCode: 'usa_epa',
     gradient: 'linear-gradient(90deg, #0e7a0d, #ffde33, #ff9933, #cc0033, #660099, #7e0023)',
-    min: 'Low PM2.5',
-    max: 'High PM2.5',
+    min: 'Lower PM2.5',
+    max: 'Higher PM2.5',
+  },
+  UAQI_RED_GREEN: {
+    indexCode: 'uaqi',
+    gradient: 'linear-gradient(90deg, #d7191c, #f07c26, #f7d038, #a6d96a, #1a9641)',
+    min: '0 · Poor',
+    max: '100 · Excellent',
   },
 };
 
 const state = {
   map: null,
+  markerClass: null,
   heatmapLayer: null,
   marker: null,
-  activeLayer: 'UAQI_RED_GREEN',
+  activeLayer: 'US_AQI',
   opacity: 0.7,
   lookupController: null,
 };
 
+const mobileSheetQuery = window.matchMedia('(max-width: 860px)');
+
 const elements = {
+  panel: document.querySelector('.panel'),
+  panelContent: document.querySelector('.panel-content'),
+  panelToggle: document.querySelector('#panel-toggle'),
   map: document.querySelector('#map'),
   status: document.querySelector('#status'),
+  locateButton: document.querySelector('#locate-button'),
   layerSelect: document.querySelector('#layer-select'),
   opacityInput: document.querySelector('#opacity-input'),
   opacityLabel: document.querySelector('#opacity-label'),
@@ -55,17 +57,33 @@ const elements = {
   legendMax: document.querySelector('#legend-max'),
   searchSlot: document.querySelector('#search-slot'),
   conditions: document.querySelector('#conditions'),
+  locationLabel: document.querySelector('#location-label'),
   aqiValue: document.querySelector('#aqi-value'),
   aqiCategory: document.querySelector('#aqi-category'),
   aqiIndexName: document.querySelector('#aqi-index-name'),
   aqiPollutant: document.querySelector('#aqi-pollutant'),
   pollutantList: document.querySelector('#pollutant-list'),
+  pollutantDetails: document.querySelector('#pollutant-details'),
+  pollutantEffects: document.querySelector('#pollutant-effects'),
+  pollutantSources: document.querySelector('#pollutant-sources'),
+  generalGuidance: document.querySelector('#general-guidance'),
+  sensitiveGuidanceWrap: document.querySelector('#sensitive-guidance-wrap'),
+  sensitiveGuidance: document.querySelector('#sensitive-guidance'),
   aqiTime: document.querySelector('#aqi-time'),
 };
 
 function setStatus(message, tone = 'neutral') {
   elements.status.textContent = message;
   elements.status.dataset.tone = tone;
+}
+
+function setPanelExpanded(expanded) {
+  const collapsed = !expanded && mobileSheetQuery.matches;
+  elements.panel.dataset.collapsed = String(collapsed);
+  elements.panelContent.inert = collapsed;
+  elements.panelToggle.setAttribute('aria-expanded', String(!collapsed));
+  elements.panelToggle.setAttribute('aria-label', collapsed ? 'Show air quality details' : 'Hide air quality details');
+  elements.panelToggle.textContent = collapsed ? 'Show' : 'Hide';
 }
 
 function applyLegend() {
@@ -80,8 +98,10 @@ function applyHeatmap() {
   state.map.overlayMapTypes.clear();
   state.heatmapLayer = new google.maps.ImageMapType({
     getTileUrl: (coordinate, zoom) => {
-      if (zoom < 0 || zoom > 16) return null;
-      return `${AIR_QUALITY_HOST}/mapTypes/${state.activeLayer}/heatmapTiles/${zoom}/${coordinate.x}/${coordinate.y}?key=${API_KEY}`;
+      const limit = 2 ** zoom;
+      if (zoom < 0 || zoom > 16 || coordinate.y < 0 || coordinate.y >= limit) return null;
+      const x = ((coordinate.x % limit) + limit) % limit;
+      return `${AIR_QUALITY_HOST}/mapTypes/${state.activeLayer}/heatmapTiles/${zoom}/${x}/${coordinate.y}?key=${API_KEY}&solution_id=${SOLUTION_ID}`;
     },
     tileSize: new google.maps.Size(256, 256),
     maxZoom: 16,
@@ -93,7 +113,12 @@ function applyHeatmap() {
 
 function rgbFromApiColor(color = {}) {
   const channel = (value) => Math.round((value || 0) * 255);
-  return `rgb(${channel(color.red)}, ${channel(color.green)}, ${channel(color.blue)})`;
+  return { red: channel(color.red), green: channel(color.green), blue: channel(color.blue) };
+}
+
+function readableTextColor({ red, green, blue }) {
+  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+  return luminance > 0.58 ? '#08111f' : '#ffffff';
 }
 
 function pickIndex(indexes = []) {
@@ -101,68 +126,139 @@ function pickIndex(indexes = []) {
   return indexes.find((index) => index.code === preferred) || indexes[0] || null;
 }
 
-function renderConditions(payload, latLng) {
+function formatConcentration(concentration) {
+  if (!concentration) return '';
+  const units = {
+    MICROGRAMS_PER_CUBIC_METER: 'µg/m³',
+    PARTS_PER_BILLION: 'ppb',
+    PARTS_PER_MILLION: 'ppm',
+  };
+  return `${concentration.value} ${units[concentration.units] || String(concentration.units || '').toLowerCase().replaceAll('_', ' ')}`.trim();
+}
+
+function renderPollutants(payload, dominantCode) {
+  const pollutants = [...(payload.pollutants || [])]
+    .sort((first, second) => Number(second.code === dominantCode) - Number(first.code === dominantCode))
+    .slice(0, 4);
+  elements.pollutantList.replaceChildren();
+  pollutants.forEach((pollutant) => {
+    const item = document.createElement('li');
+    const name = document.createElement('strong');
+    name.textContent = pollutant.displayName || pollutant.code;
+    const value = document.createElement('span');
+    value.textContent = formatConcentration(pollutant.concentration);
+    item.append(name, value);
+    elements.pollutantList.append(item);
+  });
+
+  const dominant = pollutants.find((pollutant) => pollutant.code === dominantCode);
+  const additionalInfo = dominant?.additionalInfo;
+  elements.pollutantDetails.hidden = !(additionalInfo?.effects || additionalInfo?.sources);
+  elements.pollutantEffects.textContent = additionalInfo?.effects ? `Health effects: ${additionalInfo.effects}` : '';
+  elements.pollutantSources.textContent = additionalInfo?.sources ? `Common sources: ${additionalInfo.sources}` : '';
+}
+
+function renderGuidance(recommendations = {}) {
+  elements.generalGuidance.textContent = recommendations.generalPopulation
+    || 'No general-population guidance was returned for this point.';
+  const groups = [
+    ['People with lung conditions', recommendations.lungDiseasePopulation],
+    ['People with heart conditions', recommendations.heartDiseasePopulation],
+    ['Older adults', recommendations.elderly],
+    ['Children', recommendations.children],
+    ['Pregnant people', recommendations.pregnantWomen],
+    ['Athletes', recommendations.athletes],
+  ].filter(([, guidance]) => guidance);
+  elements.sensitiveGuidanceWrap.hidden = groups.length === 0;
+  elements.sensitiveGuidance.replaceChildren();
+  groups.forEach(([label, guidance]) => {
+    const item = document.createElement('p');
+    const heading = document.createElement('strong');
+    heading.textContent = `${label}: `;
+    item.append(heading, guidance);
+    elements.sensitiveGuidance.append(item);
+  });
+}
+
+function renderConditions(payload, latLng, locationName) {
   const index = pickIndex(payload.indexes);
   if (!index) {
-    setStatus('No air quality data for that location (often oceans or unmonitored regions).', 'error');
+    elements.conditions.hidden = true;
+    setStatus('No air quality data is available for that point.', 'error');
     return;
   }
 
   elements.conditions.hidden = false;
+  elements.locationLabel.textContent = locationName || 'Selected map point';
   elements.aqiValue.textContent = index.aqiDisplay || String(index.aqi ?? '–');
-  elements.aqiValue.style.background = rgbFromApiColor(index.color);
+  const color = rgbFromApiColor(index.color);
+  elements.aqiValue.style.background = `rgb(${color.red}, ${color.green}, ${color.blue})`;
+  elements.aqiValue.style.color = readableTextColor(color);
   elements.aqiCategory.textContent = index.category || '';
   elements.aqiIndexName.textContent = index.displayName || index.code;
   elements.aqiPollutant.textContent = index.dominantPollutant
-    ? `Dominant pollutant: ${index.dominantPollutant.toUpperCase()}`
+    ? `Dominant: ${index.dominantPollutant.toUpperCase()}`
     : '';
 
-  const pollutants = (payload.pollutants || []).slice(0, 6);
-  elements.pollutantList.innerHTML = pollutants
-    .map((pollutant) => {
-      const value = pollutant.concentration
-        ? `${pollutant.concentration.value} ${(pollutant.concentration.units || '').replaceAll('_', ' ').toLowerCase()}`
-        : '';
-      return `<li><strong>${pollutant.displayName || pollutant.code}</strong><span>${value}</span></li>`;
-    })
-    .join('');
+  renderGuidance(payload.healthRecommendations);
+  renderPollutants(payload, index.dominantPollutant);
 
   const time = payload.dateTime ? new Date(payload.dateTime) : null;
-  elements.aqiTime.textContent = [
-    payload.regionCode ? `Region: ${payload.regionCode.toUpperCase()}` : null,
-    time ? `As of ${time.toLocaleString()}` : null,
-  ].filter(Boolean).join(' · ');
-
-  setStatus(`Conditions loaded for ${latLng.lat.toFixed(3)}, ${latLng.lng.toFixed(3)}.`, 'success');
+  elements.aqiTime.textContent = time
+    ? time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : 'Current';
+  setStatus(`Current conditions loaded for ${latLng.lat.toFixed(3)}, ${latLng.lng.toFixed(3)}.`, 'success');
+  setPanelExpanded(true);
 }
 
-async function lookupConditions(latLng) {
+async function lookupConditions(latLng, locationName = '') {
+  if (!Number.isFinite(latLng.lat) || !Number.isFinite(latLng.lng)
+    || latLng.lat < -90 || latLng.lat > 90 || latLng.lng < -180 || latLng.lng > 180) {
+    setStatus('Choose a valid point on the map.', 'error');
+    return;
+  }
+
   state.lookupController?.abort();
   state.lookupController = new AbortController();
-  setStatus('Looking up local conditions…');
+  setStatus('Checking current air quality…');
   placeMarker(latLng);
 
   try {
     const response = await fetch(`${AIR_QUALITY_HOST}/currentConditions:lookup?key=${API_KEY}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'X-Goog-Maps-Solution-ID': SOLUTION_ID,
+      },
       signal: state.lookupController.signal,
       body: JSON.stringify({
         location: { latitude: latLng.lat, longitude: latLng.lng },
         universalAqi: true,
-        extraComputations: ['LOCAL_AQI', 'DOMINANT_POLLUTANT_CONCENTRATION', 'POLLUTANT_CONCENTRATION'],
+        extraComputations: [
+          'LOCAL_AQI',
+          'HEALTH_RECOMMENDATIONS',
+          'DOMINANT_POLLUTANT_CONCENTRATION',
+          'POLLUTANT_CONCENTRATION',
+          'POLLUTANT_ADDITIONAL_INFO',
+        ],
         languageCode: 'en',
       }),
     });
     const payload = await response.json();
-    if (!response.ok) {
-      throw new Error(payload.error?.message || 'Air Quality API request failed.');
-    }
-    renderConditions(payload, latLng);
+    if (!response.ok) throw new Error(payload.error?.message || 'Air Quality API request failed.');
+    renderConditions(payload, latLng, locationName);
   } catch (error) {
     if (error.name === 'AbortError') return;
     elements.conditions.hidden = true;
     setStatus(error.message, 'error');
+  }
+}
+
+function addMarkerContent(marker, content) {
+  if (typeof marker.append === 'function') {
+    marker.append(content);
+  } else {
+    marker.content = content;
   }
 }
 
@@ -171,41 +267,72 @@ function placeMarker(latLng) {
     state.marker.position = latLng;
     return;
   }
-  state.marker = new google.maps.marker.AdvancedMarkerElement({
+  state.marker = new state.markerClass({
     map: state.map,
     position: latLng,
     title: 'Air quality lookup point',
   });
+  const markerContent = document.createElement('span');
+  markerContent.className = 'lookup-marker';
+  markerContent.setAttribute('aria-hidden', 'true');
+  addMarkerContent(state.marker, markerContent);
 }
 
-async function attachPlaceSearch() {
+async function attachPlaceSearch(PlaceAutocompleteElement) {
   try {
-    const { PlaceAutocompleteElement } = await importLibrary('places');
-    const autocomplete = new PlaceAutocompleteElement();
+    const autocomplete = new PlaceAutocompleteElement({
+      internalUsageAttributionIds: [SOLUTION_ID],
+    });
     autocomplete.id = 'place-search';
+    autocomplete.placeholder = 'Search a city, address, or ZIP';
     elements.searchSlot.append(autocomplete);
     autocomplete.addEventListener('gmp-select', async ({ placePrediction }) => {
       const place = placePrediction.toPlace();
-      await place.fetchFields({ fields: ['location', 'viewport'] });
-      const location = place.location;
-      if (!location) return;
-      const latLng = { lat: location.lat(), lng: location.lng() };
+      await place.fetchFields({ fields: ['location', 'viewport', 'displayName'] });
+      if (!place.location) return;
+      const latLng = { lat: place.location.lat(), lng: place.location.lng() };
       if (place.viewport) {
-        state.map.fitBounds(place.viewport);
+        state.map.fitBounds(place.viewport, { top: 72, right: 48, bottom: 180, left: 48 });
       } else {
         state.map.setCenter(latLng);
         state.map.setZoom(10);
       }
-      lookupConditions(latLng);
+      lookupConditions(latLng, place.displayName || 'Selected place');
     });
   } catch (error) {
-    // Places is a nice-to-have here; the map click flow still works without it.
     console.warn('Place search unavailable:', error);
-    elements.searchSlot.textContent = 'Place search unavailable for this key.';
+    elements.searchSlot.textContent = 'Search is unavailable for this key. Tap the map instead.';
   }
 }
 
+function useCurrentLocation() {
+  if (!navigator.geolocation) {
+    setStatus('This browser does not provide location access.', 'error');
+    return;
+  }
+  elements.locateButton.disabled = true;
+  setStatus('Getting your location…');
+  navigator.geolocation.getCurrentPosition(({ coords }) => {
+    const latLng = { lat: coords.latitude, lng: coords.longitude };
+    state.map.setCenter(latLng);
+    state.map.setZoom(11);
+    lookupConditions(latLng, 'Your location');
+    elements.locateButton.disabled = false;
+  }, (error) => {
+    const message = error.code === error.PERMISSION_DENIED
+      ? 'Location access was declined. Search or tap the map instead.'
+      : 'Your location is unavailable right now. Search or tap the map instead.';
+    setStatus(message, 'error');
+    elements.locateButton.disabled = false;
+  }, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 });
+}
+
 function bindUi() {
+  elements.panelToggle.addEventListener('click', () => {
+    setPanelExpanded(elements.panel.dataset.collapsed === 'true');
+  });
+  elements.locateButton.addEventListener('click', useCurrentLocation);
+  mobileSheetQuery.addEventListener('change', () => setPanelExpanded(true));
   elements.layerSelect.addEventListener('change', () => {
     state.activeLayer = elements.layerSelect.value;
     applyLegend();
@@ -221,23 +348,26 @@ function bindUi() {
 
 async function init() {
   bindUi();
-
   if (!API_KEY) {
-    setStatus('Set VITE_GMP_API_KEY (with Maps JavaScript + Air Quality APIs enabled) to load the map.', 'error');
+    setStatus('Set VITE_GMP_API_KEY with Maps JavaScript, Places, and Air Quality enabled.', 'error');
     return;
   }
 
   setOptions({ key: API_KEY, v: 'weekly', authReferrerPolicy: 'origin' });
   let Map;
+  let PlaceAutocompleteElement;
   try {
-    ({ Map } = await importLibrary('maps'));
-    await importLibrary('marker');
+    const [mapsLibrary, markerLibrary, placesLibrary] = await Promise.all([
+      importLibrary('maps'),
+      importLibrary('marker'),
+      importLibrary('places'),
+    ]);
+    ({ Map } = mapsLibrary);
+    state.markerClass = markerLibrary.AdvancedMarkerElement;
+    ({ PlaceAutocompleteElement } = placesLibrary);
   } catch (error) {
-    // Never fail silently: a rejected loader (bad key, blocked referrer,
-    // network) should tell the visitor what happened, not strand them on
-    // an empty page.
     console.error('Google Maps failed to load:', error);
-    setStatus('Google Maps failed to load — the API key may be invalid or restricted for this origin.', 'error');
+    setStatus('Google Maps failed to load. Check the browser key and enabled APIs.', 'error');
     return;
   }
 
@@ -250,14 +380,14 @@ async function init() {
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: true,
+    internalUsageAttributionIds: [SOLUTION_ID],
   });
 
   applyHeatmap();
-  attachPlaceSearch();
+  attachPlaceSearch(PlaceAutocompleteElement);
   state.map.addListener('click', ({ latLng }) => {
-    lookupConditions({ lat: latLng.lat(), lng: latLng.lng() });
+    lookupConditions({ lat: latLng.lat(), lng: latLng.lng() }, 'Selected map point');
   });
-  setStatus('Click the map for local conditions.');
 }
 
 init().catch((error) => {

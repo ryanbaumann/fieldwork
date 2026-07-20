@@ -8,7 +8,7 @@
     "dev": "node server.js --dev",
     "build": "vite build",
     "preview": "node server.js",
-    "test": "npm run build"
+    "test": "node --test && npm run build"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",

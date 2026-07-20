@@ -2,19 +2,24 @@
 
 ![Isochrones preview](../../portfolio/static/previews/isochrones.jpg)
 
-This is a small Vite + Node demo that showcases the Google Maps Platform Isochrones API on an interactive Google Map. It is designed around three common reachability workflows:
+This Vite + Node demo turns the Google Maps Platform Isochrones API into a
+practical meet-in-the-middle finder:
 
-- **Delivery**: compare service-area bands from a hub (default 30-minute radius).
-- **Commute**: flip travel direction to understand who can arrive at a destination within a target time.
-- **Response**: inspect time-band gaps for field teams, clinics, or emergency-style service planning.
+- Set two starts by Places search, browser location, or map tap.
+- Generate one equal-time travel area for each person by driving, biking, or walking.
+- Search Places (New) near the midpoint, then keep only coffee, food, drinks,
+  or parks whose coordinates fall inside both isochrones.
+- Open any shared result in Google Maps.
 
-The demo is live-by-default: rings generate automatically on load and regenerate (debounced, in parallel) whenever the origin, scenario, or any setting changes. Set the origin by place search (`PlaceAutocompleteElement`), by clicking the map, or by dragging the pin. The results panel lists each time band with cumulative area and the incremental area added by that band; hovering a band highlights its ring on the map.
+The two travel areas are generated in parallel only when requested, which keeps
+quota use predictable. A mobile bottom sheet can collapse so the full map stays
+available for panning and selecting points.
 
 ## Prerequisites
 
 - Node.js 20 or newer.
 - Google Maps Platform API keys. For security best practices:
-  - **Browser Key** (`VITE_GMP_API_KEY`): Used to load the Maps JavaScript API. This should be restricted by HTTP referrer in your Google Cloud console.
+  - **Browser Key** (`VITE_GMP_API_KEY`): Used to load the Maps JavaScript API and Places API (New). This should be restricted by HTTP referrer in your Google Cloud console.
   - **Server Key** (`GMP_SERVER_API_KEY`): Used for backend requests to the Isochrones API. This should be unrestricted or IP-restricted.
 
 ### Environment setup
@@ -30,7 +35,7 @@ GMP_SERVER_API_KEY=YOUR_GOOGLE_MAPS_SERVER_KEY
 ```
 
 Make sure the Google Maps Platform products are enabled on the project(s) corresponding to your keys:
-- Maps JavaScript API and Places API (for the browser key; the place-search box degrades gracefully if Places is not enabled)
+- Maps JavaScript API and Places API (New) for the browser key
 - Isochrones API (for the server key)
 
 ## Run locally
@@ -62,5 +67,5 @@ The app calls the Isochrones REST endpoint through `server.js` at `/api/isochron
 ## Notes
 
 - Drive mode is capped at 60 minutes by the Isochrones API; the server validates this before proxying.
-- Coordinates are validated in the browser and server before rendering or sending requests.
+- Coordinates are validated in the browser and server before rendering or sending requests. Nearby Search is capped at its documented 50 km radius and returns at most 20 candidates before overlap filtering.
 - The demo uses Map ID `556022f677234497` for Advanced Marker support in local prototyping.
