@@ -107,6 +107,12 @@ mapping or application check fails, rollback that domain with the same
 `create --force-override` command using `--service trails-ninja`. The legacy
 service remains ready for this purpose.
 
+After all four mappings serve `fieldwork` and the public production smoke is
+green, remove `ROOT_APP_COMPAT_NAME: portfolio` from the deploy workflow. That
+override applies only to the still-legacy public-origin manifest check; the
+direct post-deploy smoke for the new `fieldwork` service remains strict
+throughout the migration.
+
 ## Route compatibility
 
 The brand migration does not rename public site paths. Before and after the

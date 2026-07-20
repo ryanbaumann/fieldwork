@@ -2,6 +2,13 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-07-20 - Parallel-service deploy checks need an explicit compatibility boundary
+
+Context: The new `fieldwork` Cloud Run revision deployed and passed its direct production smoke, but the deploy job then compared the still-legacy public origin's `portfolio` root manifest name against the renamed checkout and failed.
+Learning: During a parallel-service migration, keep candidate-service verification strict and scope any compatibility override to the known legacy identity at the public-origin boundary. Do not weaken route, asset, canonical, redirect, auth, or secret checks.
+Evidence: The failed deploy passed the new revision smoke and every public-origin assertion except the expected root app name; a tested `ROOT_APP_COMPAT_NAME` override changes only that expected root name for the public-origin step.
+Use next time: Model transitional identities explicitly, document their removal condition beside the override, and delete the compatibility setting immediately after the domain cutover passes the strict public smoke.
+
 ## 2026-07-20 - Brand migrations need identity layers and compatibility gates
 
 Context: Renaming the repository and deployment from Portfolio and `trails-ninja` to Fieldwork also affected public metadata, social assets, package names, source links, writer defaults, CI guards, image storage, and Cloud Run, while every existing website path needed to remain valid.

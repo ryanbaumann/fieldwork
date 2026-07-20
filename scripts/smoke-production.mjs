@@ -4,11 +4,14 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { expectedPublicAppNames } from './lib/production-smoke.mjs';
+
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const apps = JSON.parse(readFileSync(resolve(REPO_ROOT, 'apps.json'), 'utf8'))
   .filter((app) => (app.visibility || 'public') === 'public');
 const site = JSON.parse(readFileSync(resolve(REPO_ROOT, 'portfolio/content/site.json'), 'utf8'));
 const baseUrl = (process.env.BASE_URL || site.siteUrl).replace(/\/$/, '');
+const rootAppCompatibilityName = process.env.ROOT_APP_COMPAT_NAME || '';
 const canonicalOrigin = new URL(site.siteUrl).origin;
 const redirectOrigins = [
   'https://www.ryanbaumann.dev',
@@ -62,7 +65,7 @@ async function main() {
     const response = await fetch(`${baseUrl}/api/apps`);
     if (!response.ok) throw new Error(`/api/apps returned ${response.status}`);
     const payload = await response.json();
-    const expected = apps.map((app) => app.name).sort();
+    const expected = expectedPublicAppNames(apps, rootAppCompatibilityName);
     const actual = payload.apps.map((app) => app.name).sort();
     if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`expected ${expected.join(', ')}, got ${actual.join(', ')}`);
   });
