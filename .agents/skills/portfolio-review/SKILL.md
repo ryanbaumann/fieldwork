@@ -11,7 +11,7 @@ Treat review as a bounded evidence loop, not a vibe check. Read the portfolio wr
 
 - Run `git status --short` before work and inspect the focused diff.
 - List every changed public claim, link, canonical or alias, image, alt string, and metadata field.
-- Identify the intended reader action and the one idea each visual must communicate.
+- Identify the intended reader action, the misconception or tension used by the title/social copy, and the one idea each visual must communicate.
 - Use `docs/PORTFOLIO_EVIDENCE_LEDGER.md` for existing claims. Add durable new evidence there when a material claim will recur.
 
 ## 2. Audit copy and claims
@@ -22,7 +22,7 @@ Treat review as a bounded evidence loop, not a vibe check. Read the portfolio wr
 - Distinguish observed correlation from causation. Put unrelated evidence in separately labeled groups.
 - Credit team work accurately. Default to "Our team built… I led the strategy," not solo credit, but do not dilute genuinely individual work. Remove or qualify anything the evidence does not support.
 - Generalize third-party tools: name first-party surfaces (AI Studio), never enumerate competitor AI products. Flag employer product-marketing tone that reads as selling the platform or looking for work elsewhere.
-- Verify that the opening states the thesis, each section advances it, and the ending tells the reader what to do.
+- Verify that the opening states the thesis, pays off the title/social promise immediately, each section advances it, and the ending tells the reader what to do.
 - Search the changed prose for banned voice patterns such as passive self-credit, hype adjectives, resume bullets, and em dashes. Also flag three or more adjacent sentences that repeat the same subject-verb structure, especially glossary definitions and metric sequences. Read the copy aloud for varied rhythm and conversational flow because style cannot be proven by a regex, and compare the rhythm against the hand-written calibration reference linked in the writing skill.
 
 ## 3. Audit links and URL ownership

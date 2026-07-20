@@ -29,8 +29,19 @@ export function inspectArchive(path) {
   }
   let expandedBytes = 0;
   for (const line of lines.filter((item) => item.startsWith('-'))) {
-    const size = Number(line.trim().split(/\s+/)[2]);
-    if (!Number.isSafeInteger(size) || size > 25 * 1024 * 1024) throw new Error('artifact contains an invalid or oversized file');
+    let size = NaN;
+    const bsdMatch = /^[-drwxts.]{10,11}\s+\d+\s+\S+\s+\S+\s+(\d+)/.exec(line);
+    if (bsdMatch) {
+      size = Number(bsdMatch[1]);
+    } else {
+      const gnuMatch = /^[-drwxts.]{10,11}\s+\S+\s+(\d+)/.exec(line);
+      if (gnuMatch) {
+        size = Number(gnuMatch[1]);
+      }
+    }
+    if (!Number.isSafeInteger(size) || size > 25 * 1024 * 1024) {
+      throw new Error('artifact contains an invalid or oversized file');
+    }
     expandedBytes += size;
   }
   if (expandedBytes > 250 * 1024 * 1024) throw new Error('artifact expands beyond 250 MiB');

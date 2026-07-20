@@ -19,10 +19,10 @@
     },
     {
       "role": "social preview source",
-      "output": "portfolio/static/social/devx-growth-discipline-final-source.png",
-      "finalOutput": "portfolio/static/social/devx-growth-discipline.png",
-      "postProcess": "Center-cropped the uncropped source to the Open Graph ratio and resized to 1200x627; scripts/social-cards.mjs reproduces this crop.",
-      "prompt": "Generate a professional infographic image as the social preview for the essay 'DevX Is a Growth Discipline'. The visual hook is that DevX owns measurable business outcomes, not documentation output. Show a compact product-distribution-measurement system on the left and two separately grouped observed outcomes from Google Maps Platform open-source client libraries on the right. Do not imply that the operating-system diagram proves the strategy caused the metrics. Final production social composition, distinct from the header, optimized for thumbnail legibility. Use exactly this title: 'DevX Is a Growth Discipline'. Use exactly this subtitle: 'Own outcomes, not documentation output'. Use exactly these metric labels: 'Significant unique active user growth' and 'Significant API engagement growth'. The left group is a minimal three-node loop labeled only 'Product', 'Distribution', 'Measurement'. The right group is labeled 'Observed outcomes'. Separate the groups visually with no causal arrow between them. Warm neutral paper, charcoal, restrained blue. No other words, case-study claim, URL, paragraph, tiny footer, gradients, neon, glass, stock art, fake logos, or watermark."
+      "output": "portfolio/static/social/devx-growth-discipline.jpg",
+      "finalOutput": "portfolio/static/social/devx-growth-discipline.jpg",
+      "postProcess": "Regenerated through scripts/social-cards.mjs as a compressed 1200x627 JPEG from the checked-in header mechanism.",
+      "prompt": "Generate a professional social preview for the essay 'DevX Is Not a Docs Team'. The visual hook is that DevX owns the loop from repeated developer friction to changed builder behavior, not documentation output. Show one compact contrast optimized for thumbnail legibility: the title on the left and a four-stage loop on the right using the checked-in header mechanism. Use exactly this title: 'DevX Is Not a Docs Team'. Use exactly this subtitle: 'Own friction \u00b7 Ship the fix \u00b7 Measure behavior'. Use only these loop labels: 'Friction', 'Ship', 'Distribute', 'Measure'. Do not invent metrics, imply causality from observed growth, include logos, repeat the title elsewhere, add tiny text, use gradients, neon, glass, stock art, fake UI, exaggerated emotion, or watermark."
     },
     {
       "role": "inline eval mechanism",

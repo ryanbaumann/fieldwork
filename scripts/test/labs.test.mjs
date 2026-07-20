@@ -31,7 +31,11 @@ test('artifact inspection accepts a static root and rejects traversal', () => {
   execFileSync('tar', ['-czf', good, '-C', goodDir, '.']);
   assert.equal(inspectArchive(good), 2);
   const bad = join(root, 'bad.tgz');
-  execFileSync('tar', ['-czf', bad, '--transform=s|index.html|../index.html|', '-C', goodDir, 'index.html']);
+  try {
+    execFileSync('tar', ['-czf', bad, '--transform=s|index.html|../index.html|', '-C', goodDir, 'index.html'], { stdio: 'ignore' });
+  } catch {
+    execFileSync('tar', ['-czf', bad, '-s', '|index.html|../index.html|', '-C', goodDir, 'index.html'], { stdio: 'ignore' });
+  }
   assert.throws(() => inspectArchive(bad), /unsafe artifact entry/);
   const bombDir = join(root, 'bomb');
   mkdirSync(bombDir);

@@ -168,6 +168,5 @@ jobs:
           fetch-depth: 0
 
       - name: Secret Scanner (Gitleaks)
-        uses: gitleaks/gitleaks-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest detect --source=/repo --verbose --redact

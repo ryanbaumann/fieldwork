@@ -1,6 +1,6 @@
 ---
 name: portfolio-writing
-description: How Ryan writes. Use whenever drafting or editing any prose for this site — work case studies, blog posts, page copy, talk abstracts, even link summaries.
+description: How Ryan writes. Use whenever drafting or editing prose or copy for this site, including work case studies, blog posts, social posts, article headlines, page copy, talk titles and abstracts, naming, social preview copy, and link summaries.
 ---
 
 # How Ryan writes
@@ -20,6 +20,36 @@ description: How Ryan writes. Use whenever drafting or editing any prose for thi
 - **Generalize third-party tools; name first-party surfaces.** Name Ryan's own and first-party surfaces (AI Studio, the open-source libraries). Do not enumerate specific third-party or competitor AI agent products — name-brand IDEs, assistants, or agent apps. Use "AI Studio and other compatible agent environments." This keeps the site a builder's portfolio, not a product catalog, and avoids reading like tool-shopping or looking for work elsewhere.
 - **A dev brand, not a product pitch.** This is Ryan's portfolio, not an employer's marketing page. Describe shipped work and link public artifacts, but do not adopt a product-marketing tone or over-brand every noun. Prefer "hosted MCP service" to "Google-hosted MCP service" when the brand is not the point. Keep legitimate public links; cut salesy product-name enumerations and internal product framings.
 - **Cut, don't polish.** If a piece of content is not differentiated, cut it. Don't spend time making weak content sound better.
+
+
+## Social, titles, headlines, and naming
+
+Use this framework for any social post, article headline, demo name, section title, talk title, social card copy, or link preview. The goal is honest curiosity that earns attention and improves recall while still sounding like Ryan. For examples, read `references/social-packaging-examples.md` when drafting or reviewing public-facing packaging.
+
+### The retention loop
+
+1. **Name the misconception or false certainty first.** Start from the thing a smart builder likely believes, assumes, or overlooks.
+2. **Turn it into a question or tension.** Make the reader want the explanation, but point to a real answer the piece immediately pays off.
+3. **Resolve with a causal mechanism.** Explain the tradeoff, sequence, or before/after path. Use cause-and-effect language so the lesson sticks.
+4. **Swap the surface topic for the hidden lesson.** Draft the obvious framing first, then lead with the more interesting underlying mechanism. Let the announcement, artifact, or launch support that lesson.
+5. **Make the reader do one small mental move.** Ask them to compare, predict, diagnose, or notice a contradiction before the explanation lands.
+
+### Packaging rules
+
+- **One idea per package.** A title, preview image, or social post should be readable in one glance and summarize one promise.
+- **Concrete stakes beat abstraction.** Prefer a visible consequence, artifact, or tradeoff over a category label.
+- **Title and image do different jobs.** Let the title carry the question or claim. Let the image show the artifact, contrast, scale, before/after, or human consequence.
+- **Make the visual obvious at small size.** Use high contrast, one focal point, minimal text, and a clear before/after, tradeoff, or focal contrast. Avoid fake shock, exaggerated faces, cluttered diagrams, and meme language.
+- **Earn the click immediately.** The first paragraph must answer the promise made by the title or social card. If the piece cannot pay off the hook honestly, weaken the hook or cut the piece.
+- **Iterate before polishing.** Draft at least 10 title/social-card/social-post variants for important pieces, then keep the one with the clearest misconception, strongest artifact, and most honest stakes.
+
+### Ryan-specific guardrails
+
+- Adapt high-retention patterns to Ryan’s builder voice: plainspoken, evidence-led, humble, and useful to practitioners.
+- Never imitate a named creator, meme format, shocked expression, giveaway framing, or manufactured drama.
+- Never use curiosity that withholds a basic fact the reader needs. Curiosity should expose a useful gap in understanding, not trick the reader.
+- Keep promises bounded by evidence. If the title says “changed,” “worked,” “failed,” or “grew,” the body needs a public artifact, metric, or clearly framed experience behind it.
+- Prefer durable learning over cleverness. A good headline makes the reader remember the mechanism, not just click the link.
 
 ## Structure for work entries
 

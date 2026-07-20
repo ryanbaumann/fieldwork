@@ -16,7 +16,7 @@ string. Common keys:
 
 | Key | Used by | Meaning |
 |---|---|---|
-| `title`, `summary` | all | Shown in lists, cards, and meta tags |
+| `title`, `summary` | all | Shown in lists, cards, and meta tags. Use the writing skill's packaging framework before publishing. |
 | `order` | all | Sort key (ascending); ties break by `date` descending |
 | `featured` | work | `true` puts the entry on the home page |
 | `org`, `role`, `period`, `tags`, `links` | work | Card + case-study header |
@@ -33,7 +33,7 @@ Keep tags reader-facing and reusable. Prefer the existing vocabulary: `developer
 ## Where things go
 
 - **Work case study** → `content/work/<slug>.md`. Body renders at `/work/<slug>/`; no body = card links out to the first `links` URL.
-- **Blog post** → `content/writing/<slug>.md` (or `npm run new:post -- "Title"` from the repo root). New posts are drafts. Use `--publish` or `--schedule 2099-07-14T16:00:00Z` deliberately. Use the writing skill for voice.
+- **Blog post** → `content/writing/<slug>.md` (or `npm run new:post -- "Title"` from the repo root). New posts are drafts. Use `--publish` or `--schedule 2099-07-14T16:00:00Z` deliberately. Use the writing skill for voice, titles, summaries, social preview copy, and social-draft packaging.
 - **Talk / presentation** → `content/talks/<slug>.md`, decks in `static/decks/` (see the presenting skill).
 - **Agent script** → canonical package in `../agent-scripts/<slug>/`, with an optional reader-facing field note in `content/writing/<slug>.md`. The field note summarizes and links to the package; it does not duplicate the full prompt.
 - **Standalone page** → `content/pages/<slug>.md` → `/<slug>/`. Add it to the nav in `build.mjs` `layout()` if it should be globally reachable.

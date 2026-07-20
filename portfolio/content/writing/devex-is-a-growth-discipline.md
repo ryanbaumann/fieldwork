@@ -1,24 +1,24 @@
 ---
-title: DevX Is a Growth Discipline
+title: DevX Is Not a Docs Team
 slug: devx-is-a-growth-discipline
 aliases: ["/writing/devex-is-a-growth-discipline/"]
-summary: DevX teams should own developer friction from discovery through distribution, product improvement, and measurable growth.
+summary: The growth loop starts when DevX owns repeated developer friction, ships the fix, distributes the better path, and measures whether behavior changed.
 date: 2026-07-14
-updated: 2026-07-15
+updated: 2026-07-20
 canonical: https://ryanbaumann.dev/writing/devx-is-a-growth-discipline/
 image: /assets/devx-growth-header.png
 imageAlt: A four-stage DevX loop moves from observed friction to a shipped fix, distribution in builder workflows, and rising measured outcomes.
 socialImage: /social/devx-growth-discipline.jpg
-shareTitle: DevX Is a Growth Discipline
-shareSummary: Own the friction, ship the fix, distribute the experience, and measure the outcome.
-shareImageAlt: DevX Is a Growth Discipline, with a product, distribution, and measurement loop beside observed user and API engagement growth.
+shareTitle: DevX Is Not a Docs Team
+shareSummary: More docs rarely fix a broken journey. Own the friction, ship the fix, distribute the path, and measure the outcome.
+shareImageAlt: Social preview reading DevX Is Not a Docs Team beside the friction, ship, distribute, and measure loop.
 tags: ["developer experience", "growth", "distribution", "ai"]
 order: 2
 ---
 
-DevX is a growth discipline. The job is not to publish more documentation. The job is to find the friction that stops a builder, fix it in the product or experience, put that fix where people work, and prove that it improved an outcome.
+DevX teams often get pulled into publishing more docs. That is often the wrong scoreboard. The job is to find the friction that stops a builder, fix it in the product or experience, put the better path where people work, and prove that behavior changed.
 
-Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, with strong growth in API engagement. During that period, I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, and technical writing. We treated product, distribution, and measurement as one system without confusing presence in a workflow with proof of adoption.
+That is why I think DevX is a growth discipline, not a docs queue. Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, with strong growth in API engagement. During that period, I helped lead distribution strategy across major UI frameworks and AI agent platforms, working with teams across product, engineering, UX, and technical writing. We treated product, distribution, and measurement as one system without confusing presence in a workflow with proof of adoption.
 
 ## Own the friction
 
@@ -44,4 +44,4 @@ Evals do not replace user research. An eval delta tests whether the experience c
 
 ![An agent evaluation loop moves from a representative task through an agent trace and rubric comparison to a ship-or-hold decision, then repeats using telemetry and research.](/assets/devx-eval-loop.png)
 
-This is the discipline: own the friction, solve it, improve the product, ship the better experience into the workflow, and measure the impact. Then run the loop again. We are still experimenting with every part of it, and that is the point.
+This is the discipline: stop counting output as progress by default. Own the friction, solve it, improve the product, ship the better experience into the workflow, and measure the impact. Then run the loop again. We are still experimenting with every part of it, and that is the point.
