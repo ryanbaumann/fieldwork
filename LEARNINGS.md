@@ -2,6 +2,13 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-07-20 - Social-card generation in remote agent sandboxes: shadow the Playwright browsers dir, do not reinstall
+
+Context: Regenerating a Field Note social card with `node scripts/social-cards.mjs` in a Claude Code remote session failed because the pinned Playwright wanted `chromium_headless_shell-1228` while the sandbox preinstalls r1194 under `/opt/pw-browsers` (with the older `chrome-linux/headless_shell` layout) and blocks `playwright install`.
+Learning: A minor headless-shell version skew renders these static HTML cards identically, so a writable shadow browsers directory with symlinks satisfies Playwright's executable check without downloading anything: recreate the expected `chromium_headless_shell-<rev>/chrome-headless-shell-linux64/chrome-headless-shell` path as a symlink to the preinstalled `chrome-linux/headless_shell` binary, then run with `PLAYWRIGHT_BROWSERS_PATH=<shadow-dir>`.
+Evidence: `scripts/social-cards.mjs` produced a valid 1200x627 JPEG under the 200KB target this way for PR #114; `npm install` in `demos/strava-explorer` also churned `package-lock.json` (removed 42 lines) and had to be reverted before committing.
+Use next time: In sandboxes with preinstalled browsers, check `/opt/pw-browsers` and `PLAYWRIGHT_BROWSERS_PATH` before touching Playwright installs, build the shadow-symlink dir when revisions differ, and always `git checkout` lockfiles that an install-for-tooling touched.
+
 ## 2026-07-20 - Cloud Run domain mapping replacement can interrupt TLS
 
 Context: Cloud Run rejected the documented `create --force-override` command for an existing same-project mapping, so moving `ryanbaumann.dev` required deleting and recreating the exact DomainMapping resource.

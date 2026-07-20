@@ -152,6 +152,14 @@ const CARDS = [
     layout: 'artifact',
   },
   {
+    file: 'the-model-that-picks-your-platform-doesnt-write-the-code.png',
+    eyebrow: 'FIELD NOTES · DEVELOPER EXPERIENCE',
+    title: "The Model That Picks Your Platform Doesn't Write the Code",
+    summary: 'Frontier models decide. Small models complete the task consistently. Evals prove it.',
+    source: 'portfolio/static/img/writing/model-tiers-header.svg',
+    layout: 'artifact',
+  },
+  {
     file: 'the-next-platform-interface-is-an-agent-session.png',
     eyebrow: 'WRITING · AGENT EXPERIENCE',
     title: 'The Next Platform Interface Is an Agent Session',
