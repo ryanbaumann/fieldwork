@@ -40,7 +40,7 @@ function fixture() {
     defaultShareImageAlt: 'Test Person portfolio preview.',
   }));
   write(manifest, JSON.stringify([
-    { name: 'portfolio', title: 'Test Person', description: 'Home', path: '/', dev_build_dir: 'portfolio/dist' },
+    { name: 'fieldwork', title: 'Test Site', description: 'Home', path: '/', dev_build_dir: 'portfolio/dist' },
     { name: 'public-demo', title: 'Public demo', description: 'Visible', path: '/public/', visibility: 'public' },
     { name: 'private-demo', title: 'Private demo', description: 'Hidden', path: '/private/', visibility: 'private', auth: { type: 'password', envVar: 'PRIVATE_DEMO_PASSWORD' } },
   ]));
@@ -184,16 +184,39 @@ test('homepage Labs action opens the Labs collection instead of a featured demo'
   assert.match(home, /<a class="more" href="\/labs\/">Explore Labs/);
 });
 
-test('shared primary navigation leads with Field Notes and keeps core destinations', () => {
+test('shared primary navigation leads with Notes and keeps the resume under About', () => {
   const paths = fixture();
+  write(join(paths.content, 'pages', 'about.md'), `---\ntitle: About\nsummary: About this person\n---\n[View the resume](/resume/)`);
+  write(join(paths.content, 'pages', 'resume.md'), `---\ntitle: Resume\nsummary: Resume page\n---\nExperience.`);
   const result = build(paths);
   assert.equal(result.status, 0, result.stderr);
   const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
   const primaryNav = home.match(/<nav class="site-nav" aria-label="Primary">([\s\S]*?)<\/nav>/)?.[1] || '';
-  assert.match(primaryNav, /^\s*<a href="\/writing\/"[^>]*>Field Notes<\/a>/);
+  assert.match(primaryNav, /^\s*<a href="\/writing\/"[^>]*>Notes<\/a>/);
   assert.match(primaryNav, /href="\/work\/"[^>]*>Work<\/a>/);
   assert.match(primaryNav, /href="\/talks\/"[^>]*>Talks<\/a>/);
-  assert.match(primaryNav, /href="\/resume\/"[^>]*>Resume<\/a>/);
+  assert.match(primaryNav, /href="\/about\/"[^>]*>About<\/a>/);
+  assert.doesNotMatch(primaryNav, /href="\/resume\/"/);
+  assert.doesNotMatch(home, /nav-overflow-cue|Show more navigation links/);
+
+  const about = readFileSync(join(paths.dist, 'about', 'index.html'), 'utf8');
+  assert.match(about, /href="\/resume\/"[^>]*>View the resume<\/a>/);
+});
+
+test('site brand and person identity stay distinct in visible and structured metadata', () => {
+  const paths = fixture();
+  const sitePath = join(paths.content, 'site.json');
+  const site = JSON.parse(readFileSync(sitePath, 'utf8'));
+  write(sitePath, JSON.stringify({ ...site, brand: 'Fieldwork', headerBrand: 'Test Person’s Fieldwork', brandShort: 'Fieldwork', brandByline: 'Fieldwork by Test Person' }));
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
+  assert.match(home, /<title>Fieldwork by Test Person<\/title>/);
+  assert.match(home, /<meta property="og:site_name" content="Fieldwork" \/>/);
+  assert.match(home, /<span class="site-name-full">Test Person’s Fieldwork<\/span><span class="site-name-short" aria-hidden="true">Fieldwork<\/span>/);
+  assert.match(home, /&copy; <span>\d{4}<\/span> Fieldwork by Test Person/);
+  assert.match(home, /"@type":"WebSite","name":"Fieldwork"/);
+  assert.match(home, /"@type":"Person","name":"Test Person"/);
 });
 
 test('clickable writing and talk rows link the image, title, and summary as one target', () => {

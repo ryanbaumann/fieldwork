@@ -11,7 +11,7 @@ Give this package URL to the coding agent you already use:
 ```text
 Install this coding-agent operating contract globally for every compatible
 agent harness on this computer:
-https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop
+https://github.com/ryanbaumann/fieldwork/tree/main/agent-scripts/coding-agent-loop
 
 Use each harness's native user-level instructions and skills. Install
 SYSTEM_PROMPT.md as the always-on contract and the four files under roles/ as

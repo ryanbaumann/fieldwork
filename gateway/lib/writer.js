@@ -61,7 +61,7 @@ export async function publishWritingUpdate({ collection, sourceSlug, action, pub
   if (!ACTIONS.has(action)) throw Object.assign(new Error('Unknown publishing action.'), { statusCode: 400 });
 
   const token = env.GITHUB_CONTENT_TOKEN;
-  const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/Portfolio';
+  const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/fieldwork';
   const branch = env.GITHUB_CONTENT_BRANCH || 'main';
   if (!token) throw Object.assign(new Error('Writer publishing is not configured.'), { statusCode: 503 });
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) {
@@ -113,7 +113,7 @@ export async function saveWritingDraft({ collection, sourceSlug, markdown, env =
   if (!SOURCE_SLUG.test(sourceSlug || '')) throw Object.assign(new Error('Invalid slug.'), { statusCode: 400 });
   if (typeof markdown !== 'string' || markdown.length > 28_000 || !markdown.startsWith('---\n')) throw Object.assign(new Error('Provide valid Markdown with front matter.'), { statusCode: 422 });
   const token = env.GITHUB_CONTENT_TOKEN;
-  const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/Portfolio';
+  const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/fieldwork';
   const branch = env.GITHUB_CONTENT_BRANCH || 'main';
   if (!token) throw Object.assign(new Error('Writer publishing is not configured.'), { statusCode: 503 });
   const path = `portfolio/content/${collection}/${sourceSlug}.md`;
@@ -132,7 +132,7 @@ export async function requestWritingReview({ collection, sourceSlug, comment, en
   if (!SOURCE_SLUG.test(sourceSlug || '')) throw Object.assign(new Error('Invalid slug.'), { statusCode: 400 });
   if (typeof comment !== 'string' || comment.trim().length > 4_000) throw Object.assign(new Error('Review comment must be 4,000 characters or fewer.'), { statusCode: 422 });
   const token = env.GITHUB_REVIEW_TOKEN;
-  const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/Portfolio';
+  const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/fieldwork';
   const branch = env.GITHUB_CONTENT_BRANCH || 'main';
   if (!token) throw Object.assign(new Error('Agent review is not configured.'), { statusCode: 503 });
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw Object.assign(new Error('Writer repository configuration is invalid.'), { statusCode: 503 });

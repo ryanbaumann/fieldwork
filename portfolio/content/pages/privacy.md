@@ -1,10 +1,10 @@
 ---
 title: Privacy
 eyebrow: Privacy
-summary: How this portfolio handles analytics, contact details, email subscriptions, Lab data, and third-party services.
+summary: How Fieldwork handles analytics, contact details, email subscriptions, Lab data, and third-party services.
 ---
 
-Effective July 17, 2026. This portfolio collects as little data as practical. Public pages work without an account or personalized advertising.
+Effective July 17, 2026. Fieldwork collects as little data as practical. Public pages work without an account or personalized advertising.
 
 ## Contact
 
@@ -18,20 +18,20 @@ The subscribe form sends your email address to Resend so Ryan can send occasiona
 
 Comments on field notes, where enabled, are GitHub Discussions rendered by the open-source [giscus](https://giscus.app) widget. Posting requires signing in to GitHub inside the widget; comments are public and stored by GitHub under its own [privacy practices](https://docs.github.com/site-policy/privacy-policies). This site never sees your GitHub credentials.
 
-## Portfolio analytics
+## Fieldwork analytics
 
-Google Analytics is on by default on the production portfolio and the Ryan’s Lab applications hosted with it. It measures page paths, a sanitized internal referrer, approved campaign tags (`utm_source`, `utm_medium`, `utm_campaign`, and `utm_content`), and low-cardinality actions such as selecting a content item, subscribing, or completing the contact form. Advertising storage and personalization signals are disabled.
+Google Analytics is on by default on Fieldwork and the Ryan’s Lab applications hosted with it. It measures page paths, a sanitized internal referrer, approved campaign tags (`utm_source`, `utm_medium`, `utm_campaign`, and `utm_content`), and low-cardinality actions such as selecting a content item, subscribing, or completing the contact form. Advertising storage and personalization signals are disabled.
 
-Arbitrary query parameters are excluded. Analytics events must not contain names, email addresses, form text, OAuth values, activity IDs, place names, coordinates, route geometry, photos, or raw errors. Google may still receive normal request and device information, including an IP address and browser details, under [Google’s privacy policy](https://policies.google.com/privacy). Browser privacy controls and content blockers may limit this collection. Experiments hosted outside this portfolio follow their own analytics and privacy practices.
+Arbitrary query parameters are excluded. Analytics events must not contain names, email addresses, form text, OAuth values, activity IDs, place names, coordinates, route geometry, photos, or raw errors. Google may still receive normal request and device information, including an IP address and browser details, under [Google’s privacy policy](https://policies.google.com/privacy). Browser privacy controls and content blockers may limit this collection. Experiments hosted outside Fieldwork follow their own analytics and privacy practices.
 
 ## Ryan’s Lab
 
 Same-origin Lab applications can call third-party services to provide their core functionality. Strava 3D Explorer can process account and activity data after you choose to connect Strava. Air Quality Map and Isochrones can send a selected location to their supporting APIs. Do not submit a location or connect an account unless you accept the relevant provider terms and privacy practices.
 
-Ryan’s Lab also links to experiments hosted outside this portfolio. Those destinations run separately and are governed by their own privacy notices and providers.
+Ryan’s Lab also links to experiments hosted outside Fieldwork. Those destinations run separately and are governed by their own privacy notices and providers.
 
 ## Third-party links
 
-Links to GitHub, LinkedIn, Substack, X, YouTube, Google, npm, and other sites take you to services with their own privacy practices. This policy covers the portfolio and same-origin Lab applications, not external sites.
+Links to GitHub, LinkedIn, Substack, X, YouTube, Google, npm, and other sites take you to services with their own privacy practices. This policy covers Fieldwork and same-origin Lab applications, not external sites.
 
 Questions about this policy can be sent through [the contact form](/contact/).

@@ -51,7 +51,7 @@ for (const app of apps) {
     if (!GATEWAY_SERVER.includes(route)) fail(`${label}: declared gateway API is not registered in gateway/server.js (${route})`);
   }
   const isExternal = app.path.startsWith('http');
-  const isHostedDemo = app.path !== '/' && app.name !== 'portfolio-writer' && !isExternal;
+  const isHostedDemo = app.path !== '/' && app.name !== 'fieldwork-writer' && !isExternal;
   if (isHostedDemo && app.path !== `/${app.name}/`) fail(`${label}: hosted demo path must be /${app.name}/`);
   if (isHostedDemo && !app.tags?.length) fail(`${label}: hosted demos need at least one tag`);
   if (app.source?.type === 'artifact') {
@@ -108,5 +108,5 @@ if (errors.length) {
   process.exit(1);
 }
 
-const demos = apps.filter((app) => app.path !== '/' && app.name !== 'portfolio-writer');
+const demos = apps.filter((app) => app.path !== '/' && app.name !== 'fieldwork-writer');
 console.log(`[labs] validated ${demos.length} hosted demos and ${apps.length} manifest entries`);

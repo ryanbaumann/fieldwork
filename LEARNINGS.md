@@ -2,6 +2,20 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-07-20 - Brand migrations need identity layers and compatibility gates
+
+Context: Renaming the repository and deployment from Portfolio and `trails-ninja` to Fieldwork also affected public metadata, social assets, package names, source links, writer defaults, CI guards, image storage, and Cloud Run, while every existing website path needed to remain valid.
+Learning: Separate the person, public brand, internal package paths, and deployment resources. Rename reader-facing and operational identity together, but preserve stable internal directories and environment variables when changing them adds no user value. Compare the complete route and redirect inventories before cutover, stage a parallel Cloud Run service, and retain both GitHub redirects and the legacy service until the public origin is verified. Repository-bound Workload Identity Federation conditions and service-account principals must explicitly allow the new GitHub name before the rename.
+Evidence: The rebuilt Fieldwork output contains all 26 production sitemap paths and all 6 production redirects; the new `fieldwork` Cloud Run service is ready with the same 23 runtime configuration names while `trails-ninja` remains ready. The deploy provider and service-account roles now allow both the old and new repository principals during migration.
+Use next time: Inventory page paths, redirects, metadata, images, repository links, workflow guards, package names, registry paths, runtime configuration names, Workload Identity provider conditions, service-account principals, IAM, domain mappings, and rollback targets before any public identity rename.
+
+## 2026-07-20 - Mobile navigation should prioritize instead of overflow
+
+Context: The header exposed every desktop destination on narrow screens, requiring horizontal scrolling and an extra JavaScript overflow control.
+Learning: Mobile navigation is a hierarchy decision. Keep the three primary reader destinations visible in one row, move secondary destinations to a complete footer, and verify the rendered header width rather than relying on a scroll affordance.
+Evidence: At 360 pixels, the rendered header shows Notes, Work, and About, its scroll width equals its client width, and Resume remains available from About and the footer.
+Use next time: Define desktop and mobile destination priority explicitly, retain 44-pixel targets, and add a structural test for links that must remain present or absent.
+
 ## 2026-07-19 - Gitleaks Action v3 licensing breaks CI/CD workflows
 
 Context: The CI pipeline's Gitleaks secret scanner step failed with a "missing gitleaks license" error because the proprietary `gitleaks-action@v3` wrapper enforces licensing key checks for organization repos or when GitHub's account-type API experiences a transient lookup failure.

@@ -133,17 +133,11 @@ img { max-width: 100%; height: auto; border-radius: 0.6rem; }
 .site-name { min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
 .site-name-short { display: none; }
 .site-nav-frame { min-width: 0; }
-.nav-overflow-cue,
-.nav-overflow-cue[hidden] { display: none; }
 .site-header nav {
   display: flex;
   gap: clamp(0.75rem, 3vw, 1.35rem);
   max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
 }
-.site-header nav::-webkit-scrollbar { display: none; }
 .site-header nav a {
   flex: 0 0 auto;
   text-decoration: none;
@@ -904,34 +898,10 @@ main > section.hero { margin-bottom: clamp(0.75rem, 2vw, 1.5rem); }
     justify-content: start;
     width: 100%;
     gap: 0.25rem;
-    overflow-x: auto;
     flex-wrap: nowrap;
-    padding-bottom: 0.15rem;
-    scrollbar-width: thin;
-    scrollbar-color: var(--faint) transparent;
   }
-  .site-nav-frame {
-    position: relative;
-  }
-  .site-nav-frame.has-nav-overflow {
-    padding-right: 4.2rem;
-  }
-  .nav-overflow-cue {
-    position: absolute;
-    inset: 0 0 0 auto;
-    display: flex;
-    align-items: center;
-    width: 4.4rem;
-    justify-content: center;
-    background: var(--bg);
-    color: var(--faint);
-    font: 600 0.6rem/1 ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-    letter-spacing: 0.02em;
-    border: 0;
-    cursor: pointer;
-  }
-  .site-header nav::-webkit-scrollbar { display: block; height: 3px; }
-  .site-header nav::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 999px; }
+  .site-header .nav-talks,
+  .site-header .nav-demos { display: none; }
   .site-header nav a { min-height: 44px; font-size: 0.78rem; padding-inline: 0.25rem; }
   .site-header nav a { min-width: 44px; justify-content: center; }
   .header-actions { justify-self: end; gap: 0.35rem; }
@@ -944,7 +914,7 @@ main > section.hero { margin-bottom: clamp(0.75rem, 2vw, 1.5rem); }
   .hero { margin-bottom: 1rem; }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
   .header-contact { display: none; }
 }
 

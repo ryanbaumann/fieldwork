@@ -8,7 +8,7 @@ const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ENV_PATH = resolve(process.env.PORTFOLIO_ENV_PATH || join(REPO_ROOT, '.env'));
 
 async function main() {
-  console.log('--- Ryan Baumann Portfolio Local Environment Setup ---');
+  console.log('--- Fieldwork Local Environment Setup ---');
   if (existsSync(ENV_PATH)) {
     console.log('✅ .env already exists! If you want to re-run setup, delete it first.');
     process.exit(0);
@@ -34,7 +34,7 @@ async function main() {
   console.log('\n3. Contact form and email list (optional for local development)');
   const RESEND_API_KEY = await ask('   Resend API key');
   const CONTACT_TO_EMAIL = await ask('   Contact destination email');
-  const CONTACT_FROM_EMAIL = await ask('   Verified sender', 'Portfolio Contact <onboarding@resend.dev>');
+  const CONTACT_FROM_EMAIL = await ask('   Verified sender', 'Fieldwork Contact <onboarding@resend.dev>');
   const RESEND_SEGMENT_ID = await ask('   Resend Field Notes segment ID');
   const RESEND_TOPIC_ID = await ask('   Resend Field Notes topic ID');
 

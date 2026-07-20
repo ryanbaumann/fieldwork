@@ -20,10 +20,10 @@ const HEIGHT = 627;
 const CARDS = [
   {
     file: 'home.png',
-    eyebrow: 'RYAN BAUMANN',
+    eyebrow: 'FIELDWORK · RYAN BAUMANN',
     title: 'Builder platforms for humans + agents.',
     summary: 'Tools · Evals · Reference apps',
-    source: 'portfolio/static/previews/portfolio.jpg',
+    source: 'portfolio/static/previews/fieldwork.jpg',
     layout: 'screenshot',
   },
   {

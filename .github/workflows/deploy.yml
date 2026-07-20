@@ -27,9 +27,9 @@ on:
 
 jobs:
   deploy:
-    name: Build and deploy Ryan Baumann Portfolio
+    name: Build and deploy Fieldwork
     runs-on: ubuntu-latest
-    if: github.repository == 'ryanbaumann/Portfolio' || github.repository == 'ryanbaumann/portfolio'
+    if: github.repository == 'ryanbaumann/fieldwork'
     concurrency:
       group: "deploy"
       cancel-in-progress: false
@@ -115,7 +115,7 @@ jobs:
       - name: Build image with Cloud Build
         run: |
           set -euo pipefail
-          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/trails-ninja/app:${GITHUB_SHA}"
+          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/fieldwork/app:${GITHUB_SHA}"
           echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
           # `gcloud builds submit --tag` can't forward Docker --build-arg values,
           # so the VITE_* build args are threaded through cloudbuild.yaml via
@@ -128,7 +128,7 @@ jobs:
           set -euo pipefail
           # --min-instances 0 scales down to zero when idle to minimize costs.
           # --cpu-boost temporarily allocates extra CPU during startup to keep cold starts snappy.
-          gcloud run deploy trails-ninja \
+          gcloud run deploy fieldwork \
             --project "$GCP_PROJECT_ID" \
             --image "$IMAGE" \
             --region "$GCP_REGION" \
@@ -141,7 +141,7 @@ jobs:
           # revisions, so they are set once by hand (not on every deploy).
           # First-time setup, after creating the secrets in Secret Manager:
           #
-          #   gcloud run services update trails-ninja \
+          #   gcloud run services update fieldwork \
           #     --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
           #     --update-secrets=STRAVA_CLIENT_SECRET=strava-client-secret:latest \
           #     --update-secrets=GMP_SERVER_API_KEY=gmp-server-api-key:latest \
@@ -166,7 +166,7 @@ jobs:
         run: |
           set -euo pipefail
           SERVICE_JSON="$(mktemp)"
-          gcloud run services describe trails-ninja \
+          gcloud run services describe fieldwork \
             --project "$GCP_PROJECT_ID" \
             --region "$GCP_REGION" \
             --format=json > "$SERVICE_JSON"
@@ -198,7 +198,16 @@ jobs:
           console.log('Cloud Run runtime variable names are configured; values were not read or printed.');
           NODE
 
-      - name: Post-deploy smoke test
+      - name: Post-deploy smoke test for the new Fieldwork revision
+        run: |
+          set -euo pipefail
+          SERVICE_URL="$(gcloud run services describe fieldwork \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --format='value(status.url)')"
+          BASE_URL="$SERVICE_URL" node scripts/smoke-production.mjs
+
+      - name: Verify the current public origin
         env:
           BASE_URL: https://ryanbaumann.dev
         run: node scripts/smoke-production.mjs

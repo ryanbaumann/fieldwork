@@ -133,7 +133,7 @@ jobs:
           context: .
           push: false
           load: true
-          tags: ryan-baumann-portfolio
+          tags: fieldwork
           build-args: |
             VITE_STRAVA_CLIENT_ID=smoke-test-placeholder-client-id
             ALLOW_MISSING_ARTIFACTS=1
@@ -143,14 +143,14 @@ jobs:
       - name: Smoke test the built container
         run: |
           set -euo pipefail
-          docker run --rm -d -p 8080:8080 --name portfolio-smoke ryan-baumann-portfolio
-          trap 'docker rm -f portfolio-smoke >/dev/null 2>&1 || true' EXIT
+          docker run --rm -d -p 8080:8080 --name fieldwork-smoke fieldwork
+          trap 'docker rm -f fieldwork-smoke >/dev/null 2>&1 || true' EXIT
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:8080/healthz >/dev/null; then
               break
             fi
             if [ "$attempt" -eq 30 ]; then
-              docker logs portfolio-smoke
+              docker logs fieldwork-smoke
               exit 1
             fi
             sleep 1

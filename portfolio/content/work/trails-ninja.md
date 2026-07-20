@@ -3,7 +3,7 @@ title: Labs
 org: Personal
 role: Builder
 period: ongoing
-summary: Working reference apps hosted with this portfolio, plus selected external experiments.
+summary: Working reference apps hosted with Fieldwork, plus selected external experiments.
 tags: ["developer experience", "open source", "reference apps"]
 external: /demos/
 image: /previews/strava-explorer.jpg

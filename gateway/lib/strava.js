@@ -106,7 +106,7 @@ export async function handlePhotoProxy(photoUrl, { fetch, maxPhotoBytes, hosts =
     for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
       upstream = await fetch(currentUrl, {
         headers: {
-          'User-Agent': 'ryan-baumann-portfolio-photo-proxy/1.0',
+          'User-Agent': 'fieldwork-photo-proxy/1.0',
           'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
         },
         redirect: 'manual',

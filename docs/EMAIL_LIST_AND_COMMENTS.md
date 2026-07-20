@@ -40,7 +40,7 @@ The embed is config-gated: `portfolio/content/site.json` → `comments`. It
 renders nothing (and loads no script) until every field is filled, so the
 site stays inert until you flip it on.
 
-1. Enable **Discussions** on the `ryanbaumann/portfolio` repo
+1. Enable **Discussions** on the `ryanbaumann/fieldwork` repo
    (Settings → General → Features).
 2. Create a Discussions category for comments. An **Announcements-type**
    category is recommended so only giscus/maintainers can open threads

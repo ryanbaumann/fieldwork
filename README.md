@@ -1,20 +1,20 @@
-# Ryan Baumann's Portfolio site
+# Fieldwork
 
-![Ryan Baumann Portfolio homepage screenshot](portfolio/static/previews/portfolio.jpg)
+![Fieldwork homepage](portfolio/static/previews/fieldwork.jpg)
 
-This repo is the public home for Ryan Baumann's portfolio and Ryan’s Lab. It is part personal site, part runnable reference architecture, and part proof that developer experience work should ship as real artifacts.
+Fieldwork is Ryan Baumann’s public developer notebook: part personal site, part runnable reference architecture, and part proof that developer experience work should ship as real artifacts.
 
 The live site is https://ryanbaumann.dev/.
 
 ## What is inside
 
-* **Portfolio site** at `/`: a zero-dependency static site over a flat-file markdown CMS. It covers work, Field Notes, talks, and Ryan’s Lab with small inline theme and privacy-limited analytics helpers.
+* **Fieldwork** at `/`: a zero-dependency static site over a flat-file markdown CMS. It covers work, Field Notes, talks, and Ryan’s Lab with small inline theme and privacy-limited analytics helpers.
 * **[Agent scripts](agent-scripts/README.md)**: reusable, vendor-neutral prompts, role contracts, and behavioral evals for software agents.
-* **Ryan’s Lab** at `/demos/`: workspace reference apps hosted with the portfolio plus selected external experiments.
+* **Ryan’s Lab** at `/demos/`: workspace reference apps hosted with Fieldwork plus selected external experiments.
 * **Gateway** in `gateway/`: a zero-npm-dependency Node server that serves the site, mounts each demo, and keeps secret-bearing API calls behind same-origin `/api/*` routes.
 * **Cloud Run container**: one deployable artifact for the site and its workspace apps. External Lab entries remain separate destinations.
 
-The portfolio narrative is intentionally grounded: solution architecture, developer experience, forward-deployed incubation at Google Maps Platform, and product growth leadership. The codebase backs that up with live apps, public docs, shipped links, tests, smoke checks, and a changelog.
+The narrative is intentionally grounded: solution architecture, developer experience, forward-deployed incubation at Google Maps Platform, and product growth leadership. The codebase backs that up with live apps, public docs, shipped links, tests, smoke checks, and a changelog.
 
 ## Start here
 
@@ -30,7 +30,7 @@ The portfolio narrative is intentionally grounded: solution architecture, develo
 
 ## Apps
 
-* **[Site / Portfolio](portfolio/README.md)**, served at `/`: Ryan's home page, work, Field Notes, talks, and Ryan’s Lab index.
+* **[Fieldwork site](portfolio/README.md)**, served at `/`: Ryan's home page, work, Field Notes, talks, and Ryan’s Lab index.
 * **[Agent scripts](agent-scripts/README.md)**: copyable system prompts and role overlays with versioned regression cases.
 * **[Strava 3D Explorer](demos/strava-explorer/README.md)**: visualize Strava routes, endpoints, and photos in Google Maps Platform Photorealistic 3D.
 * **[Air Quality Map](demos/aqi-map/README.md)**: inspect live Air Quality API heatmap tiles and point conditions on a 2D Google map.
@@ -63,7 +63,7 @@ cd portfolio && node build.mjs && node serve.mjs
 
 ## Architecture in one paragraph
 
-`portfolio/` builds static HTML into `portfolio/dist/`. Each workspace app builds its own static bundle. `scripts/build-local.mjs` stages those outputs under `apps/<name>/`, matching the Docker runtime layout. `gateway/server.js` serves the portfolio at the root, mounts workspace apps from `apps.json` by most-specific path first, and proxies secret-bearing calls through server-side routes. External manifest entries render as outbound Lab links. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
+`portfolio/` builds Fieldwork into `portfolio/dist/`. Each workspace app builds its own static bundle. `scripts/build-local.mjs` stages those outputs under `apps/<name>/`, matching the Docker runtime layout. `gateway/server.js` serves Fieldwork at the root, mounts workspace apps from `apps.json` by most-specific path first, and proxies secret-bearing calls through server-side routes. External manifest entries render as outbound Lab links. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
 
 ## Security posture
 
@@ -75,6 +75,10 @@ cd portfolio && node build.mjs && node serve.mjs
 ## Deploy
 
 `.github/workflows/deploy.yml` builds the container with Cloud Build and deploys it to Cloud Run on pushes to `main` using Workload Identity Federation.
+
+Repository and service naming are standardized on `fieldwork`. Follow
+[`docs/FIELDWORK_MIGRATION.md`](docs/FIELDWORK_MIGRATION.md) for the
+backward-compatible GitHub and Cloud Run migration sequence.
 
 The canonical production origin is `https://ryanbaumann.dev/`. Follow
 [`docs/DOMAIN_MIGRATION.md`](docs/DOMAIN_MIGRATION.md) to configure DNS and

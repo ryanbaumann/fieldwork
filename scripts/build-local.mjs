@@ -121,10 +121,10 @@ export function resolveAppPaths(entry, repoRoot = REPO_ROOT) {
 // via env before calling this script.
 export function buildTimeOverrides(app, env) {
   const overrides = {};
-  if (app.source?.type === 'workspace' && app.name !== 'portfolio' && env.ANALYTICS_MEASUREMENT_ID) {
+  if (app.source?.type === 'workspace' && app.name !== 'fieldwork' && env.ANALYTICS_MEASUREMENT_ID) {
     overrides.VITE_ANALYTICS_MEASUREMENT_ID = env.ANALYTICS_MEASUREMENT_ID;
   }
-  if (app.name === 'portfolio-writer') {
+  if (app.name === 'fieldwork-writer') {
     return {
       PORTFOLIO_WRITER_MODE: 'true',
       PORTFOLIO_DIST_DIR: app.outDir,

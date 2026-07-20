@@ -1,6 +1,6 @@
-# Ryan Baumann Portfolio and Lab Architecture
+# Fieldwork and Lab Architecture
 
-One Cloud Run service hosts Ryan Baumann's static-built portfolio, its
+One Cloud Run service hosts Fieldwork, its
 workspace Lab apps, and a zero-dependency Node gateway that routes between
 them and brokers secret-bearing API calls. The shared `apps.json` manifest
 can also list external experiments, which render as outbound links instead of
@@ -10,11 +10,11 @@ secrets belong in browser bundles.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────┐
-│ Cloud Run service: trails-ninja (legacy service name)              │
+│ Cloud Run service: fieldwork                                      │
 │                                                                    │
 │ https://ryanbaumann.dev/                                          │
 │   └── gateway/server.js (node:20-slim, no deps)                    │
-│       ├── /                → site (portfolio)                      │
+│       ├── /                → Fieldwork site                        │
 │       │    /work/ /writing/ /talks/ /demos/ …                      │
 │       │    built static by portfolio/build.mjs                     │
 │       ├── /writer/         → private draft preview + controls       │
@@ -38,7 +38,7 @@ secrets belong in browser bundles.
 Routing and builds are manifest-driven: `apps.json` lists each app's mount
 `path`, `source` (`workspace`, immutable private `artifact`, or `external`), and `api`
 (`none`, gateway-owned, or authenticated private upstream). The gateway matches the most specific path first, so
-the root-mounted portfolio (`path: "/"`) is the catch-all after every hosted app
+the root-mounted Fieldwork site (`path: "/"`) is the catch-all after every hosted app
 path has had its chance.
 
 Manifest entries default to `visibility: "public"`. `unlisted` apps remain
@@ -85,7 +85,7 @@ plain-HTTP gateway development URL.
 5. **CI never hands secrets to forks.** PR jobs build + smoke with dummy env
    only. Deploy runs on `main` pushes via Workload Identity Federation.
 6. **Scheduled publishing rebuilds.** Public content is immutable static output. A future `publishAt` stays out of detail pages, lists, RSS, and sitemap until an hourly deploy rebuilds at or after that timestamp. `/writer/` is a separate private static build; its publishing endpoint can only update known content files after Google OAuth, allowlisted-email, session, and same-origin checks pass.
-7. **The portfolio stays extractable.** `portfolio/` is a self-contained,
+7. **The Fieldwork site stays extractable.** `portfolio/` is a self-contained,
    zero-dependency static site (flat-file markdown CMS with small inline
    theme, analytics, and configured comments helpers).
    Its only tie to this repo is optional: when `../apps.json` exists, the

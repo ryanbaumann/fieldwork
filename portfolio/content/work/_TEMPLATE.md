@@ -6,8 +6,8 @@ period: 2025 – present
 summary: One sentence, outcome first. What shipped and what it moved.
 tags: ["two", "or three", "tags"]
 links: [{"label": "Docs", "url": "https://example.com"}]
-image: /previews/portfolio.jpg
-imageAlt: Ryan Baumann Portfolio preview card
+image: /previews/fieldwork.jpg
+imageAlt: Fieldwork homepage preview
 socialImage: /social/work-project-name.jpg
 shareTitle: Project name
 shareSummary: One concrete outcome or reason to open the case study.

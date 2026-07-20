@@ -1,8 +1,8 @@
 {
-  "name": "portfolio",
+  "name": "fieldwork-site",
   "private": true,
   "version": "1.0.0",
-  "description": "Ryan Baumann's portfolio: a zero-dependency static site over a flat-file markdown CMS.",
+  "description": "Fieldwork by Ryan Baumann: a zero-dependency static site over a flat-file markdown CMS.",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",

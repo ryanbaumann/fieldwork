@@ -1,7 +1,7 @@
 {
-  "name": "ryan-baumann-portfolio",
+  "name": "fieldwork",
   "private": true,
-  "description": "Ryan Baumann portfolio container and Ryan’s Lab. See docs/ARCHITECTURE.md.",
+  "description": "Fieldwork by Ryan Baumann: Field Notes, shipped work, talks, and Labs.",
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "build": "node scripts/build-local.mjs",

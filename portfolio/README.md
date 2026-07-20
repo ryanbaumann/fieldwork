@@ -1,9 +1,9 @@
-# Ryan Baumann Portfolio
+# Fieldwork
 
-Ryan Baumann's site: [work](https://ryanbaumann.dev/work/),
+Ryan Baumann's developer notebook: [work](https://ryanbaumann.dev/work/),
 Field Notes, talks, and Labs, from 15+ years building developer platforms
 as a growth engine, currently as Head of Developer Experience at Google Maps
-Platform. Served at the root of
+Platform. Fieldwork is served at the root of
 [ryanbaumann.dev](https://ryanbaumann.dev/).
 
 Built to be **bare bones, fast, and easy to update**: a zero-dependency

@@ -82,7 +82,7 @@ test('writer publishing requires the private writer session and same-origin form
     GITHUB_CONTENT_TOKEN: process.env.GITHUB_CONTENT_TOKEN,
   };
   const writer = {
-    name: 'portfolio-writer', title: 'Writer', description: 'Writer', path: '/writer/',
+    name: 'fieldwork-writer', title: 'Writer', description: 'Writer', path: '/writer/',
     visibility: 'private', auth: { type: 'password', envVar: 'PORTFOLIO_WRITER_PASSWORD' },
     dir: null, available: false,
   };
@@ -100,7 +100,7 @@ test('writer publishing requires the private writer session and same-origin form
   try {
     assert.equal((await postForm(port, '/api/writer/publish', form)).res.statusCode, 401);
     const cookieResponse = { setHeader(_name, value) { this.value = value; } };
-    setAuthCookie(cookieResponse, 'portfolio-writer', 'writer-secret');
+    setAuthCookie(cookieResponse, 'fieldwork-writer', 'writer-secret');
     const cookie = cookieResponse.value[0].split(';', 1)[0];
     assert.equal((await postForm(port, '/api/writer/social', { sourceSlug: 'draft', channel: 'x', text: 'Draft' }, {
       Cookie: cookie,

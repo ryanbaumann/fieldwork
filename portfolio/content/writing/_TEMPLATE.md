@@ -39,6 +39,6 @@ End with a concrete action for each relevant reader. Do not repeat the introduct
 
 Files starting with `_` are skipped by the build. Copy this file to `<slug>.md` to publish.
 
-For a hosted post, write the body below the front matter. It renders at `/writing/<slug>/`. Publish here first, then syndicate to LinkedIn or Substack with the portfolio URL as canonical where the platform permits it.
+For a hosted post, write the body below the front matter. It renders at `/writing/<slug>/`. Publish here first, then syndicate to LinkedIn or Substack with the Fieldwork URL as canonical where the platform permits it.
 
 For an external entry, add `external: https://...` to the front matter and leave the body empty. Drafts are safe by default. Use `npm run new:post -- "Title" --publish` for immediate publication or `--schedule 2099-07-14T16:00:00Z` for the next scheduled deploy after that UTC time.

@@ -6,7 +6,7 @@ updated: 2026-07-16
 canonical: https://ryanbaumann.dev/writing/loop-engineering-coding-agent/
 aliases: ["/scripts/loop-engineering-coding-agent/"]
 tags: ["ai", "developer tools", "evals", "field notes"]
-links: [{"label":"Get the prompt","url":"https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop"}]
+links: [{"label":"Get the prompt","url":"https://github.com/ryanbaumann/fieldwork/tree/main/agent-scripts/coding-agent-loop"}]
 image: /img/scripts/coding-agent-loop.svg
 imageAlt: An orchestrator routes jobs to tools, fast workers, balanced agents, or deep reasoning before integrated verification.
 socialImage: /social/coding-agent-loop.jpg
@@ -52,7 +52,7 @@ The prompt makes these rules explicit: the task mode, the files an agent may cha
 
 ## I codified the system as a prompt
 
-I codified the system as a [GitHub package](https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop) that includes the full prompt, four short role overlays for the lead, helper, reviewer, and verifier, and a regression suite.
+I codified the system as a [GitHub package](https://github.com/ryanbaumann/fieldwork/tree/main/agent-scripts/coding-agent-loop) that includes the full prompt, four short role overlays for the lead, helper, reviewer, and verifier, and a regression suite.
 
 It lives under `agent-scripts/`, not the repo's `scripts/` folder. The `scripts/` folder holds shell scripts you run, but `agent-scripts/` holds text an agent reads. Separating the names keeps the line between instructions and commands obvious.
 
@@ -65,7 +65,7 @@ Copy this request into your coding agent:
 ```text
 Install this coding-agent operating contract globally for every compatible
 agent harness on this computer:
-https://github.com/ryanbaumann/portfolio/tree/main/agent-scripts/coding-agent-loop
+https://github.com/ryanbaumann/fieldwork/tree/main/agent-scripts/coding-agent-loop
 
 Use each harness's native user-level instructions and skills. Install
 SYSTEM_PROMPT.md as the always-on contract and the four files under roles/ as
@@ -94,6 +94,6 @@ The structural check passes, and a separate read-only review found problems that
 
 ## Why it is built this way
 
-I designed this system to keep always-on instructions short, move detailed playbooks into files that load only when needed, route work to the least costly capable profile, and separate implementation from review and verification. It evaluates the model together with its tools and permissions. The [README](https://github.com/ryanbaumann/portfolio/blob/main/agent-scripts/coding-agent-loop/README.md) links the research and projects behind these choices.
+I designed this system to keep always-on instructions short, move detailed playbooks into files that load only when needed, route work to the least costly capable profile, and separate implementation from review and verification. It evaluates the model together with its tools and permissions. The [README](https://github.com/ryanbaumann/fieldwork/blob/main/agent-scripts/coding-agent-loop/README.md) links the research and projects behind these choices.
 
 Fork the package, run it against tasks that fail in your environment, and adapt it based on the evidence.

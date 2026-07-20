@@ -1,9 +1,9 @@
 {
-  "name": "ryan-baumann-portfolio-gateway",
+  "name": "fieldwork-gateway",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Zero-dependency Node gateway: Ryan Baumann portfolio hosting + secret-bearing API proxy.",
+  "description": "Zero-dependency Node gateway for Fieldwork and its secret-bearing API proxies.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

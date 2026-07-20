@@ -6,7 +6,7 @@ The production portfolio loads GA4 by default when a Measurement ID is configure
 
 1. Open [Google Analytics](https://analytics.google.com/) and select the account that should own this portfolio's data.
 2. Open **Admin**, choose **Create**, then **Property**.
-3. Name it `Ryan Baumann Portfolio`.
+3. Name it `Fieldwork`.
 4. Choose the reporting timezone and currency you want to use, complete the business details, then select **Create**.
 
 Google requires an Editor role or higher to create a property. See [Add a GA4 property](https://support.google.com/analytics/answer/9744165).
@@ -15,7 +15,7 @@ Google requires an Editor role or higher to create a property. See [Add a GA4 pr
 
 1. In the new property, open **Admin > Data collection and modification > Data streams**.
 2. Select **Web**.
-3. Use `https://ryanbaumann.dev` as the website URL and `Ryan Baumann Portfolio` as the stream name.
+3. Use `https://ryanbaumann.dev` as the website URL and `Fieldwork` as the stream name.
 4. Create the stream.
 5. In **Stream details**, copy the Measurement ID. It starts with `G-`. See [Find your Measurement ID](https://support.google.com/analytics/answer/12270356).
 

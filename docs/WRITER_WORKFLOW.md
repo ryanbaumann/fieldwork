@@ -33,7 +33,7 @@ Required runtime configuration:
 - `GOOGLE_OAUTH_ALLOWED_EMAIL`: optional override, defaults to `user@example.com`.
 - `GITHUB_CONTENT_TOKEN`: a fine-grained GitHub token restricted to this repository with **Contents: read and write**. Store it in Secret Manager.
 - `GITHUB_REVIEW_TOKEN`: a dedicated fine-grained GitHub token with **Issues: read and write**. Required to submit agent-review requests; it never reaches the browser.
-- `GITHUB_CONTENT_REPOSITORY`: optional, defaults to `ryanbaumann/Portfolio`.
+- `GITHUB_CONTENT_REPOSITORY`: optional, defaults to `ryanbaumann/fieldwork`.
 - `GITHUB_CONTENT_BRANCH`: optional, defaults to `main`.
 - `BUFFER_API_KEY`: Buffer account API key. Required only for staging social
   drafts from the writer dashboard.

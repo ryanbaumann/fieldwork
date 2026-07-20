@@ -63,17 +63,17 @@ the Cloud project.
 
 ## 4. Map the apex and www names to the existing service
 
-Do not deploy another Cloud Run service. Map both names to `trails-ninja`:
+Map both names to the canonical `fieldwork` Cloud Run service:
 
 ```bash
 gcloud beta run domain-mappings create \
-  --service trails-ninja \
+  --service fieldwork \
   --domain ryanbaumann.dev \
   --project "$GCP_PROJECT_ID" \
   --region "$GCP_REGION"
 
 gcloud beta run domain-mappings create \
-  --service trails-ninja \
+  --service fieldwork \
   --domain www.ryanbaumann.dev \
   --project "$GCP_PROJECT_ID" \
   --region "$GCP_REGION"

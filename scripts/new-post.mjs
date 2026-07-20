@@ -96,8 +96,8 @@ summary: ${summary}
 date: ${date}
 updated: ${date}
 canonical: ${canonical}
-image: /previews/portfolio.jpg
-imageAlt: Ryan Baumann Portfolio preview card
+image: /previews/fieldwork.jpg
+imageAlt: Fieldwork homepage preview
 tags: ${JSON.stringify(tagList)}
 draft: ${draft}
 noindex: ${draft}

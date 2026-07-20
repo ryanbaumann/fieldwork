@@ -140,7 +140,7 @@ function formResponsePage(title, message, statusCode = 200, { backHref = '/conta
 }
 
 const contactResponsePage = (title, message, statusCode = 200) => formResponsePage(title, message, statusCode);
-const subscribeResponsePage = (title, message, statusCode = 200) => formResponsePage(title, message, statusCode, { backHref: '/writing/', backLabel: 'Field Notes' });
+const subscribeResponsePage = (title, message, statusCode = 200) => formResponsePage(title, message, statusCode, { backHref: '/writing/', backLabel: 'Notes' });
 
 // POST /api/subscribe — add an email address to the Resend global Contacts
 // model, the internal Field Notes segment, and its user-facing Topic. Sends
@@ -353,7 +353,7 @@ async function handleContactRequest(request, response) {
 // still honors the password-cookie session when the app is configured for it.
 async function handleWriterFormRequest(request, response, { allowPasswordCookie = false } = {}, action) {
   if (request.method !== 'POST') return sendJson(request, response, 405, { error: 'Method not allowed' });
-  const writerApp = appsByPathLength.find((app) => app.name === 'portfolio-writer');
+  const writerApp = appsByPathLength.find((app) => app.name === 'fieldwork-writer');
   const authenticated = allowPasswordCookie && writerApp?.auth?.type !== 'google-oauth'
     ? writerApp?.auth?.envVar && verifyAuthCookie(request, writerApp.name, process.env[writerApp.auth.envVar])
     : hasGoogleSession(request);
