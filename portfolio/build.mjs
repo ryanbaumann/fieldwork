@@ -441,11 +441,6 @@ function loadCollection(name) {
       return { slug, sourceSlug: fileSlug, meta, body, raw, collection: name };
     })
     .sort((a, b) => {
-      if (name !== 'writing') {
-        const orderA = a.meta.order ?? Number.MAX_SAFE_INTEGER;
-        const orderB = b.meta.order ?? Number.MAX_SAFE_INTEGER;
-        if (orderA !== orderB) return orderA - orderB;
-      }
       return String(b.meta.date || '').localeCompare(String(a.meta.date || ''));
     });
 }
@@ -1206,12 +1201,18 @@ function writerDashboard(entries) {
 
 function buildHome(collections) {
   const bySlug = (collection, slug) => collections[collection].find((entry) => entry.slug === slug);
-  const selectedWork = ['code-assist', 'agent-skills', 'agentic-growth']
-    .map((slug) => bySlug('work', slug)).filter(Boolean);
+  const pinnedWork = collections.work.find((e) => e.meta.order !== undefined) || collections.work[0];
+  const otherWork = collections.work.filter((e) => e !== pinnedWork);
+  const selectedWork = [pinnedWork, ...otherWork].slice(0, 3);
+
   const pinnedWriting = collections.writing.find((e) => e.meta.order !== undefined) || collections.writing[0];
   const otherWriting = collections.writing.filter((e) => e !== pinnedWriting);
   const writingEntries = [pinnedWriting, ...otherWriting].slice(0, 4);
-  const homeDemos = demos.filter(d => !d.hideOnHome).slice(0, 3);
+
+  const visibleDemos = demos.filter((d) => !d.hideOnHome);
+  const pinnedDemo = visibleDemos.find((d) => d.order !== undefined) || visibleDemos[0];
+  const otherDemos = visibleDemos.filter((d) => d !== pinnedDemo);
+  const homeDemos = [pinnedDemo, ...otherDemos].slice(0, 3);
   const demosSection = homeDemos.length
     ? `
 <section>
