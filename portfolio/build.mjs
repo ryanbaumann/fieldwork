@@ -441,9 +441,6 @@ function loadCollection(name) {
       return { slug, sourceSlug: fileSlug, meta, body, raw, collection: name };
     })
     .sort((a, b) => {
-      const orderA = a.meta.order ?? Number.MAX_SAFE_INTEGER;
-      const orderB = b.meta.order ?? Number.MAX_SAFE_INTEGER;
-      if (orderA !== orderB) return orderA - orderB;
       return String(b.meta.date || '').localeCompare(String(a.meta.date || ''));
     });
 }
@@ -1204,10 +1201,18 @@ function writerDashboard(entries) {
 
 function buildHome(collections) {
   const bySlug = (collection, slug) => collections[collection].find((entry) => entry.slug === slug);
-  const selectedWork = ['code-assist', 'agent-skills', 'agentic-growth']
-    .map((slug) => bySlug('work', slug)).filter(Boolean);
-  const writingEntries = collections.writing.slice(0, 4);
-  const homeDemos = demos.filter(d => !d.hideOnHome).slice(0, 3);
+  const pinnedWork = collections.work.find((e) => e.meta.order !== undefined) || collections.work[0];
+  const otherWork = collections.work.filter((e) => e !== pinnedWork);
+  const selectedWork = [pinnedWork, ...otherWork].filter(Boolean).slice(0, 3);
+
+  const pinnedWriting = collections.writing.find((e) => e.meta.order !== undefined) || collections.writing[0];
+  const otherWriting = collections.writing.filter((e) => e !== pinnedWriting);
+  const writingEntries = [pinnedWriting, ...otherWriting].filter(Boolean).slice(0, 4);
+
+  const visibleDemos = demos.filter((d) => !d.hideOnHome);
+  const pinnedDemo = visibleDemos.find((d) => d.order !== undefined) || visibleDemos[0];
+  const otherDemos = visibleDemos.filter((d) => d !== pinnedDemo);
+  const homeDemos = [pinnedDemo, ...otherDemos].filter(Boolean).slice(0, 3);
   const demosSection = homeDemos.length
     ? `
 <section>
@@ -1246,11 +1251,6 @@ function buildHome(collections) {
 
   <h1>${escapeHtml(site.heroHeadline || site.name)}</h1>
   <p class="lede">${escapeHtml(site.intro)}</p>
-  <p class="hero-actions">
-    <a class="button button-primary" href="${BASE}writing/">Read Field Notes</a>
-    <a class="text-link" href="${BASE}work/">Selected work</a>
-    <a class="text-link" href="${BASE}contact/">Contact</a>
-  </p>
   ${stats}
 </section>
 
@@ -1292,7 +1292,6 @@ ${demosSection}
 function buildDemosPage() {
   if (!demos.length) return;
   const content = `<section>
-  <p class="eyebrow">Labs</p>
   <h1>Labs</h1>
   <p class="lede">${escapeHtml(site.sectionIntros?.demos || '')}</p>
   <div class="grid demo-grid">
@@ -1324,13 +1323,10 @@ function buildCollectionIndex(collection, entries) {
     const owned = entries.filter((entry) => !entry.meta.external);
     const elsewhere = entries.filter((entry) => entry.meta.external);
     body = `<div class="collection-group">
-  <h2>Essays</h2>
-  <p>Canonical ideas published here first, with evidence and a practical next move.</p>
   <ul class="rows">${owned.map((entry) => listRow(collection.name, entry)).join('\n')}</ul>
 </div>
 ${elsewhere.length ? `<div class="collection-group">
   <h2>Elsewhere</h2>
-  <p>Launch notes and experiments published with the teams and communities behind the work.</p>
   <ul class="rows">${elsewhere.map((entry) => listRow(collection.name, entry)).join('\n')}</ul>
 </div>` : ''}
 ${subscribeSection()}`;
@@ -1343,7 +1339,6 @@ ${subscribeSection()}`;
     : '';
 
   const content = `<section>
-  <p class="eyebrow">${escapeHtml(collection.label)}</p>
   <h1>${escapeHtml(collection.label)}</h1>
   ${intro}
   ${isEmpty ? emptyState : body}
