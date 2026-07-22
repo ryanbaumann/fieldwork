@@ -1251,11 +1251,6 @@ function buildHome(collections) {
 
   <h1>${escapeHtml(site.heroHeadline || site.name)}</h1>
   <p class="lede">${escapeHtml(site.intro)}</p>
-  <p class="hero-actions">
-    <a class="button button-primary" href="${BASE}writing/">Read Field Notes</a>
-    <a class="text-link" href="${BASE}work/">Selected work</a>
-    <a class="text-link" href="${BASE}contact/">Contact</a>
-  </p>
   ${stats}
 </section>
 
