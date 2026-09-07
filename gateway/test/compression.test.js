@@ -73,6 +73,13 @@ test('static file compression and conditional requests', async (t) => {
     assert.equal(brotliDecompressSync(body).toString('utf8'), LARGE_HTML);
   });
 
+  await t.test('an explicitly unacceptable encoding is never selected', async () => {
+    const { res, body } = await rawRequest(port, '/compress-demo/', { 'Accept-Encoding': 'br;q=0, gzip;q=1' });
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.headers['content-encoding'], 'gzip');
+    assert.equal(gunzipSync(body).toString('utf8'), LARGE_HTML);
+  });
+
   await t.test('no Accept-Encoding gets an identity body but still varies on Accept-Encoding', async () => {
     const { res, body } = await rawRequest(port, '/compress-demo/');
     assert.equal(res.statusCode, 200);

@@ -2,6 +2,16 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-09-06 - Compression tokens are not capability booleans
+
+Context: A repository audit reviewed the gateway's static and generated response compression path.
+
+Learning: Presence-only matching of `br` or `gzip` in `Accept-Encoding` misreads `q=0` as support and ignores a client's ranked preferences. Even a small zero-dependency server needs quality-aware selection for correct content negotiation.
+
+Evidence: Regression tests now cover ranked encodings, explicit exclusions, wildcard fallback, malformed quality values, and an end-to-end response where Brotli is forbidden.
+
+Use next time: Parse weighted HTTP request headers before treating listed tokens as enabled, and include a negative (`q=0`) interoperability case.
+
 ## 2026-09-02 - Upgrading to Gemini 3.8 Flash & Gemini Omni 1.1 Flash Preview across workspaces and global skills
 
 Context: Upgrading demo agent architectures and model configurations across the repository from `gemini-3.7-flash` to `gemini-3.8-flash`, upgrading Gemini Omni video generation to `gemini-omni-1.1-flash-preview`, and updating globally installed Gemini skills.

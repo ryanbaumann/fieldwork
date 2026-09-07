@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Gateway content negotiation audit fix (`gateway/`)**: Corrected
+  `Accept-Encoding` handling so quality rankings, `q=0` exclusions, and
+  wildcard preferences are honored for compressed responses.
+
 ### Added
 - **Real World Reasoning Agent: Gateway Latency Optimization & Cloud Run Keep-Alive (`gateway/`, `demos/real-world-reasoning-agent`)**:
   - Configured explicit HTTP `server.keepAliveTimeout = 65_000` and `server.headersTimeout = 66_000` on the root Node gateway to comfortably exceed Cloud Run and load balancer 60-second idle connection timeouts, eliminating transient 502 Bad Gateway / ECONNRESET errors on reused TCP sockets.

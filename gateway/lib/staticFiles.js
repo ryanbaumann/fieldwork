@@ -230,15 +230,29 @@ export function isCompressibleType(filePath) {
   return COMPRESSIBLE_EXTENSIONS.has(extname(filePath).toLowerCase());
 }
 
-// Prefer brotli when the client offers it, else gzip, else no compression.
-// This is a simple substring/word-boundary check, not full Accept-Encoding
-// q-value parsing — good enough for a portfolio gateway with two candidate
-// encodings.
+// Prefer the highest-quality supported encoding, using brotli to break ties.
+// Explicit q=0 exclusions override a wildcard so clients never receive an
+// encoding they said they cannot decode.
 export function pickEncoding(acceptEncodingHeader) {
-  const header = String(acceptEncodingHeader || '').toLowerCase();
-  if (/\bbr\b/.test(header)) return 'br';
-  if (/\bgzip\b/.test(header)) return 'gzip';
-  return null;
+  const qualities = new Map();
+  for (const item of String(acceptEncodingHeader || '').toLowerCase().split(',')) {
+    const [rawName, ...parameters] = item.trim().split(';');
+    if (!rawName) continue;
+    let quality = 1;
+    const qualityParameter = parameters.find((parameter) => parameter.trim().startsWith('q='));
+    if (qualityParameter) {
+      const parsed = Number(qualityParameter.trim().slice(2));
+      quality = Number.isFinite(parsed) && parsed >= 0 && parsed <= 1 ? parsed : 0;
+    }
+    qualities.set(rawName, quality);
+  }
+
+  const wildcardQuality = qualities.get('*') || 0;
+  const qualityFor = (encoding) => qualities.has(encoding) ? qualities.get(encoding) : wildcardQuality;
+  const brotliQuality = qualityFor('br');
+  const gzipQuality = qualityFor('gzip');
+  if (brotliQuality <= 0 && gzipQuality <= 0) return null;
+  return brotliQuality >= gzipQuality ? 'br' : 'gzip';
 }
 
 function compressionTransformFor(encoding) {

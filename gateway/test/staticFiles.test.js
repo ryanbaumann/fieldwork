@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { safeResolve, cacheControlFor, mimeTypeFor, applySecurityHeaders, CSP_POLICIES, CSP_MANIFEST_POLICIES, cspForApp } from '../lib/staticFiles.js';
+import { safeResolve, cacheControlFor, mimeTypeFor, applySecurityHeaders, CSP_POLICIES, CSP_MANIFEST_POLICIES, cspForApp, pickEncoding } from '../lib/staticFiles.js';
 
 const DEMO_SRC = join(dirname(fileURLToPath(import.meta.url)), '../../demos/strava-explorer/src');
 
@@ -69,6 +69,15 @@ test('mimeTypeFor maps common extensions', () => {
   assert.equal(mimeTypeFor('a.js'), 'text/javascript; charset=utf-8');
   assert.equal(mimeTypeFor('a.css'), 'text/css; charset=utf-8');
   assert.equal(mimeTypeFor('a.unknownext'), 'application/octet-stream');
+});
+
+test('pickEncoding honors quality values, exclusions, and wildcards', () => {
+  assert.equal(pickEncoding('gzip, br'), 'br');
+  assert.equal(pickEncoding('br;q=0.5, gzip;q=0.9'), 'gzip');
+  assert.equal(pickEncoding('br;q=0, gzip;q=1'), 'gzip');
+  assert.equal(pickEncoding('gzip;q=0, br;q=0'), null);
+  assert.equal(pickEncoding('*;q=0.4, br;q=0'), 'gzip');
+  assert.equal(pickEncoding('br;q=not-a-number, gzip;q=0.2'), 'gzip');
 });
 
 test('applySecurityHeaders sends a locked-down default CSP with X-Frame-Options as backup', () => {
