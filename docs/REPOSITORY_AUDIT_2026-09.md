@@ -74,6 +74,12 @@ a dedicated architecture change rather than a broad audit edit.
 
 ## Recommended next actions
 
+The [PR #259 execution plan](PR_259_EXECUTION_PLAN.md) expands these follow-ups
+into security, performance, copy, and UX work with parallel ownership and
+verification requirements. It includes Ryan's voice and full-article narrative
+review using Clarity. The plan is pending implementation; it does not change the
+findings or verification results recorded above.
+
 1. Resolve the Atlas transitive advisories through a tested upstream upgrade or
    override; confirm the vulnerable parsers are absent with `npm ls` and
    `npm audit`.
