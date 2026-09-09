@@ -34,8 +34,7 @@ and reduced-motion combinations plus twelve primary interactions.
 | PERF-1 | Low | Gateway | Static serving performs synchronous metadata operations on each request. | **Measured and deferred.** The host was noisy and GET throughput ranges overlapped broadly, so the benchmark does not support an async-filesystem rewrite. The retained harness establishes a repeatable baseline. |
 | PERF-2 | Low | Gateway | `HEAD` traversed file and compression streams even though no body is sent. | **Fixed and measured.** At concurrency 50, median CPU per request fell from 451 to 231 microseconds for identity, 1,719 to 537 for gzip, and 1,432 to 579 for Brotli. Throughput ranges still overlapped, so this is a CPU-path result rather than a production-capacity claim. |
 | PERF-3 | Low | Atlas | Atlas's largest production chunk is substantial. | **Measured and deferred.** The current build reports 607.76 kB raw / 175.07 kB gzip for the deck chunk. No split was made without interaction and transfer evidence showing a user-visible gain. |
-| CONTENT-1 | High reader impact | Portfolio | The fine-tuning article presented a saved 2/10 base score even though its retained outputs contain one clean base result and nine clean tuned results. The runner can print a saved summary without recomputing it and does not retain provenance. | **Fixed.** The article now distinguishes the saved score from the auditable outputs, explains the runner behavior, and avoids presenting the disputed score as a measured result. Its header, evidence diagram, social image, and evidence ledger were updated. Citation validation resolved all seven cited URLs. |
-| CONTENT-2 | Moderate reader impact | Portfolio + demos | Several essays and demo descriptions overstated causality, live behavior, verification, or the operation behind static fixtures. Contact and privacy copy also omitted the spam-classification step. | **Fixed.** Claims were narrowed to retained evidence, Voice Studio now labels fixtures and simple replacements accurately, Atlas distinguishes tool traces from conclusions, and contact/privacy copy describes message screening. A full maker inventory and independent copy review found no remaining material blocker. |
+| CONTENT-1 | Moderate reader impact | Portfolio + demos | Several page and demo descriptions disagreed with implemented behavior: Voice Studio implied live model operation, Atlas overstated verified conclusions, and contact/privacy copy omitted message screening. | **Fixed.** Voice Studio now labels fixtures and simple replacements accurately, Atlas distinguishes tool traces from conclusions, and contact/privacy copy describes screening. Essay edits proposed during the audit were removed at owner review. |
 | UX-1 | Moderate | Demo UI | Infographic Agent and Voice Studio overflowed at 320 px; common controls were below the 44 px target. | **Fixed.** Mobile headers/tabs now fit the viewport, controls meet the target, and reduced-motion rules cover their animations. |
 | UX-2 | Moderate | Demo UI | Infographic Agent's API-key dialog left focus behind the modal and ignored Escape; Hairstyle AI did not reliably restore trigger focus. | **Fixed.** Both dialogs move focus, contain Tab navigation, dismiss from the keyboard, and restore the prior control. |
 
@@ -73,12 +72,6 @@ persistence, Voice fixture controls and export, CSP allow/deny behavior, map
 control shells, and API-key dialogs. Live Maps/WebGL and external provider
 responses remain outside this credential-free pass.
 
-The fine-tuning diagrams render cleanly on desktop and fit mobile layouts. Some
-supporting text in the evidence diagram is approximately 8–10 px at a 390 px
-viewport; the article text carries the same evidence for readers who do not
-zoom the image. This is a documented legibility limit rather than a claim that
-every embedded label is readable at mobile scale.
-
 ## Content disposition
 
 Every content entry was read in full. `Keep` means this pass found no warranted
@@ -110,17 +103,17 @@ preserved.
 | `work/trails-ninja.md` | Keep. |
 | `work/voice-of-developer.md` | Keep. |
 | `writing/ai-saves-the-hour.md` | Needs source evidence; keep the draft unchanged. |
-| `writing/builder-platforms-grow-by-owning-the-agent-loop.md` | Correct unsupported user-outcome claims and ending. |
-| `writing/can-i-build-an-ai-agent-that-doesnt-write-slop.md` | Restructure around the retained prompt/output record. |
+| `writing/builder-platforms-grow-by-owning-the-agent-loop.md` | Keep unchanged; proposed edits removed at owner review. |
+| `writing/can-i-build-an-ai-agent-that-doesnt-write-slop.md` | Keep unchanged; proposed edits removed at owner review. |
 | `writing/code-assist-launch.md` | Keep the external draft unchanged. |
-| `writing/devex-is-a-growth-discipline.md` | Correct causal and absolute claims. |
+| `writing/devex-is-a-growth-discipline.md` | Keep unchanged; proposed edits removed at owner review. |
 | `writing/evals-turn-ai-developer-experience-into-an-operating-system.md` | Needs source evidence; keep the draft unchanged. |
-| `writing/fine-tuning-was-the-easy-part.md` | Restructure around the conflicting saved evidence. |
-| `writing/loop-engineering-coding-agent.md` | Correct scenario/checker claims. |
+| `writing/fine-tuning-was-the-easy-part.md` | Keep unchanged; proposed edits and replacement visuals removed at owner review. |
+| `writing/loop-engineering-coding-agent.md` | Keep unchanged; proposed edits removed at owner review. |
 | `writing/the-model-that-picks-your-platform-doesnt-write-the-code.md` | Keep. |
 | `writing/the-next-platform-interface-is-an-agent-session.md` | Keep the draft unchanged. |
 | `writing/this-weeks-learnings.md` | Keep the external draft unchanged. |
-| `writing/using-geojson-bigquery.md` | Correct the date and transformation claim. |
+| `writing/using-geojson-bigquery.md` | Keep unchanged; proposed edits removed at owner review. |
 | `writing/vibing-with-maps.md` | Keep the external entry unchanged. |
 
 ## Residual risk and next checks
@@ -132,8 +125,6 @@ preserved.
    results to justify filesystem or caching architecture changes.
 3. Exercise live Maps, WebGL, Gemini generation, and email delivery in an
    authorized environment with synthetic accounts and restricted keys.
-4. Consider a full-size image affordance if mobile readers need to inspect every
-   label in the fine-tuning evidence diagram.
 
 The implementation procedure and original acceptance criteria remain in the
 [PR #259 execution plan](PR_259_EXECUTION_PLAN.md).

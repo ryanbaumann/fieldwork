@@ -22,16 +22,6 @@ Evidence: Portfolio tests verify exact-byte hashes, non-executable JSON-LD exclu
 
 Use next time: Generate CSP metadata as the last build step, load it once at process start, key it by canonical served file, and deploy/restart HTML plus metadata atomically.
 
-## 2026-09-09 - Saved evaluation summaries are claims until outputs and provenance reproduce them
-
-Context: The fine-tuning article cited a saved 2/10 base score while the retained output file contained one clean base response and nine clean tuned responses.
-
-Learning: A runner that prints a stored summary when a trace exists can preserve a stale or unrelated score. Without dataset hash, model and adapter identifiers, evaluator version, configuration, and recomputation from retained outputs, the summary is historical context rather than reproducible evidence.
-
-Evidence: The article, evidence ledger, and diagrams now distinguish the saved summary from the count visible in retained outputs; citation validation resolved all seven external references.
-
-Use next time: Persist provenance beside evaluation outputs and recompute reader-facing scores from those outputs before publication.
-
 ## 2026-09-09 - Narrow CSP profiles prevent unrelated third-party capability grants
 
 Context: Infographic Agent used the Maps CSP only because it loaded Google Fonts.

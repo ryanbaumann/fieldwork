@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 - **Repository security, performance, content, and UX audit (`gateway/`,
-  `portfolio/`, `demos/`, `docs/`)**: Completed the PR #259 execution plan.
+  `portfolio/`, `demos/`, `docs/`)**: Implemented the confirmed technical and
+  interface findings from PR #259. Essay copy remains unchanged after owner
+  review.
   - Hardened writer Google OAuth claim validation so false verification values
     and missing or malformed expiry claims are denied.
   - Replaced the default inline-script CSP allowance with build-generated,
@@ -16,9 +18,8 @@ All notable changes to this project will be documented in this file.
   - Updated Atlas's vulnerable `fflate` transitive dependency and Strava's
     development lockfile advisory. Documented the remaining unpatched
     `image-size` chain and its current reachability.
-  - Corrected unsupported or overstated claims across portfolio essays, pages,
-    demo UI, and READMEs. Reframed the fine-tuning article around the mismatch
-    between a saved score and retained outputs, with new evidence visuals.
+  - Corrected contact, privacy, subscription, demo UI, and README descriptions
+    where they disagreed with implemented behavior. Essay copy remains unchanged.
   - Fixed 320 px overflow, touch-target sizing, reduced-motion handling, and
     API-key dialog keyboard/focus behavior in Infographic Agent, Voice Studio,
     and Hairstyle AI Studio.

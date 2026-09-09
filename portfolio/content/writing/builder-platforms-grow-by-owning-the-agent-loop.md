@@ -2,7 +2,7 @@
 title: Builder Platforms Grow by Owning the Agent Loop
 summary: Give coding agents a tested path into your platform, measure what works, and use the results to improve activation and retention.
 date: 2026-07-18
-updated: 2026-09-07
+updated: 2026-07-18
 canonical: https://ryanbaumann.dev/writing/builder-platforms-grow-by-owning-the-agent-loop/
 image: /img/writing/agent-feedback-loop-header.svg
 imageAlt: A stable builder platform control plane holds context, evals, distribution, and outcomes while models and agent harnesses change around it.
@@ -18,7 +18,7 @@ noindex: false
 
 When a developer asks a coding agent to build with your platform, that session becomes part of how they experience your product.
 
-Our team runs agent skills and evals across Google Maps Platform because an agent's mistakes become part of the developer's task. If it picks the wrong API, misses an authentication step, or writes code that fails to compile, the developer still has to repair the result before moving on.
+Our team learned this while running agent skills and evals across Google Maps Platform: if an agent picks the wrong API, misses an authentication step, or writes code that fails to compile, the developer doesn't blame the model: they experience that failure as your platform, and they leave.
 
 The best model will change, and so will the agent harness wrapped around it. Don't anchor your platform's developer experience to either one. Own the feedback loop that keeps core developer tasks working as models and agents move around it.
 
@@ -92,4 +92,4 @@ Start with ten core developer tasks. For each one:
 4. Test it across representative model and harness versions.
 5. Measure outcomes and review failures. Reuse traces only when they're authorized and cleared through privacy and security review.
 
-Which failure from a real developer session made you change an eval or a skill? I'd like to compare how teams carry that evidence back into the next release.
+Start small and let the loop compound. If you are building developer platforms for an agent-first world, how are you structuring your evaluation and distribution loops? Share your approach in the comments below.
