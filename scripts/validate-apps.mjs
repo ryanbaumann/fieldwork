@@ -58,7 +58,7 @@ for (const app of apps) {
   if (app.csp !== undefined && !CSP_MANIFEST_VALUES.includes(app.csp)) {
     fail(`${label}: csp must be one of ${CSP_MANIFEST_VALUES.map((value) => JSON.stringify(value)).join(', ')} when present (got ${JSON.stringify(app.csp)})`);
   }
-  if (app.tags?.includes('google-maps-platform') && !app.path.startsWith('http') && !CSP_MANIFEST_VALUES.includes(app.csp)) {
+  if (app.tags?.includes('google-maps-platform') && !app.path.startsWith('http') && !['maps', 'maps-strava'].includes(app.csp)) {
     fail(`${label}: apps loading the Maps JS API must declare a maps CSP (${CSP_MANIFEST_VALUES.join(' or ')}) so the gateway serves the Maps CSP`);
   }
 

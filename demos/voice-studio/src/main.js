@@ -135,14 +135,11 @@ function revealArena() {
   cardA?.classList.add('revealed');
   cardB?.classList.add('revealed');
 
-  const tunedSlot = modelMapping.A === "round1Model" ? cardA : cardB;
-  tunedSlot?.classList.add('winner');
-
   const verdictBox = document.getElementById('arena-verdict-box');
   if (verdictBox) {
     verdictBox.style.display = 'block';
     verdictBox.innerHTML = `
-      <strong>Ground Truth Reference (Ryan):</strong><br>
+      <strong>Saved reference example:</strong><br>
       <span style="color: #cbd5e1;">"${item.groundTruth}"</span>
     `;
   }

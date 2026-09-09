@@ -13,6 +13,7 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeCspManifest } from './lib/csp.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 const CONTENT_DIR = resolve(process.env.PORTFOLIO_CONTENT_DIR || join(ROOT, 'content'));
@@ -950,7 +951,7 @@ function subscribeSection() {
   return `<section class="subscribe" aria-labelledby="subscribe-title">
   <p class="eyebrow">Email list</p>
   <h2 id="subscribe-title">Get new field notes by email</h2>
-  <p>One email when something ships. One-click unsubscribe.</p>
+  <p>Occasional updates about new essays, talks, and Labs. Unsubscribe in any email.</p>
   <form class="subscribe-form" action="${BASE}api/subscribe" method="post">
     <label for="subscribe-email">Email address</label>
     <div class="subscribe-controls">
@@ -1319,7 +1320,7 @@ function buildHome(collections) {
   const demosSection = homeDemos.length
     ? `
 <section>
-  ${sectionHeader('', 'Labs', '/labs/', 'Explore Labs')}
+  ${sectionHeader('', 'Labs', `${BASE}demos/`, 'Explore Labs')}
   <p class="section-note">${escapeHtml(site.sectionIntros?.demos || '')}</p>
   <div class="grid demo-grid">
     ${homeDemos.map(demoCard).join('\n')}
@@ -1372,7 +1373,7 @@ ${demosSection}
   <div>
     <p class="eyebrow">Collaborate</p>
     <h2>Growing a developer platform, or getting one ready for agents?</h2>
-    <p>That's most of what I work on. Happy to consult, collaborate, or just trade notes.</p>
+    <p>That's most of what I work on. Happy to collaborate or trade notes.</p>
   </div>
   <div>
     <a class="button button-primary" href="${BASE}contact/">Get in touch</a>
@@ -1489,10 +1490,11 @@ function pageActions() {
   </p>`;
 }
 
-function contactPageContent(meta) {
+function contactPageContent(meta, body) {
   return `<section class="contact-shell">
   <p class="eyebrow">Contact</p>
   <h1>Start a conversation.</h1>
+  <div class="prose">${markdownToHtml(body)}</div>
   <form id="contact-form" class="contact-form" action="${BASE}api/contact" method="post">
     <fieldset class="intent-options"><legend>What is this about?</legend>
       ${['Developer platform discussion', 'Content collaboration', 'Speaking opportunity', 'Other'].map((intent) => `<label><input type="radio" name="intent" value="${intent}" required /> <span>${intent}</span></label>`).join('')}
@@ -1508,7 +1510,7 @@ function contactPageContent(meta) {
     <label class="human-check"><input name="human" type="checkbox" value="1" required /> <span>I am a person, and this is not an unsolicited sales pitch.</span></label>
     <button class="button" type="submit">Send note</button>
   </form>
-  <p class="section-note">The server uses your details only to deliver the note and reply. See <a href="${BASE}privacy/">Privacy</a>.</p>
+  <p class="section-note">Your message may be checked for unsolicited advertising before delivery. See <a href="${BASE}privacy/">Privacy</a>.</p>
   <script>(()=>{const value=new URLSearchParams(location.search).get('intent');const intents={platform:'Developer platform discussion',content:'Content collaboration',speaking:'Speaking opportunity',other:'Other'};const selected=intents[value];if(!selected)return;const input=[...document.querySelectorAll('input[name="intent"]')].find((item)=>item.value===selected);if(input)input.checked=true})();</script>
 </section>`;
 }
@@ -1531,7 +1533,7 @@ function loadPages() {
 function buildStandalonePages(pages) {
   for (const page of pages) {
     const { slug, meta, body } = page;
-    const customContent = slug === 'resume' ? resumePageContent(meta, body) : slug === 'contact' ? contactPageContent(meta) : null;
+    const customContent = slug === 'resume' ? resumePageContent(meta, body) : slug === 'contact' ? contactPageContent(meta, body) : null;
     const content = customContent || `<article class="prose">
   <p class="eyebrow">${escapeHtml(meta.eyebrow || site.name)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
@@ -1905,5 +1907,6 @@ if (existsSync(STATIC_DIR)) {
 
 const pageCount = readdirSync(DIST_DIR, { recursive: true }).filter((file) => String(file).endsWith('index.html')).length;
 validateMetadata();
+writeCspManifest(DIST_DIR);
 publishOutput();
 console.log(`[portfolio] built ${pageCount} pages into ${OUTPUT_DIR} (base: ${BASE})`);

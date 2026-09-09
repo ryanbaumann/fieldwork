@@ -4,7 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Repository security, performance, content, and UX audit (`gateway/`,
+  `portfolio/`, `demos/`, `docs/`)**: Implemented the confirmed technical and
+  interface findings from PR #259. Essay copy remains unchanged after owner
+  review.
+  - Hardened writer Google OAuth claim validation so false verification values
+    and missing or malformed expiry claims are denied.
+  - Replaced the default inline-script CSP allowance with build-generated,
+    per-page SHA-256 hashes, and added a least-privilege Google Fonts profile.
+  - Completed standards-aware content negotiation, conditional request,
+    bodyless `HEAD`, `Vary`, and stream cleanup behavior with a repeatable
+    static-server benchmark.
+  - Updated Atlas's vulnerable `fflate` transitive dependency and Strava's
+    development lockfile advisory. Documented the remaining unpatched
+    `image-size` chain and its current reachability.
+  - Corrected contact, privacy, subscription, demo UI, and README descriptions
+    where they disagreed with implemented behavior. Essay copy remains unchanged.
+  - Fixed 320 px overflow, touch-target sizing, reduced-motion handling, and
+    API-key dialog keyboard/focus behavior in Infographic Agent, Voice Studio,
+    and Hairstyle AI Studio.
+
 ### Added
+- **PR #259 execution plan (`docs/`)**: Added the security, performance, copy,
+  and UX implementation handoff, including parallel ownership, verification,
+  and Clarity-based review of Ryan's voice and narrative across blogs and pages.
+  This documents planned work; it does not mark the audit follow-ups complete.
 - **Real World Reasoning Agent: Gateway Latency Optimization & Cloud Run Keep-Alive (`gateway/`, `demos/real-world-reasoning-agent`)**:
   - Configured explicit HTTP `server.keepAliveTimeout = 65_000` and `server.headersTimeout = 66_000` on the root Node gateway to comfortably exceed Cloud Run and load balancer 60-second idle connection timeouts, eliminating transient 502 Bad Gateway / ECONNRESET errors on reused TCP sockets.
   - Added `x-accel-buffering` to `SAFE_UPSTREAM_RESPONSE_HEADERS` to prevent downstream reverse proxies from buffering SSE streaming tokens.

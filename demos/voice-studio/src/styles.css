@@ -134,6 +134,7 @@ body {
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
+  min-height: 44px;
 }
 
 .tab-btn:hover {
@@ -212,6 +213,7 @@ body {
   outline: none;
   cursor: pointer;
   transition: border-color 0.15s ease;
+  min-height: 44px;
 }
 
 .custom-select:focus {
@@ -345,6 +347,7 @@ body {
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.15s ease;
+  min-height: 44px;
 }
 
 .btn-vote:hover {
@@ -375,6 +378,7 @@ body {
   border-radius: 0.5rem;
   cursor: pointer;
   transition: opacity 0.15s ease;
+  min-height: 44px;
 }
 
 .btn-primary:hover {
@@ -390,6 +394,7 @@ body {
   border-radius: 0.5rem;
   cursor: pointer;
   transition: background 0.15s ease;
+  min-height: 44px;
 }
 
 .btn-secondary:hover {
@@ -460,6 +465,7 @@ body {
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.15s ease;
+  min-height: 44px;
 }
 
 .template-chip:hover {
@@ -547,5 +553,42 @@ body {
   }
   .arena-grid, .scrubber-grid {
     grid-template-columns: 1fr;
+  }
+
+  .nav-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .tab-btn {
+    padding-inline: 0.35rem;
+    font-size: 0.8rem;
+  }
+
+  .select-group {
+    min-width: 0;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .prompt-selector-row {
+    align-items: stretch;
+  }
+
+  .prompt-selector-row > .btn-secondary {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

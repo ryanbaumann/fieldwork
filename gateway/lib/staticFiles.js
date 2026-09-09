@@ -5,6 +5,7 @@
 
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
+import { pipeline } from 'node:stream';
 import { createGzip, createBrotliCompress, gzipSync, brotliCompressSync, constants as zlibConstants } from 'node:zlib';
 
 export const MIME_TYPES = new Map([
@@ -96,13 +97,9 @@ export const SECURITY_HEADERS = {
 //    two image hosts are loaded without the proxy. The Maps policy alone
 //    blocks all of that, so the demo gets those origins added on top.
 //
-// All three policies allow 'unsafe-inline' for script-src and style-src: the
-// portfolio build inlines a theme-toggle script, an analytics bootstrap
-// script, a giscus mount script, and a <style> block directly into static
-// HTML served by a separate process from the build. There's no per-request
-// nonce plumbing between the two, and wiring one up would mean a large
-// refactor of the build pipeline — accepted as a known limitation rather
-// than attempted here.
+// The default policy authorizes inline scripts with per-page hashes supplied
+// by the portfolio build or the generated-page writer. Style allowances are
+// separate. Maps policies retain their existing SDK allowances.
 //
 // Policies are built from directive maps rather than pre-joined strings so a
 // per-app relaxation can only widen named directives (see extendDirectives:
@@ -113,7 +110,7 @@ const CSP_DEFAULT_DIRECTIVES = {
   'base-uri': ["'self'"],
   'object-src': ["'none'"],
   'frame-ancestors': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://giscus.app'],
+  'script-src': ["'self'", 'https://www.googletagmanager.com', 'https://giscus.app'],
   'style-src': ["'self'", "'unsafe-inline'"],
   'img-src': ["'self'", 'data:', 'https://www.google-analytics.com'],
   'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://*.google-analytics.com', 'https://www.googletagmanager.com'],
@@ -177,6 +174,10 @@ const CSP_STRAVA_DEMO_DIRECTIVES = extendDirectives(CSP_MAPS_DEMO_DIRECTIVES, {
 });
 
 const CSP_DEFAULT = serializeCsp(CSP_DEFAULT_DIRECTIVES);
+const CSP_GOOGLE_FONTS = serializeCsp(extendDirectives(CSP_DEFAULT_DIRECTIVES, {
+  'style-src': ['https://fonts.googleapis.com'],
+  'font-src': ['https://fonts.gstatic.com'],
+}));
 const CSP_MAPS_DEMO = serializeCsp(CSP_MAPS_DEMO_DIRECTIVES);
 const CSP_STRAVA_DEMO = serializeCsp(CSP_STRAVA_DEMO_DIRECTIVES);
 
@@ -195,6 +196,7 @@ export const CSP_POLICIES = Object.freeze({
 export const CSP_MANIFEST_POLICIES = Object.freeze({
   maps: CSP_MAPS_DEMO,
   'maps-strava': CSP_STRAVA_DEMO,
+  'google-fonts': CSP_GOOGLE_FONTS,
 });
 
 export function cspForApp(app) {
@@ -230,15 +232,66 @@ export function isCompressibleType(filePath) {
   return COMPRESSIBLE_EXTENSIONS.has(extname(filePath).toLowerCase());
 }
 
-// Prefer brotli when the client offers it, else gzip, else no compression.
-// This is a simple substring/word-boundary check, not full Accept-Encoding
-// q-value parsing — good enough for a portfolio gateway with two candidate
-// encodings.
-export function pickEncoding(acceptEncodingHeader) {
-  const header = String(acceptEncodingHeader || '').toLowerCase();
-  if (/\bbr\b/.test(header)) return 'br';
-  if (/\bgzip\b/.test(header)) return 'gzip';
-  return null;
+// RFC 9110 sections 12.4.2 and 12.5.3. An omitted identity preference is a
+// fallback; an explicit preference competes with supported content codings.
+// Return null only when none of the available representations is acceptable.
+export function pickEncoding(acceptEncodingHeader, { compressible = true, preferIdentity = false } = {}) {
+  const qualities = new Map();
+  for (const item of String(acceptEncodingHeader || '').toLowerCase().split(',')) {
+    const [rawName, ...parameters] = item.trim().split(';');
+    const name = rawName.trim();
+    if (!/^[!#$%&'*+.^_`|~a-z0-9-]+$/.test(name)) continue;
+    let quality = 1;
+    if (parameters.length) {
+      const match = parameters.length === 1
+        && /^q=(0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.exec(parameters[0].trim());
+      quality = match ? Number(match[1]) : 0;
+    }
+    // Conflicting duplicates have no specified ranking. Fail closed so an
+    // explicit exclusion or invalid weight cannot be revived by another item.
+    qualities.set(name, Math.min(qualities.get(name) ?? 1, quality));
+  }
+
+  const identityAllowed = (qualities.get('identity') ?? (qualities.get('*') === 0 ? 0 : 1)) > 0;
+  if (preferIdentity && identityAllowed && !qualities.has('identity')) return 'identity';
+  let encoding = null;
+  let bestQuality = 0;
+  for (const candidate of compressible ? ['br', 'gzip', 'identity'] : ['identity']) {
+    const quality = candidate === 'identity'
+      ? (qualities.get('identity') ?? 0)
+      : (qualities.get(candidate) ?? qualities.get('*') ?? 0);
+    if (quality > bestQuality) {
+      encoding = candidate;
+      bestQuality = quality;
+    }
+  }
+  return encoding || (identityAllowed ? 'identity' : null);
+}
+
+function varyOnEncoding(headers, response) {
+  const names = Object.keys(headers).filter((name) => name.toLowerCase() === 'vary');
+  const values = [response.getHeader?.('vary'), ...names.map((name) => headers[name])]
+    .filter((value) => value !== undefined).flatMap((value) => String(value).split(','))
+    .map((value) => value.trim()).filter(Boolean);
+  for (const name of names) delete headers[name];
+  if (values.includes('*')) {
+    headers.Vary = '*';
+    return;
+  }
+  if (!values.some((value) => value.toLowerCase() === 'accept-encoding')) values.push('Accept-Encoding');
+  headers.Vary = [...new Map(values.map((value) => [value.toLowerCase(), value])).values()].join(', ');
+}
+
+function sendNotAcceptable(response, headers) {
+  // No body: identity itself might be forbidden. Do not cache this selection
+  // failure using the successful representation's validators or freshness.
+  const finalHeaders = { ...headers, 'Cache-Control': 'no-store', 'Content-Length': 0 };
+  for (const name of Object.keys(finalHeaders)) {
+    if (['etag', 'last-modified', 'content-encoding', 'content-length', 'cache-control'].includes(name.toLowerCase())
+      && name !== 'Content-Length' && name !== 'Cache-Control') delete finalHeaders[name];
+  }
+  response.writeHead(406, finalHeaders);
+  response.end();
 }
 
 function compressionTransformFor(encoding) {
@@ -269,21 +322,31 @@ export function compressBuffer(buffer, encoding) {
  */
 export function sendCompressibleBody(request, response, statusCode, headers, body) {
   const buffer = Buffer.isBuffer(body) ? body : Buffer.from(String(body), 'utf8');
-  const finalHeaders = { ...headers, Vary: 'Accept-Encoding' };
-  const encoding = buffer.length >= MIN_COMPRESSIBLE_BYTES
-    ? pickEncoding(request?.headers?.['accept-encoding'])
-    : null;
+  const finalHeaders = { ...headers };
+  varyOnEncoding(finalHeaders, response);
+  const encoding = pickEncoding(request?.headers?.['accept-encoding'], {
+    preferIdentity: buffer.length < MIN_COMPRESSIBLE_BYTES,
+  });
+  if (encoding === null) {
+    sendNotAcceptable(response, finalHeaders);
+    return;
+  }
 
-  if (encoding) {
+  for (const name of Object.keys(finalHeaders)) {
+    if (name.toLowerCase() === 'content-length') delete finalHeaders[name];
+  }
+  if (encoding !== 'identity') {
     finalHeaders['Content-Encoding'] = encoding;
+    const compressed = compressBuffer(buffer, encoding);
+    finalHeaders['Content-Length'] = compressed.length;
     response.writeHead(statusCode, finalHeaders);
-    response.end(compressBuffer(buffer, encoding));
+    response.end(request?.method === 'HEAD' ? undefined : compressed);
     return;
   }
 
   finalHeaders['Content-Length'] = buffer.length;
   response.writeHead(statusCode, finalHeaders);
-  response.end(buffer);
+  response.end(request?.method === 'HEAD' ? undefined : buffer);
 }
 
 // ---------------------------------------------------------------------------
@@ -301,7 +364,8 @@ function requestIsNotModified(request, etag, lastModified) {
   const headers = request?.headers || {};
   const ifNoneMatch = headers['if-none-match'];
   if (ifNoneMatch !== undefined) {
-    return ifNoneMatch.split(',').map((tag) => tag.trim()).includes(etag);
+    if (ifNoneMatch.trim() === '*') return true;
+    return ifNoneMatch.split(',').some((tag) => tag.trim().replace(/^W\//, '') === etag.replace(/^W\//, ''));
   }
   const ifModifiedSince = headers['if-modified-since'];
   if (ifModifiedSince) {
@@ -321,7 +385,7 @@ function requestIsNotModified(request, etag, lastModified) {
  * big enough to bother.
  */
 function sendStaticFile(filePath, stat, request, response, statusCode, { cacheControl, extraHeaders = {}, csp }) {
-  applySecurityHeaders(response, { csp });
+  applySecurityHeaders(response, { csp: typeof csp === 'function' ? csp(filePath) : csp });
 
   const compressible = isCompressibleType(filePath);
   const etag = computeEtag(stat);
@@ -332,28 +396,39 @@ function sendStaticFile(filePath, stat, request, response, statusCode, { cacheCo
     ETag: etag,
     ...extraHeaders,
   };
-  if (compressible) headers.Vary = 'Accept-Encoding';
+  varyOnEncoding(headers, response);
 
-  if (requestIsNotModified(request, etag, stat.mtime)) {
+  const encoding = pickEncoding(request?.headers?.['accept-encoding'], {
+    compressible,
+    preferIdentity: stat.size < MIN_COMPRESSIBLE_BYTES,
+  });
+  if (encoding === null) {
+    sendNotAcceptable(response, headers);
+    return true;
+  }
+
+  if (statusCode === 200 && (!request?.method || ['GET', 'HEAD'].includes(request.method))
+    && requestIsNotModified(request, etag, stat.mtime)) {
     response.writeHead(304, headers);
     response.end();
     return true;
   }
 
-  const encoding = compressible && stat.size >= MIN_COMPRESSIBLE_BYTES
-    ? pickEncoding(request?.headers?.['accept-encoding'])
-    : null;
-
-  if (encoding) {
+  if (encoding !== 'identity') {
     headers['Content-Encoding'] = encoding;
-    response.writeHead(statusCode, headers);
-    createReadStream(filePath).pipe(compressionTransformFor(encoding)).pipe(response);
+  } else {
+    headers['Content-Length'] = stat.size;
+  }
+  response.writeHead(statusCode, headers);
+  if (request?.method === 'HEAD') {
+    response.end();
     return true;
   }
-
-  headers['Content-Length'] = stat.size;
-  response.writeHead(statusCode, headers);
-  createReadStream(filePath).pipe(response);
+  // pipeline destroys the whole chain on read/compression failures and client
+  // disconnects. Headers are committed, so a second HTTP error is unsafe.
+  const streams = [createReadStream(filePath)];
+  if (encoding !== 'identity') streams.push(compressionTransformFor(encoding));
+  pipeline(...streams, response, () => {});
   return true;
 }
 

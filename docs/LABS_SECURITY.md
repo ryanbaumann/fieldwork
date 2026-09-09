@@ -44,13 +44,13 @@ Restriction guidance:
 
 ## CSP
 
-Only apps marked `csp: "maps"` receive the Maps policy. It keeps
+Apps marked `csp: "maps"` receive the Maps policy; `maps-strava` adds Strava's required hosts. It keeps
 `default-src 'self'`, `base-uri 'self'`, `object-src 'none'`, and
 `frame-ancestors 'self'`, then allows the Google Maps/Places and analytics
 origins those apps use. Gemini remains same-origin through the gateway.
-`'unsafe-eval'` is scoped to Maps apps for the Maps loader; `'unsafe-inline'`
-remains for static generated bootstraps and styles. The portfolio and non-Maps
-apps keep the tighter default policy.
+`'unsafe-eval'` and inline-script allowances remain scoped to these Maps policies. Infographic Agent uses `google-fonts`, which permits its font stylesheet and files without Maps script or evaluation privileges.
+
+The default script policy blocks unapproved inline scripts. The portfolio build writes per-page SHA-256 hashes to `csp-hashes.json`, which the gateway validates and loads at startup. Public pages, private writer pages, and the 404 page receive only their own hashes. Deploy the manifest and HTML together and restart after rebuilding; missing or malformed metadata fails closed. Inline styles remain allowed separately.
 
 ## Required checks
 

@@ -98,6 +98,7 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
 }
 
 @media (min-width: 768px) {
@@ -124,6 +125,7 @@ a:hover {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
 }
 
 .back-to-home:hover {
@@ -184,6 +186,32 @@ a:hover {
   background: var(--bg-surface);
   cursor: pointer;
   transition: all 0.15s ease;
+  min-height: 44px;
+}
+
+@media (max-width: 560px) {
+  .header-inner {
+    align-items: flex-start;
+  }
+
+  .brand-group {
+    min-width: 0;
+  }
+
+  .brand-icon,
+  .brand-badge {
+    display: none;
+  }
+
+  .key-status-btn {
+    width: 44px;
+    padding-inline: 0;
+    justify-content: center;
+  }
+
+  .key-status-btn span {
+    display: none;
+  }
 }
 
 .key-status-btn:hover {
@@ -258,6 +286,7 @@ a:hover {
   font-size: 0.875rem;
   color: var(--text-primary);
   transition: border-color 0.15s ease;
+  min-height: 44px;
 }
 
 .form-input:focus, .form-textarea:focus, .form-select:focus {
@@ -340,6 +369,7 @@ a:hover {
   background: var(--bg-surface-elevated);
   cursor: pointer;
   transition: all 0.15s ease;
+  min-height: 44px;
 }
 
 .aspect-btn:hover {
@@ -369,6 +399,7 @@ a:hover {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
   transition: all 0.15s ease;
+  min-height: 44px;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -396,6 +427,7 @@ a:hover {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
+  min-height: 44px;
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -420,6 +452,7 @@ a:hover {
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.12s ease;
+  min-height: 44px;
 }
 
 .starter-chip:hover {
@@ -701,7 +734,11 @@ a:hover {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 0.25rem;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-close-btn:hover {
@@ -713,4 +750,15 @@ a:hover {
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

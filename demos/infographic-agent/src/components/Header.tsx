@@ -31,15 +31,16 @@ export const Header: React.FC<HeaderProps> = ({ apiKey, onOpenKeyDialog }) => {
             className="key-status-btn"
             onClick={onOpenKeyDialog}
             title={apiKey ? 'Personal Gemini API Key Active' : 'Hosted Daily Free Tier'}
+            aria-label={apiKey ? 'Manage personal Gemini API key' : 'Connect a Gemini API key'}
           >
             {apiKey ? (
               <>
-                <CheckCircle2 size={15} color="#10b981" />
+                <CheckCircle2 size={15} color="#10b981" aria-hidden="true" />
                 <span>Personal Key Active</span>
               </>
             ) : (
               <>
-                <Key size={15} />
+                <Key size={15} aria-hidden="true" />
                 <span>API Key / Free Tier</span>
                 <span className="status-dot" />
               </>
