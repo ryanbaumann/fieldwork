@@ -48,7 +48,14 @@ export async function finishGoogleLogin(request, response, searchParams, env = p
   if (!claimsResponse.ok) throw Object.assign(new Error('Google could not verify the sign-in token.'), { statusCode: 401 });
   const payload = await claimsResponse.json();
   const allowedEmail = env.GOOGLE_OAUTH_ALLOWED_EMAIL || 'rsbaumann@gmail.com';
-  if (!payload.email_verified || payload.email !== allowedEmail || payload.aud !== env.GOOGLE_OAUTH_CLIENT_ID || payload.iss !== 'https://accounts.google.com' || Number(payload.exp) <= Date.now() / 1000) throw Object.assign(new Error('This Google account is not allowed to access the dashboard.'), { statusCode: 403 });
+  // tokeninfo serializes verified status and expiry as strings. In particular,
+  // the string "false" is truthy; absent/non-numeric expiry also fails open if
+  // checked only with a <= comparison because Number(undefined) is NaN.
+  const emailVerified = payload?.email_verified === true || payload?.email_verified === 'true';
+  const expiry = typeof payload?.exp === 'number'
+    ? payload.exp
+    : typeof payload?.exp === 'string' && /^\d+$/.test(payload.exp) ? Number(payload.exp) : NaN;
+  if (!emailVerified || payload?.email !== allowedEmail || payload?.aud !== env.GOOGLE_OAUTH_CLIENT_ID || payload?.iss !== 'https://accounts.google.com' || !Number.isSafeInteger(expiry) || expiry <= Date.now() / 1000) throw Object.assign(new Error('This Google account is not allowed to access the dashboard.'), { statusCode: 403 });
   const expires = Math.floor(Date.now() / 1000) + TTL_SECONDS;
   const session = `${payload.email}:${expires}:${randomBytes(16).toString('hex')}`;
   cookie(response, GOOGLE_AUTH_COOKIE, `${session}:${sign(session, env.GOOGLE_OAUTH_SESSION_SECRET)}`, TTL_SECONDS);

@@ -11,7 +11,7 @@ Fieldwork serves the production build at `/real-world-reasoning-agent/`. See
 [PROVENANCE.md](PROVENANCE.md) for the pinned source snapshot and migration
 boundary.
 
-Atlas gives an AI eyes on the real world. It's a Vite + React demo of one agent that **perceives** (Street View + satellite imagery), **reasons** over grounded signals (routes, air, weather, visible street activity, solar), and **acts** — rendering its results as **interactive generative UI**. Atlas 2.0 leads with one mission that observes, compares, asks for approval, creates a campaign, and reveals the result in 3D. The six original journeys remain available as recipes. One reusable agent loop coordinates purpose-built tools, policies, typed state, and generated surfaces.
+Atlas is a Vite + React map agent that combines Maps data and imagery with Gemini to compare locations and render interactive results. A mission can inspect a site, compare candidates, ask for approval, and create campaign materials. Six journeys provide starting points for different tasks. Tool traces let you inspect the evidence behind a result; model-generated conclusions still need review.
 
 <!-- TODO(demo-gif): record a short capture of the Scout mission (brief → compare → approve → 3D reveal),
      save it as docs/screens/demo.gif (keep it under ~10 MB so it autoplays on GitHub),
@@ -28,14 +28,14 @@ Atlas gives an AI eyes on the real world. It's a Vite + React demo of one agent 
 | **Concierge** | One sentence in — a walkable day out. Real places, real hours, reasoned into order and drawn on the map. |
 | **Insight** | Click any block. The agent pulls air, weather, solar, and live commutes — and hands down a verdict with receipts. |
 | **Fleet** | A dispatcher that watches live traffic and weighs every tradeoff before it commits a single van. |
-| **Cinema** | The agent flies a photoreal 3D city and narrates it — speaking only facts it can prove. |
+| **Cinema** | Explore a photorealistic 3D city with narration informed by retrieved evidence. |
 | **Ad Studio** | Point at a storefront. Get back a campaign: grounded copy, conditioned creatives, walk-time targeting. |
 | **Scout** | It walks the block on Street View, reads frontage and visible street activity, then defends its site pick with evidence. |
 
 ## Why this matters for developers
 
-- **Visible reasoning traces.** Every answer is built from live tool calls surfaced as status chips and a progress panel — you watch the agent perceive and act, not just read a final blob of text.
-- **3D as the reasoning payoff.** Cinema flies a photorealistic 3D city and narrates only what it can ground, turning the map itself into the agent's evidence.
+- **Visible tool traces.** Status chips and a progress panel show tool calls so you can compare the retrieved evidence with the answer.
+- **3D exploration.** Cinema connects narration with a photorealistic 3D view of the city. Verify narrated claims before relying on them.
 - **Replay links.** Any completed run yields a one-click link that re-opens Atlas in the same journey + city and re-runs the prompt live — so sharing a result means sharing the *agent reasoning*, not a screenshot. Click **How it's built** in any journey to see the exact prompt and tools behind it.
 
 ## Generative UI (A2UI)
@@ -56,7 +56,7 @@ Browser
   └─ /api/real-world-reasoning-agent/ai/*  → Fieldwork gateway → Gemini API (model-allowlisted)
 ```
 
-Only the restricted browser Maps key is bundled into the app. Server-side Google Maps Platform REST calls and all Gemini calls are proxied by `server/index.mjs`, which allowlists every target model. Gemini uses the hosted `GEMINI_KEY` by default. A user may instead connect a personal Gemini key from the cold open or the **AI key** control; it stays in tab memory, travels in a private same-origin header, overrides hosted access for that tab, and is never stored in URLs, browser storage, chat, or diagnostics.
+Only the restricted browser Maps key is bundled into the app. In production, Fieldwork's `gateway/server.js` proxies Google Maps Platform REST and Gemini calls and enforces model allowlists. The standalone `server/` modules remain as migration inputs and test fixtures. The gateway reads `GMP_SERVER_API_KEY` and `GEMINI_API_KEY` for hosted access. A user may instead connect a personal Gemini key from the cold open or the **AI key** control; it stays in tab memory, travels in a private same-origin header, overrides hosted access for that tab, and is never stored in URLs, browser storage, chat, or diagnostics.
 
 ### Model configuration
 
@@ -72,9 +72,11 @@ Prerequisites: Node.js 20.19+ and a Google Cloud project with the Maps JavaScrip
 
 1. Create an ignored `.env` file and set:
    - `VITE_GMP_API_KEY` — restricted browser key for Maps JavaScript, Places (New), Routes, and Map Tiles.
-   - `VITE_GMP_MAP_ID` — optional public map ID; Atlas uses Google's `DEMO_MAP_ID` when unset.
-   - `GMP_SERVER_KEY` — server-side Google Maps Platform REST/static key.
-   - `GEMINI_KEY` — server-side Gemini key (used for Gemini reasoning and Google Maps Grounding).
+   - `VITE_GMP_MAP_ID` — optional public map ID; when unset, Atlas uses `DEFAULT_MAP_ID` from `src/lib/config.ts`.
+   - `GMP_SERVER_API_KEY` — server-side Google Maps Platform REST/static key.
+   - `GEMINI_API_KEY` — server-side Gemini key (used for Gemini reasoning and Google Maps Grounding).
+
+   Vite also accepts the legacy local aliases `GMP_SERVER_KEY` and `GEMINI_KEY`. Use the canonical names above for the Fieldwork gateway.
 
 2. Install and run:
 
@@ -116,7 +118,7 @@ Override the target with `SMOKE_URL` (defaults to `http://localhost:8080`). Scre
 
 ## Security notes
 
-Keep `GMP_SERVER_KEY` and hosted `GEMINI_KEY` server-side only (`.env` locally, the Fieldwork gateway in production) — never commit them. A user-entered Gemini key is deliberately tab-scoped and never persisted, but any same-origin JavaScript can access in-memory credentials; use BYOK only on a deployment you trust. Restrict `VITE_GMP_API_KEY` by HTTP referrer and to the specific Maps APIs it needs, since it ships in the client bundle. See [SECURITY.md](SECURITY.md) for reporting and key-handling expectations.
+Keep `GMP_SERVER_API_KEY` and hosted `GEMINI_API_KEY` server-side only (`.env` locally, the Fieldwork gateway in production); never commit them. A user-entered Gemini key is deliberately tab-scoped and never persisted, but any same-origin JavaScript can access in-memory credentials; use BYOK only on a deployment you trust. Restrict `VITE_GMP_API_KEY` by HTTP referrer and to the specific Maps APIs it needs, since it ships in the client bundle. See [SECURITY.md](SECURITY.md) for reporting and key-handling expectations.
 
 ## Contributing & license
 

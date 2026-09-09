@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { safeResolve, cacheControlFor, mimeTypeFor, applySecurityHeaders, CSP_POLICIES, CSP_MANIFEST_POLICIES, cspForApp } from '../lib/staticFiles.js';
+import { safeResolve, cacheControlFor, mimeTypeFor, applySecurityHeaders, CSP_POLICIES, CSP_MANIFEST_POLICIES, cspForApp, pickEncoding } from '../lib/staticFiles.js';
 
 const DEMO_SRC = join(dirname(fileURLToPath(import.meta.url)), '../../demos/strava-explorer/src');
 
@@ -69,6 +69,34 @@ test('mimeTypeFor maps common extensions', () => {
   assert.equal(mimeTypeFor('a.js'), 'text/javascript; charset=utf-8');
   assert.equal(mimeTypeFor('a.css'), 'text/css; charset=utf-8');
   assert.equal(mimeTypeFor('a.unknownext'), 'application/octet-stream');
+});
+
+test('pickEncoding honors quality values, exclusions, and wildcards', () => {
+  assert.equal(pickEncoding('gzip, br'), 'br');
+  assert.equal(pickEncoding('br;q=0.5, gzip;q=0.9'), 'gzip');
+  assert.equal(pickEncoding('br;q=0, gzip;q=1'), 'gzip');
+  assert.equal(pickEncoding('gzip;q=0, br;q=0'), 'identity');
+  assert.equal(pickEncoding('*;q=0.4, br;q=0'), 'gzip');
+  assert.equal(pickEncoding('br;q=not-a-number, gzip;q=0.2'), 'gzip');
+});
+
+test('pickEncoding follows token/weight grammar and explicit identity preferences', () => {
+  for (const [header, expected] of [
+    [undefined, 'identity'], ['', 'identity'], [' , ', 'identity'], ['deflate', 'identity'],
+    ['BR ; Q=0, *;q=1', 'gzip'], ['gzip;q=0.9, br;q=0.9', 'br'],
+    ['br;q=0.001, gzip;q=0.', 'br'], ['gzip;q=1.000', 'gzip'],
+    ['identity;q=1, br;q=0.5', 'identity'], ['identity;q=0.2, gzip;q=0.8', 'gzip'],
+    ['identity;q=0, gzip;q=1', 'gzip'], ['identity;q=0', null], ['*;q=0', null],
+    ['*;q=0, identity;q=0.5', 'identity'], ['*;q=0.5, br;q=0, gzip;q=0', 'identity'],
+    ['br;q=0, br;q=1, gzip', 'gzip'], ['br;q=1, br;q=0, gzip', 'gzip'],
+    ['br;q=0.4, br;q=0.8, gzip;q=0.6', 'gzip'],
+  ]) assert.equal(pickEncoding(header), expected, String(header));
+
+  for (const weight of ['1e0', '0x1', '.9', '+1', '-0', '0.0001', '1.001', '2', '', 'NaN', '"1"', '1;q=0']) {
+    assert.equal(pickEncoding(`br;q=${weight}, gzip;q=0.5`), 'gzip', weight);
+  }
+  assert.equal(pickEncoding('br;level=1, gzip'), 'gzip');
+  assert.equal(pickEncoding('br;q =1, gzip'), 'gzip');
 });
 
 test('applySecurityHeaders sends a locked-down default CSP with X-Frame-Options as backup', () => {
@@ -176,7 +204,16 @@ test('cspForApp maps manifest values to policies and falls back to the strict de
   // An unknown value must not inherit a relaxed policy; validate-apps.mjs
   // rejects it at build time, and the gateway degrades closed if it slips past.
   assert.equal(cspForApp({ csp: 'maps-typo' }), CSP_POLICIES.default);
-  assert.deepEqual(Object.keys(CSP_MANIFEST_POLICIES), ['maps', 'maps-strava']);
+  assert.deepEqual(Object.keys(CSP_MANIFEST_POLICIES), ['maps', 'maps-strava', 'google-fonts']);
+});
+
+test('font-only app policy allows styles and font files without Maps script privileges', () => {
+  const policy = cspForApp({ csp: 'google-fonts' });
+  assert.ok(cspAllows(policy, 'style-src', 'https://fonts.googleapis.com/css2'));
+  assert.ok(cspAllows(policy, 'font-src', 'https://fonts.gstatic.com/font.woff2'));
+  assert.ok(!cspAllows(policy, 'script-src', 'https://maps.googleapis.com/maps/api/js'));
+  assert.ok(!cspSources(policy, 'script-src').includes("'unsafe-inline'"));
+  assert.ok(!cspSources(policy, 'script-src').includes("'unsafe-eval'"));
 });
 
 test('applySecurityHeaders sets Content-Security-Policy via setHeader (not writeHead)', () => {

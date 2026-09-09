@@ -2,19 +2,17 @@
 
 ![Fieldwork homepage](portfolio/static/previews/fieldwork.jpg)
 
-Fieldwork is Ryan Baumann’s public developer notebook: part personal site, part runnable reference architecture, and part proof that developer experience work should ship as real artifacts.
+Fieldwork is Ryan Baumann’s public developer notebook, with essays, shipped work, and runnable apps for building with maps and AI.
 
 The live site is https://ryanbaumann.dev/.
 
 ## What is inside
 
-* **Fieldwork** at `/`: a zero-dependency static site over a flat-file markdown CMS. It covers work, Field Notes, talks, and Ryan’s Lab with small inline theme and privacy-limited analytics helpers.
+* **Fieldwork** at `/`: a zero-dependency static site over a flat-file markdown CMS. It covers work, Field Notes, talks, and Labs with small inline theme and privacy-limited analytics helpers.
 * **[Agent scripts](agent-scripts/README.md)**: reusable, vendor-neutral prompts, role contracts, and behavioral evals for software agents.
-* **Ryan’s Lab** at `/demos/`: workspace reference apps hosted with Fieldwork plus selected external experiments.
+* **Labs** at `/demos/`: reference apps hosted with Fieldwork. The manifest also supports links to external experiments.
 * **Gateway** in `gateway/`: a zero-npm-dependency Node server that serves the site, mounts each demo, and keeps secret-bearing API calls behind same-origin `/api/*` routes.
 * **Cloud Run container**: one deployable artifact for the site and its workspace apps. External Lab entries remain separate destinations.
-
-The narrative is intentionally grounded: solution architecture, developer experience, forward-deployed incubation at Google Maps Platform, and product growth leadership. The codebase backs that up with live apps, public docs, shipped links, tests, smoke checks, and a changelog.
 
 ## Start here
 
@@ -30,13 +28,15 @@ The narrative is intentionally grounded: solution architecture, developer experi
 
 ## Apps
 
-* **[Fieldwork site](portfolio/README.md)**, served at `/`: Ryan's home page, work, Field Notes, talks, and Ryan’s Lab index.
+* **[Fieldwork site](portfolio/README.md)**, served at `/`: Ryan's home page, work, Field Notes, talks, and Labs index.
 * **[Agent scripts](agent-scripts/README.md)**: copyable system prompts and role overlays with versioned regression cases.
 * **[Strava 3D Explorer](demos/strava-explorer/README.md)**: visualize Strava routes, endpoints, and photos in Google Maps Platform Photorealistic 3D.
 * **[Air Quality Map](demos/aqi-map/README.md)**: inspect live Air Quality API heatmap tiles and point conditions on a 2D Google map.
-* **[Isochrones](demos/isochrones/README.md)**: analyze delivery, commute, and response reachability with live-regenerating isochrone bands.
-* **Infographic Agent**: an external portable-skill experiment linked from Ryan’s Lab.
+* **[Meet in the Middle](demos/isochrones/README.md)**: set two starting points and find places within both travel-time areas.
+* **Infographic Agent**: a workspace-hosted studio for researching, generating, and refining infographic PNGs with Gemini.
+* **[Hairstyle AI Studio](demos/hairstyle-ai-studio/README.md)**: generate and refine hairstyle previews from a photo.
 * **Atlas, Real World Reasoning Agent**: a first-party open-source map agent hosted with Fieldwork.
+* **[Voice & Editorial Studio](demos/voice-studio/README.md)**: an unlisted browser demo for reviewing local evaluation fixtures.
 
 ## Local development
 

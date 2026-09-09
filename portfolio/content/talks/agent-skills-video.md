@@ -18,6 +18,4 @@ AI coding agents can shorten the path from intent to a working map. Reliable out
 
 This Google Maps Platform fireside chat looks at how builders use AI in map development, from vibe coding to specialized agents. The supporting platform pattern is current context, repeatable workflows, and checks against the task the builder is trying to complete.
 
-The operating lesson is simple: give the agent current facts, teach the workflow, and replay the task before calling the result better.
-
 [Watch the fireside chat](https://youtu.be/NEk37sPlgaY).
