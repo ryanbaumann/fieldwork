@@ -1,9 +1,9 @@
 ---
 draft: false
 noindex: false
-title: Native GeoJSON in BigQuery means no more transformation pipelines
-summary: Query massive map datasets immediately. Here's how to skip complex transformation pipelines and process map data directly using BigQuery's native GeoJSON support.
-date: 2021-01-01
+title: Load newline-delimited GeoJSON into BigQuery
+summary: Prepare map data as newline-delimited GeoJSON, load it into BigQuery, and query it with SQL. A practical guide with conversion steps and an Airbnb analysis example.
+date: 2022-03-23
 canonical: https://cloud.google.com/blog/topics/developers-practitioners/using-geojson-bigquery-geospatial-analytics
 external: https://cloud.google.com/blog/topics/developers-practitioners/using-geojson-bigquery-geospatial-analytics
 venue: Google Cloud Blog

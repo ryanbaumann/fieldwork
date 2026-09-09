@@ -4,9 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- **Gateway content negotiation audit fix (`gateway/`)**: Corrected
-  `Accept-Encoding` handling so quality rankings, `q=0` exclusions, and
-  wildcard preferences are honored for compressed responses.
+- **Repository security, performance, content, and UX audit (`gateway/`,
+  `portfolio/`, `demos/`, `docs/`)**: Completed the PR #259 execution plan.
+  - Hardened writer Google OAuth claim validation so false verification values
+    and missing or malformed expiry claims are denied.
+  - Replaced the default inline-script CSP allowance with build-generated,
+    per-page SHA-256 hashes, and added a least-privilege Google Fonts profile.
+  - Completed standards-aware content negotiation, conditional request,
+    bodyless `HEAD`, `Vary`, and stream cleanup behavior with a repeatable
+    static-server benchmark.
+  - Updated Atlas's vulnerable `fflate` transitive dependency and Strava's
+    development lockfile advisory. Documented the remaining unpatched
+    `image-size` chain and its current reachability.
+  - Corrected unsupported or overstated claims across portfolio essays, pages,
+    demo UI, and READMEs. Reframed the fine-tuning article around the mismatch
+    between a saved score and retained outputs, with new evidence visuals.
+  - Fixed 320 px overflow, touch-target sizing, reduced-motion handling, and
+    API-key dialog keyboard/focus behavior in Infographic Agent, Voice Studio,
+    and Hairstyle AI Studio.
 
 ### Added
 - **PR #259 execution plan (`docs/`)**: Added the security, performance, copy,

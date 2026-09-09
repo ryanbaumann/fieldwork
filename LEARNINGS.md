@@ -2,6 +2,66 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-09-09 - Serialized identity claims need exact type and presence checks
+
+Context: The writer OAuth callback validated claims returned by Google's token-info endpoint.
+
+Learning: A serialized boolean such as `"false"` is truthy in JavaScript, and a missing expiry becomes `NaN`, which also slips past a simple `<= now` comparison. Authentication boundaries must accept the documented true representations explicitly and reject absent, malformed, fractional, or unsafe expiry values.
+
+Evidence: `gateway/test/googleAuth.test.js` exercises verified and unverified boolean/string values plus missing, malformed, expired, wrong-audience, wrong-issuer, and wrong-email claims; the full gateway suite passes.
+
+Use next time: Normalize every external identity claim against an explicit schema before authorization, and include fail-closed tests for missing fields and misleading serialized values.
+
+## 2026-09-09 - Static script hashes must bind final HTML to its exact response path
+
+Context: Tightening the portfolio CSP without adding per-request nonces to a static build.
+
+Learning: Build-generated hashes work only when computed after every HTML copy and transformation, deployed with the matching files, and selected from the final resolved path. Hashing executable scripts only, bounding and validating the manifest, and failing closed on missing metadata prevents one page's inline script from authorizing another page or stale output.
+
+Evidence: Portfolio tests verify exact-byte hashes, non-executable JSON-LD exclusion, and per-file separation. Gateway tests cover invalid/oversized metadata, cache behavior, per-page lookup, normal routes, and 404 pages. Browser checks ran intended theme code while blocking injected scripts and handlers.
+
+Use next time: Generate CSP metadata as the last build step, load it once at process start, key it by canonical served file, and deploy/restart HTML plus metadata atomically.
+
+## 2026-09-09 - Saved evaluation summaries are claims until outputs and provenance reproduce them
+
+Context: The fine-tuning article cited a saved 2/10 base score while the retained output file contained one clean base response and nine clean tuned responses.
+
+Learning: A runner that prints a stored summary when a trace exists can preserve a stale or unrelated score. Without dataset hash, model and adapter identifiers, evaluator version, configuration, and recomputation from retained outputs, the summary is historical context rather than reproducible evidence.
+
+Evidence: The article, evidence ledger, and diagrams now distinguish the saved summary from the count visible in retained outputs; citation validation resolved all seven external references.
+
+Use next time: Persist provenance beside evaluation outputs and recompute reader-facing scores from those outputs before publication.
+
+## 2026-09-09 - Narrow CSP profiles prevent unrelated third-party capability grants
+
+Context: Infographic Agent used the Maps CSP only because it loaded Google Fonts.
+
+Learning: Reusing a broad provider policy for one shared origin silently grants unrelated script hosts, inline execution, and dynamic evaluation. CSP profiles should describe the resources an app actually loads, and manifest validation should tie capability tags to the specific required profiles.
+
+Evidence: `google-fonts` permits only the Google stylesheet and font origins; tests show it excludes Maps scripts and script execution allowances, while manifest validation still rejects a Maps-tagged app without a Maps CSP. The smoke suite passes.
+
+Use next time: Add the smallest provider-specific CSP profile and test both the required origin and capabilities that must remain denied.
+
+## 2026-09-09 - Browser matrices catch layout and dialog failures that builds cannot
+
+Context: Source checks and builds passed while Infographic Agent and Voice Studio overflowed at 320 px and an API-key dialog left focus outside the modal.
+
+Learning: Successful compilation does not measure viewport width, hit area, focus transfer, Escape dismissal, or focus restoration. Those behaviors need rendered checks at the narrow boundary and keyboard interaction assertions.
+
+Evidence: A 144-navigation browser matrix isolated the two overflow rows and interaction checks reproduced the dialog defects; focused post-fix checks cover the same elements and keyboard path.
+
+Use next time: Pair responsive source review with narrow-viewport overflow detection, 44 px target measurement, and open/focus/Escape/restore checks for dialogs.
+
+## 2026-09-09 - Shared-host benchmarks can justify a narrow path but not a broad rewrite
+
+Context: The audit measured synchronous filesystem access and bodyless static requests on a two-core shared host with variable load.
+
+Learning: Overlapping throughput ranges and changing host load make general before/after speed claims unreliable. A non-overlapping CPU reduction on the exact `HEAD` path still supports removing unnecessary body work, while the broader filesystem architecture should remain unchanged until an idle-host run reproduces a gain.
+
+Evidence: Three-run benchmark cells covered identity, Gzip, Brotli, multiple fixtures, and concurrency 1/10/50 with zero errors. At concurrency 50, median `HEAD` CPU/request fell 49% for identity, 69% for Gzip, and 60% for Brotli, while throughput ranges overlapped.
+
+Use next time: Record ranges and host conditions, accept only improvements larger than noise, and scope conclusions to the path the evidence measures.
+
 ## 2026-09-06 - Compression tokens are not capability booleans
 
 Context: A repository audit reviewed the gateway's static and generated response compression path.
@@ -169,9 +229,9 @@ Use next time: In client streaming engines, always explicitly exclude rate limit
 ## 2026-08-17 - Gemini Interactions REST API requires generation_config.thinking_level and demo app CSP alignment
 
 Context: Serving `infographic-agent` and `hairstyle-ai-studio` behind the gateway with Gemini 3.7 Flash thinking levels and Google Fonts typography.
-Learning: The Gemini Interactions REST API (`Api-Revision: 2026-05-20`) expects thinking levels in `generation_config: { thinking_level: 'low' }` (with lowercase value string), not a top-level `thinking_config` property. Sending `thinking_config` at the root payload results in HTTP 400 `Unknown name "thinking_config"`. In addition, workspace demo apps loading external fonts or stylesheets require `"csp": "maps"` in `apps.json` so the gateway issues the permissive `CSP_MAPS_DEMO_DIRECTIVES` header rather than the strict default CSP.
-Evidence: Updated `gateway/lib/infographicAgent.js` and `gateway/lib/hairstyleAi.js` with passing unit tests (`gateway/test/infographicAgent.test.js`, `gateway/test/hairstyleAi.test.js`), and verified clean local builds and smoke tests across all apps.
-Use next time: When constructing REST payloads for the Gemini Interactions API, nest thinking level inside `generation_config` as lowercase string (`'low'`, `'high'`, `'minimal'`), and configure `"csp": "maps"` in `apps.json` whenever a demo loads Google Fonts or Google Maps Platform assets.
+Learning: The Gemini Interactions REST API (`Api-Revision: 2026-05-20`) expects thinking levels in `generation_config: { thinking_level: 'low' }` (with lowercase value string), not a top-level `thinking_config` property. Sending `thinking_config` at the root payload results in HTTP 400 `Unknown name "thinking_config"`. CSP should grant the specific external resources an app uses: Google Fonts uses the `google-fonts` profile, while Maps apps use `maps` or `maps-strava`.
+Evidence: Updated `gateway/lib/infographicAgent.js` and `gateway/lib/hairstyleAi.js` with passing unit tests (`gateway/test/infographicAgent.test.js`, `gateway/test/hairstyleAi.test.js`). The later PR #259 audit added the least-privilege font profile and manifest validation that distinguishes it from Maps.
+Use next time: When constructing REST payloads for the Gemini Interactions API, nest thinking level inside `generation_config` as lowercase string (`'low'`, `'high'`, `'minimal'`), and choose the narrowest CSP profile for the origins and execution capabilities the app actually needs.
 
 ## 2026-08-17 - HTML comment stripping in static site generator prevents internal linter annotation leaks
 

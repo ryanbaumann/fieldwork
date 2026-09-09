@@ -1,7 +1,7 @@
 ---
 title: Privacy
 eyebrow: Privacy
-summary: How Fieldwork handles analytics, contact details, email subscriptions, Lab data, and third-party services.
+summary: How Fieldwork handles analytics, contact details, email subscriptions, data from Labs, and third-party services.
 ---
 
 Effective July 17, 2026. Fieldwork collects as little data as practical. Public pages work without an account or personalized advertising.
@@ -26,7 +26,7 @@ Arbitrary query parameters are excluded. Analytics events must not contain names
 
 ## Labs
 
-Same-origin Lab applications can call third-party services to provide their core functionality. Strava 3D Explorer can process account and activity data after you choose to connect Strava. Air Quality Map and Isochrones can send a selected location to their supporting APIs.
+Applications hosted with Fieldwork can call third-party services to provide their core functionality. Strava 3D Explorer can process account and activity data after you choose to connect Strava. Air Quality Map and Meet in the Middle can send a selected location to their supporting APIs.
 
 Hairstyle AI Studio sends photos and style instructions to Google's Gemini service only after you request a recommendation, generation, or refinement. Fieldwork provides five successful image generations per client IP per UTC day and keeps that daily count only in the running server's memory. You may instead provide a personal Gemini API key; the app validates it through the same-origin proxy, keeps it only in the current browser tab's memory, and never includes it in analytics. Fieldwork does not store personal keys or photos on the server. Generated looks and history stay in your browser until you delete them or clear the site's local data.
 
@@ -38,6 +38,6 @@ Labs also links to experiments hosted outside Fieldwork. Those destinations run 
 
 ## Third-party links
 
-Links to GitHub, LinkedIn, Substack, X, YouTube, Google, npm, and other sites take you to services with their own privacy practices. This policy covers Fieldwork and same-origin Lab applications, not external sites.
+Links to GitHub, LinkedIn, Substack, X, YouTube, Google, npm, and other sites take you to services with their own privacy practices. This policy covers Fieldwork and the Labs applications hosted with it, not external sites.
 
 Questions about this policy can be sent through [the contact form](/contact/).

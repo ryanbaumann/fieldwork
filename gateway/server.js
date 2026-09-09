@@ -11,7 +11,8 @@ import { createServer } from 'node:http';
 import { join } from 'node:path';
 
 import { loadApps, toPublicApp, appVisibility } from './lib/apps.js';
-import { applySecurityHeaders, serveFromDir, serveFileWithStatus, sendCompressibleBody, cspForApp } from './lib/staticFiles.js';
+import { applySecurityHeaders, serveFromDir, serveFileWithStatus, sendCompressibleBody } from './lib/staticFiles.js';
+import { createAppCsp } from './lib/cspManifest.js';
 import {
   createDailyRateLimiter,
   createRateLimiter,
@@ -60,6 +61,7 @@ const CONTACT_INTENTS = Object.freeze([
 ]);
 
 const { apps } = loadApps(process.env);
+const appContentPolicies = new Map(apps.map((app) => [app, createAppCsp(app)]));
 // Only public-visibility apps appear in /api/apps and /healthz.
 // toPublicApp returns null for unlisted/private apps.
 const publicApps = apps.map(toPublicApp).filter(Boolean);
@@ -483,7 +485,7 @@ function send404Page(request, response) {
   const rootApp = appsByPathLength.find((entry) => entry.path === '/');
   if (rootApp?.dir) {
     const notFoundPath = join(rootApp.dir, '404.html');
-    if (serveFileWithStatus(notFoundPath, request, response, 404, { cacheControl: 'no-cache' })) return;
+    if (serveFileWithStatus(notFoundPath, request, response, 404, { cacheControl: 'no-cache', csp: appContentPolicies.get(rootApp) })) return;
   }
   sendHtml(request, response, 404, errorPageHtml({
     title: 'Page not found',
@@ -1154,7 +1156,7 @@ const server = createServer(async (request, response) => {
       }
 
       const subPath = pathname.slice(app.path.length - 1);
-      const csp = cspForApp(app);
+      const csp = appContentPolicies.get(app);
       if (serveFromDir(app.dir, subPath, request, response, { private: appVisibility(app) === 'private', csp })) return;
       send404Page(request, response);
       return;

@@ -105,7 +105,7 @@ test('static file compression and conditional requests', async (t) => {
     const { res, body } = await rawRequest(port, '/compress-demo/logo.png', { 'Accept-Encoding': 'gzip, br' });
     assert.equal(res.statusCode, 200);
     assert.equal(res.headers['content-encoding'], undefined);
-    assert.equal(res.headers.vary, undefined);
+    assert.equal(res.headers.vary, 'Accept-Encoding');
     assert.equal(Number(res.headers['content-length']), SMALL_PNG.length);
     assert.ok(body.equals(SMALL_PNG));
   });

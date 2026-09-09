@@ -179,10 +179,22 @@ test('build lists public demos without disclosing private demos', () => {
 
 test('homepage Labs action opens the Labs collection instead of a featured demo', () => {
   const paths = fixture();
-  const result = build(paths);
+  const result = build(paths, { BASE_PATH: '/preview/' });
   assert.equal(result.status, 0, result.stderr);
   const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
-  assert.match(home, /<a class="more" href="\/labs\/">Explore Labs/);
+  assert.match(home, /<a class="more" href="\/preview\/demos\/">Explore Labs/);
+});
+
+test('contact page renders authored context alongside the form', () => {
+  const paths = fixture();
+  write(join(paths.content, 'pages', 'contact.md'), `---\ntitle: Contact\nsummary: Start a discussion\n---\nI am available for speaking. Read [my background](/about/).`);
+  write(join(paths.content, 'pages', 'about.md'), `---\ntitle: About\nsummary: Background\n---\nExperience.`);
+  const result = build(paths, { BASE_PATH: '/preview/' });
+  assert.equal(result.status, 0, result.stderr);
+  const contact = readFileSync(join(paths.dist, 'contact', 'index.html'), 'utf8');
+  assert.match(contact, /I am available for speaking/);
+  assert.match(contact, /href="\/preview\/about\/"/);
+  assert.match(contact, /action="\/preview\/api\/contact"/);
 });
 
 test('shared primary navigation leads with Notes and keeps the resume under About', () => {

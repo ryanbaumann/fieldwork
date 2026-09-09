@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Voice &amp; Editorial Studio | Gemma 4 26B Local Fine-Tuning</title>
-  <meta name="description" content="Interactive blind evaluation arena, voice memo scrubber, and paired dataset curator for local Gemma 4 voice fine-tuning on Apple Silicon.">
+  <title>Voice &amp; Editorial Studio | Fieldwork</title>
+  <meta name="description" content="Compare saved voice examples, try simple text cleanup, and export an editing pair. This browser demo does not run or train a model.">
   <link rel="stylesheet" href="/src/styles.css">
 </head>
 <body>
@@ -14,12 +14,12 @@
       <div class="title-row">
         <div>
           <h1 class="app-title">Voice &amp; Editorial Studio</h1>
-          <p class="app-subtitle">Interactive blind review, real-time stylistic rhythm auditing, and paired dataset curation for local Gemma 4 26B-A4B fine-tuning.</p>
+          <p class="app-subtitle">Compare saved examples, inspect writing patterns, and export an editing pair. This demo does not run or train a model.</p>
         </div>
         <div class="header-badges">
-          <span class="badge active" id="badge-model">Gemma 4 26B-A4B</span>
-          <span class="badge emerald" id="badge-hw">Apple M4 Pro (48GB)</span>
-          <span class="badge" id="badge-optiq">Metal QLoRA 4-bit</span>
+          <span class="badge active" id="badge-model">Fixture examples</span>
+          <span class="badge emerald" id="badge-hw">Browser only</span>
+          <span class="badge" id="badge-optiq">No model connected</span>
         </div>
       </div>
     </header>
@@ -36,7 +36,7 @@
       <div class="arena-header">
         <div class="prompt-selector-row">
           <div class="select-group">
-            <label for="prompt-select">Select Held-Out Prompt:</label>
+            <label for="prompt-select">Select example prompt:</label>
             <select class="custom-select" id="prompt-select"></select>
           </div>
           <button class="btn-secondary" id="btn-next-prompt">Next Prompt →</button>
@@ -109,10 +109,10 @@
         </div>
       </div>
 
-      <div class="prompt-box" id="arena-verdict-box" style="display: none; margin-bottom: 1.5rem; background: var(--bg-surface);"></div>
+      <div class="prompt-box" id="arena-verdict-box" aria-live="polite" style="display: none; margin-bottom: 1.5rem; background: var(--bg-surface);"></div>
 
       <div class="arena-actions">
-        <button class="btn-primary" id="btn-reveal">Reveal Model Identities</button>
+        <button class="btn-primary" id="btn-reveal">Reveal Saved Model Labels</button>
       </div>
     </section>
 
@@ -129,16 +129,17 @@
         <!-- Input Pane -->
         <div class="editor-pane">
           <div class="pane-header">
-            <span class="pane-title">Raw Input Draft (Dictation / Corporate)</span>
+            <label class="pane-title" for="scrubber-input">Input draft</label>
           </div>
           <textarea class="editor-textarea" id="scrubber-input" placeholder="Type or paste rough dictation, corporate announcements, or messy bullet points..."></textarea>
-          <button class="btn-secondary" id="btn-scrub">Run Local Voice Scrubber →</button>
+          <button class="btn-secondary" id="btn-scrub">Apply simple text cleanup →</button>
+          <p class="app-subtitle">Replaces a few common phrases and punctuation marks. Review the meaning before exporting.</p>
         </div>
 
         <!-- Output & Edit Pane -->
         <div class="editor-pane">
           <div class="pane-header">
-            <span class="pane-title">Tuned Output &amp; Curator (Ryan's Voice)</span>
+            <label class="pane-title" for="scrubber-output">Editable output</label>
           </div>
           <textarea class="editor-textarea" id="scrubber-output" placeholder="Edited output will appear here. You can refine and polish before exporting..."></textarea>
           
@@ -167,7 +168,7 @@
           </div>
 
           <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
-            <button class="btn-primary" id="btn-export-pair" style="width: 100%;">Export Verified Pair to JSONL</button>
+            <button class="btn-primary" id="btn-export-pair" style="width: 100%;">Export Pair to JSONL</button>
           </div>
         </div>
       </div>
@@ -176,7 +177,8 @@
     <!-- Tab 3: Loss & Memory Analytics -->
     <section class="tab-panel" id="analytics-panel">
       <div class="analytics-card">
-        <h2 class="card-heading">Fine-Tuning Iteration Progression (Apple Silicon MLX)</h2>
+        <h2 class="card-heading">Saved training summaries</h2>
+        <p class="app-subtitle">These values are checked-in examples, not measurements collected by this page. Verify them against retained run logs before using them as benchmark evidence.</p>
         <table class="loss-table">
           <thead>
             <tr>
@@ -192,7 +194,7 @@
       </div>
 
       <div class="analytics-card">
-        <h2 class="card-heading">Hardware &amp; Architecture Profile</h2>
+        <h2 class="card-heading">Example local training setup</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
           <div style="background: var(--bg-primary); padding: 1rem; border-radius: 0.5rem;">
             <strong style="color: var(--text-primary);">Apple M4 Pro (48GB)</strong><br>

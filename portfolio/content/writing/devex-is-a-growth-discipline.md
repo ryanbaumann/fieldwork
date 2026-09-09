@@ -3,7 +3,7 @@ title: DevX Is a Growth Function
 slug: devx-is-a-growth-discipline
 summary: The growth loop starts when DevX owns repeated developer friction, ships the fix, distributes the better path, and measures whether behavior changed.
 date: 2026-07-14
-updated: 2026-07-20
+updated: 2026-09-07
 canonical: https://ryanbaumann.dev/writing/devx-is-a-growth-discipline/
 image: /assets/devx-growth-header.webp
 imageAlt: A four-stage DevX loop moves from observed friction to a shipped fix, distribution in builder workflows, and rising measured outcomes.
@@ -15,7 +15,7 @@ tags: ["developer experience", "growth", "ai"]
 order: 3
 ---
 
-We more than doubled our unique active users across our open-source ecosystem in a year, driving direct growth in API engagement. We moved those metrics by treating DevX as a growth discipline, not a documentation queue. Our product, engineering, UX, and technical writing teams treated product, distribution, and measurement as one system, because presence in a workflow is not proof of adoption.
+Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users. API engagement also grew strongly over that period. Our product, engineering, UX, and technical writing teams treated product, distribution, and measurement as one system. Those are separate adoption signals; neither tells us how much any one integration contributed.
 
 Documentation requests look like progress, but they usually mask friction that belongs in the product. Docs, code samples, advocacy, and tutorials all have a ceiling. The job is direct: identify the friction that stalls a builder, fix it in the experience, place the better path where they already work, and measure the shift in behavior.
 
@@ -31,16 +31,16 @@ When builders work through coding agents, we design for both the person making t
 
 A great experience doesn't matter if builders never encounter it. Documentation is one distribution surface, not the entire strategy. The right path also needs to appear in the editor, agent, search result, sample, template, or tool where the work actually begins.
 
-Instead of relying on documentation alone, we distribute executable product behavior directly into developer workflows. Client libraries encapsulate the logic, while [Code Assist](/work/code-assist/) delivers [current official documentation and samples](https://developers.google.com/maps/ai/code-assist) straight to compatible MCP clients. For repetitive tasks, our [Agent skills](/work/agent-skills/) bundle [versioned workflows](https://github.com/googlemaps/agent-skills) across Web, Android, iOS, and Web Services. Before shipping, we gate each skill with a task-based eval to ensure it works.
+Instead of relying on documentation alone, we distribute executable product behavior directly into developer workflows. Client libraries encapsulate the logic, while [Code Assist](/work/code-assist/) delivers [current official documentation and samples](https://developers.google.com/maps/ai/code-assist) straight to compatible MCP clients. For repetitive tasks, our [agent skills](/work/agent-skills/) bundle [versioned workflows](https://github.com/googlemaps/agent-skills) across Web, Android, iOS, and Web Services. We use task-based evals as a release gate for the skills.
 
 Distribution can't be an afterthought. Design the experience so it can travel, then make it the default in the workflows that already have reach.
 
 ## Measure and own outcomes
 
-Traditional feedback loops are slow. Interviews, support themes, and developer surveys remain essential, but they rarely drive immediate product decisions. We shorten this loop using [Agent evaluations](/work/agentic-evals/). When a coding agent attempts a representative task, its trace reveals exactly where the task stalls or branches wrong. A rubric then scores that result against a no-context baseline, giving us a clear ship-or-hold decision before we launch.
+Interviews, support themes, and developer surveys explain friction, but testing a proposed fix needs a different kind of feedback. We use [agent evaluations](/work/agentic-evals/) to run representative tasks and inspect where an attempt stalls or takes a wrong turn. Scoring the result against a no-context baseline gives us evidence for a launch decision.
 
-Evals don't replace user research, because no single score explains a human builder. An eval delta confirms that the experience completes the task mechanically. Product telemetry tells us whether builders actually found that path, finished the work, and returned. Finally, direct research explains why people behaved that way. Together, these signals let a DevX team test specific hypotheses and measure the real outcome.
+Evals don't replace user research, because no single score explains a human builder. A passing run shows that a path met the checks for that task; the delta shows what changed relative to the baseline. Product telemetry tells us whether builders found the path, finished the work, and returned. Direct research helps explain why. Together, these signals let a DevX team test specific hypotheses and measure the outcome.
 
 ![An agent evaluation loop moves from a representative task through an agent trace and rubric comparison to a ship-or-hold decision, then repeats using telemetry and research.](/assets/devx-eval-loop.webp)
 
-This is the discipline: stop counting output as progress by default. Own the friction, solve it in the experience, ship the better path into the workflow, and measure whether behavior moved. If you're running DevX as a growth engine for your developer platform, how do you track and distribute your fixes? Share your loops in the comments.
+The useful follow-up to a shipped fix is whether builders encountered it and got past the original problem. How does your team follow a fix from a support thread or eval failure through to adoption?

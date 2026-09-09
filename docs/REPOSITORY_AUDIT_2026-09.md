@@ -1,92 +1,139 @@
-# Repository security, performance, and usability audit
+# Repository security, performance, content, and usability audit
 
-Date: 2026-09-06
+Date: 2026-09-09
 
 ## Scope and method
 
-This pass reviewed the zero-dependency gateway, the portfolio build, all demo
-package manifests, browser-side trust boundaries, and existing automated test
-coverage. It ran the gateway and root test suites, content validation, and
-production-dependency audits for every package with a lockfile. This is a
-source and automated-controls audit, not a penetration test or a production
-load test.
+This audit covered the production gateway, portfolio and writer builds, all nine
+manifest applications, the eight npm lockfiles, public and private route
+boundaries, browser data handling, documentation, and every publishable
+portfolio entry. Validation used a credential-free source snapshot with ignored
+environment files excluded. External browser requests were aborted, and no
+provider generation, email delivery, cloud change, deployment, or publication
+was attempted.
 
-## Findings
+The security pass traced authorization, OAuth, cookies, origins, request limits,
+proxy allowlists, redirects, error handling, CSP, browser storage, and build
+artifacts. The performance pass used a checked-in, Node-only static-server
+benchmark with three measured runs for each fixture, encoding, and concurrency
+level. The content pass inventoried 34 portfolio entries and used a separate
+read-only review. Browser review exercised 144 route, viewport, color-scheme,
+and reduced-motion combinations plus twelve primary interactions.
 
-### Moderate: compression negotiation could send a forbidden encoding - fixed
+## Finding register
 
-The gateway selected Brotli whenever the `br` token appeared, including
-`br;q=0`, and ignored client quality rankings. That could make responses
-unreadable to a conforming client or intermediary and waste CPU choosing a
-less-preferred codec. The gateway now parses quality values and wildcards,
-honors explicit exclusions, prefers the client's higher-quality supported
-encoding, and uses Brotli only to break ties. Unit and live-server regression
-coverage were added.
+| ID | Impact | Owner | Finding | Disposition and verifier |
+| --- | --- | --- | --- | --- |
+| SEC-1 | High | Gateway | Writer sign-in treated the string `"false"` as a verified Google email and did not reject a missing/non-numeric expiry. | **Fixed.** Claims now require exact verified values, the configured audience and email, Google's issuer, and a safe unexpired integer timestamp. Allowed and denied token fixtures cover the boundary. |
+| SEC-2 | Moderate | Gateway + portfolio | The default CSP allowed every inline script, weakening it as an injection backstop. | **Fixed.** The portfolio build emits exact per-page SHA-256 script hashes. The gateway validates and caches bounded manifests, applies hashes only to the resolved HTML file, and blocks inline scripts when metadata is missing or invalid. Browser checks confirmed intended theme code ran while an injected script and event handler were denied. |
+| SEC-3 | Moderate | Root manifest | Infographic Agent used the Maps CSP solely for Google Fonts, granting Maps script origins, inline script, and evaluation privileges it did not need. | **Fixed.** A `google-fonts` profile grants only the font stylesheet and font origins. Manifest validation requires real Maps apps to select a Maps profile. |
+| HTTP-1 | Moderate | Gateway | `Accept-Encoding` parsing mishandled legal whitespace, malformed weights, duplicates, wildcards, identity exclusions, and cases with no acceptable representation. | **Fixed.** Negotiation now follows RFC 9110 quality semantics, preserves `Vary`, returns 406 when required, and has decoded HTTP regression coverage for static and generated bodies. |
+| HTTP-2 | Moderate | Gateway | Conditional and `HEAD` behavior could apply validators to non-200 responses, omit weak or wildcard ETag matches, and open streams for bodyless responses. Stream errors were not closed as one pipeline. | **Fixed.** Validators are method/status scoped, weak and wildcard matches work, `HEAD` emits headers without file/compression streams, and streaming uses `pipeline`. |
+| DEP-1 | Moderate | Root dependencies | Atlas resolved vulnerable `fflate` 0.7.4 through loaders.gl. | **Fixed.** A narrow transitive override resolves 0.7.5. Type checks, 579 unit tests, source checks, and the production build pass. |
+| DEP-2 | High scanner rating; low current reachability | Root dependencies | Atlas retains eight high-severity audit entries leading to `image-size` advisories GHSA-w3rx-r6r6-pgpr and GHSA-5p2g-fcmc-qvqq. The registry reports no patched `image-size` release. | **Explicitly deferred.** The path is `@deck.gl/geo-layers` / loaders.gl texture tooling. The current app builds trip records in application code and does not accept user image archives for this parser. Keep monitoring upstream; do not force a breaking deck.gl downgrade merely to clear the scanner. |
+| PERF-1 | Low | Gateway | Static serving performs synchronous metadata operations on each request. | **Measured and deferred.** The host was noisy and GET throughput ranges overlapped broadly, so the benchmark does not support an async-filesystem rewrite. The retained harness establishes a repeatable baseline. |
+| PERF-2 | Low | Gateway | `HEAD` traversed file and compression streams even though no body is sent. | **Fixed and measured.** At concurrency 50, median CPU per request fell from 451 to 231 microseconds for identity, 1,719 to 537 for gzip, and 1,432 to 579 for Brotli. Throughput ranges still overlapped, so this is a CPU-path result rather than a production-capacity claim. |
+| PERF-3 | Low | Atlas | Atlas's largest production chunk is substantial. | **Measured and deferred.** The current build reports 607.76 kB raw / 175.07 kB gzip for the deck chunk. No split was made without interaction and transfer evidence showing a user-visible gain. |
+| CONTENT-1 | High reader impact | Portfolio | The fine-tuning article presented a saved 2/10 base score even though its retained outputs contain one clean base result and nine clean tuned results. The runner can print a saved summary without recomputing it and does not retain provenance. | **Fixed.** The article now distinguishes the saved score from the auditable outputs, explains the runner behavior, and avoids presenting the disputed score as a measured result. Its header, evidence diagram, social image, and evidence ledger were updated. Citation validation resolved all seven cited URLs. |
+| CONTENT-2 | Moderate reader impact | Portfolio + demos | Several essays and demo descriptions overstated causality, live behavior, verification, or the operation behind static fixtures. Contact and privacy copy also omitted the spam-classification step. | **Fixed.** Claims were narrowed to retained evidence, Voice Studio now labels fixtures and simple replacements accurately, Atlas distinguishes tool traces from conclusions, and contact/privacy copy describes message screening. A full maker inventory and independent copy review found no remaining material blocker. |
+| UX-1 | Moderate | Demo UI | Infographic Agent and Voice Studio overflowed at 320 px; common controls were below the 44 px target. | **Fixed.** Mobile headers/tabs now fit the viewport, controls meet the target, and reduced-motion rules cover their animations. |
+| UX-2 | Moderate | Demo UI | Infographic Agent's API-key dialog left focus behind the modal and ignored Escape; Hairstyle AI did not reliably restore trigger focus. | **Fixed.** Both dialogs move focus, contain Tab navigation, dismiss from the keyboard, and restore the prior control. |
 
-### Moderate: vulnerable transitive parsers remain in Atlas - follow-up
+## Dependency results
 
-`npm audit --omit=dev --audit-level=moderate` reports 11 vulnerabilities (8
-high, 3 moderate) below `@deck.gl/geo-layers`: denial-of-service advisories in
-`image-size` and `fflate`. Atlas imports `TripsLayer` from that package, but the
-audited interaction builds trip data in application code rather than accepting
-user-supplied ZIP64, ICNS, JXL, or HEIF files. That reduces current
-exploitability; it does not remove the vulnerable code from the dependency
-graph or bundle.
+Fresh `npm audit --omit=dev --audit-level=moderate` runs covered every lockfile:
+portfolio, AQI Map, Hairstyle AI Studio, Infographic Agent, Isochrones, Atlas,
+Strava Explorer, and Voice Studio. Seven production trees report zero known
+vulnerabilities. Atlas reports eight high entries, all in the single unresolved
+`image-size` chain described in DEP-2. A separate full audit of Strava Explorer
+reports zero after its lockfile moved `brace-expansion` from 5.0.7 to 5.0.9.
 
-The registry's proposed automatic fix downgrades `@deck.gl/geo-layers` from
-9.3.11 to 9.0.6 and is therefore a breaking change. Do not apply
-`npm audit fix --force` blindly. Track an upstream `loaders.gl` resolution or
-test a coordinated deck.gl override/update, including the fleet animation and
-production build, before merging a dependency change.
+The dependency count fell from eleven production findings (eight high, three
+moderate) to eight high. This report preserves the remaining scanner severity
+while separately recording present application reachability.
 
-### Low: synchronous static-file metadata checks remain - accepted for now
+## Performance evidence
 
-Every static request uses synchronous existence and stat calls. This blocks the
-Node event loop briefly and can reduce throughput under high concurrency. The
-container is deliberately a small, single-instance portfolio gateway serving
-local immutable build artifacts, so conversion to asynchronous filesystem APIs
-is lower priority than keeping the request path simple. Revisit if load data
-shows event-loop delay or if the deployment scales beyond its current traffic
-profile.
+`gateway/scripts/benchmark-static.mjs` records Node and machine details,
+fixtures, warm-up, three runs, concurrency 1/10/50, identity/Gzip/Brotli,
+latency, throughput, CPU, memory, event-loop delay, and errors. The baseline ran
+42,549 requests and the current implementation 27,589, with zero request errors.
+The two-core shared host had load averages between roughly 3 and 6 during these
+runs. Most GET throughput intervals overlap; fifteen of 57 comparable GET rows
+were lower in the current run. That variance prevents a general speed claim and
+is why synchronous metadata remains unchanged. The non-overlapping CPU
+improvement for the bodyless `HEAD` path supports PERF-2.
 
-### Low: Content Security Policy still permits inline script and style - known
+## Browser and editorial evidence
 
-The default and Maps policies allow inline script and style; Maps additionally
-requires dynamic evaluation. This weakens CSP as an XSS backstop, especially
-for Strava Explorer because it persists OAuth tokens in browser storage. The
-policy is scoped per app and restricts objects, framing, and network origins,
-which limits exposure. Removing inline allowances requires nonce or hash
-plumbing between the portfolio builder and gateway, so it should be handled as
-a dedicated architecture change rather than a broad audit edit.
+The browser matrix covered 320, 390, 768, and 1440 px layouts in light and dark
+schemes with reduced-motion variants. It exercised public routes, the denied and
+synthetically authenticated writer states, contact intent selection and theme
+persistence, Voice fixture controls and export, CSP allow/deny behavior, map
+control shells, and API-key dialogs. Live Maps/WebGL and external provider
+responses remain outside this credential-free pass.
 
-## Controls that held
+The fine-tuning diagrams render cleanly on desktop and fit mobile layouts. Some
+supporting text in the evidence diagram is approximately 8–10 px at a 390 px
+viewport; the article text carries the same evidence for readers who do not
+zoom the image. This is a documented legibility limit rather than a claim that
+every embedded label is readable at mobile scale.
 
-- Gateway tests cover path traversal, CSP selection, private-app authorization,
-  origin validation, rate limits, request-size ceilings, proxy allowlists,
-  redirect bounds, key handling, and upstream error sanitization.
-- Public, unlisted, and private application visibility is validated and enforced
-  before static files are served.
-- Secret-bearing calls use same-origin gateway routes and server-side
-  environment variables; malformed caller keys do not silently fall back to
-  hosted credentials.
-- All other audited production dependency trees reported zero known
-  vulnerabilities, and content validation reported no errors or warnings.
+## Content disposition
 
-## Recommended next actions
+Every content entry was read in full. `Keep` means this pass found no warranted
+edit within available evidence; it is not a new verification of every unchanged
+external claim. Draft and scheduled states, canonicals, aliases, and slugs were
+preserved.
 
-The [PR #259 execution plan](PR_259_EXECUTION_PLAN.md) expands these follow-ups
-into security, performance, copy, and UX work with parallel ownership and
-verification requirements. It includes Ryan's voice and full-article narrative
-review using Clarity. The plan is pending implementation; it does not change the
-findings or verification results recorded above.
+| Entry | Disposition |
+| --- | --- |
+| `pages/about.md` | Keep. |
+| `pages/contact-success.md` | Keep. |
+| `pages/contact.md` | Keep prose; correct the renderer so its context appears. |
+| `pages/privacy.md` | Correct product and collection names. |
+| `pages/resume.md` | Keep. |
+| `pages/subscribed.md` | Correct the delivery-frequency promise. |
+| `talks/agent-skills-video.md` | Correct repetitive generic copy. |
+| `talks/code-assist-video.md` | Correct unsupported extrapolation. |
+| `talks/geomob-vibing-with-maps.md` | Keep. |
+| `talks/visgl-vibe-your-viz.md` | Keep. |
+| `work/agent-skills.md` | Keep. |
+| `work/agentic-evals.md` | Keep. |
+| `work/agentic-growth.md` | Keep. |
+| `work/code-assist.md` | Keep. |
+| `work/geo-architecture-center.md` | Keep. |
+| `work/intelligent-product-essentials.md` | Keep. |
+| `work/mapbox-boundaries-atlas.md` | Keep. |
+| `work/mapbox-oss-datascience.md` | Keep. |
+| `work/mapbox-uber-deckgl.md` | Keep. |
+| `work/trails-ninja.md` | Keep. |
+| `work/voice-of-developer.md` | Keep. |
+| `writing/ai-saves-the-hour.md` | Needs source evidence; keep the draft unchanged. |
+| `writing/builder-platforms-grow-by-owning-the-agent-loop.md` | Correct unsupported user-outcome claims and ending. |
+| `writing/can-i-build-an-ai-agent-that-doesnt-write-slop.md` | Restructure around the retained prompt/output record. |
+| `writing/code-assist-launch.md` | Keep the external draft unchanged. |
+| `writing/devex-is-a-growth-discipline.md` | Correct causal and absolute claims. |
+| `writing/evals-turn-ai-developer-experience-into-an-operating-system.md` | Needs source evidence; keep the draft unchanged. |
+| `writing/fine-tuning-was-the-easy-part.md` | Restructure around the conflicting saved evidence. |
+| `writing/loop-engineering-coding-agent.md` | Correct scenario/checker claims. |
+| `writing/the-model-that-picks-your-platform-doesnt-write-the-code.md` | Keep. |
+| `writing/the-next-platform-interface-is-an-agent-session.md` | Keep the draft unchanged. |
+| `writing/this-weeks-learnings.md` | Keep the external draft unchanged. |
+| `writing/using-geojson-bigquery.md` | Correct the date and transformation claim. |
+| `writing/vibing-with-maps.md` | Keep the external entry unchanged. |
 
-1. Resolve the Atlas transitive advisories through a tested upstream upgrade or
-   override; confirm the vulnerable parsers are absent with `npm ls` and
-   `npm audit`.
-2. Benchmark gateway event-loop delay before replacing synchronous static-file
-   metadata access; optimize from measurements rather than assumption.
-3. Plan nonce/hash-based portfolio scripts separately, then tighten the default
-   CSP before addressing Maps' SDK-required policy exceptions.
-4. Add browser accessibility and responsive-layout checks to a future audit;
-   this pass verified code and automated behavior but did not claim manual
-   assistive-technology coverage.
+## Residual risk and next checks
+
+1. Monitor loaders.gl/deck.gl for a patched `image-size` chain, then remove the
+   override or update upstream with the Atlas fleet interaction and build as the
+   acceptance boundary.
+2. Repeat the static benchmark on an idle or dedicated host before using its GET
+   results to justify filesystem or caching architecture changes.
+3. Exercise live Maps, WebGL, Gemini generation, and email delivery in an
+   authorized environment with synthetic accounts and restricted keys.
+4. Consider a full-size image affordance if mobile readers need to inspect every
+   label in the fine-tuning evidence diagram.
+
+The implementation procedure and original acceptance criteria remain in the
+[PR #259 execution plan](PR_259_EXECUTION_PLAN.md).

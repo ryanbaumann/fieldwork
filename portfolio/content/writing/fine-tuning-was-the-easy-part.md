@@ -1,50 +1,46 @@
 ---
-title: Fine-Tuning Was the Easy Part
-summary: Fine-tuning a small model for one narrow job worked in an afternoon. The hard developer-platform problem is distribution: getting that fix past a single adapter, across every job your developers do, and into the models they pick next.
+title: A Saved Score Is Not a Fine-Tuning Result
+summary: The saved field-mask summary disagrees with its own per-case outputs. Before distributing an adapter or benchmark, I need a run that another builder can inspect and reproduce.
 date: 2026-08-04
-updated: 2026-08-08
+updated: 2026-09-07
 canonical: https://ryanbaumann.dev/writing/fine-tuning-was-the-easy-part/
 tags: ["developer experience", "ai", "evals"]
 draft: false
 noindex: false
 image: /img/writing/fine-tuning-header.svg
-imageAlt: The easy part is tuning one adapter, where Gemma 4 E4B exact match rose from 2 of 10 to 9 of 10; the hard part is distributing that fix across hundreds of jobs and every model a developer might pick.
+imageAlt: An adapter and a saved score sit apart from the prompts, outputs, and checks needed to establish a result.
 socialImage: /social/fine-tuning-was-the-easy-part.jpg
-shareTitle: Fine-Tuning Was the Easy Part
-shareSummary: Tuning a small model for one narrow job worked. Distributing that fix across every job your developers do, and into the models they pick next, is the hard problem.
-shareImageAlt: Fine-Tuning Was the Easy Part, beside a two-panel card contrasting one tuned adapter with distribution across many jobs and models.
+shareTitle: A Saved Score Is Not a Fine-Tuning Result
+shareSummary: My field-mask record reports two base-model matches, but its individual outputs contain one. The evidence has to add up before the result can travel.
+shareImageAlt: A saved score of two matches faces a count of one in the individual outputs, exposing a mismatch in the field-mask record.
 ---
 
-Point an autonomous coding agent at the Places API and it over-fetches fields. On Places, that over-fetching gets expensive fast: [Place Details bills in tiers](https://developers.google.com/maps/billing-and-pricing/sku-details), and you pay the highest tier any field in the request touches. A single unnecessary field quietly quadruples the cost of a call that still returns valid JSON.
+The saved summary says the base model got two field masks right. Count the individual outputs and there is only one. That discrepancy changes what I can say about my fine-tuning experiment before I get to the harder question of distributing it.
 
-Base models over-fetch because their weights are a stale snapshot of the internet. Skills, MCP, and llms.txt add useful context, but fine-tuning a small model on a narrow job beats a large base model at a fraction of the inference cost.
+I picked Places field masks because the task has a concrete consequence. A mask selects which fields an API response returns, and [requesting a higher-tier field can change the billed SKU](https://developers.google.com/maps/billing-and-pricing/sku-details). Extra fields can cost more; missing fields can leave the application without data it needs. Exact match against a reviewed answer key is useful, though it doesn't measure a bill by itself.
 
-## Tuning one adapter is the easy part
+## What the saved record shows
 
-I trained a [LoRA](https://arxiv.org/abs/2106.09685) adapter on Gemma 4 E4B (the roughly 4B-class model) over a set of synthetic [Places field-mask requests](https://github.com/ryanbaumann/fieldwork/tree/main/evals/field-mask). I split ten cases into eight for training and two held out that the optimizer never saw. I graded on exact match: I count a case only when the model returns exactly the fields the request needs, with no extra billable field. That grader carries correctness and cost in one number, because on Places an over-fetch is a billing event.
+The [field-mask experiment](https://github.com/ryanbaumann/fieldwork/tree/main/evals/field-mask) contains ten synthetic cases and a training script for a [LoRA](https://arxiv.org/abs/2106.09685) adapter. The current dataset labels eight cases for training and two for testing. A saved JSON record pairs expected masks with outputs labeled base and tuned.
 
-![A chart comparing exact-match field masks for Gemma 4 E4B: across all ten cases the base model scores 2 and the tuned adapter 9; on the two held-out cases the base model scores 0 and the tuned adapter 1.](/img/writing/fine-tuning-evidence.svg)
+For example, one case asks whether a place allows dogs and serves wine. Its expected mask includes both fields. Both saved outputs return only the dog field, so neither matches that answer key. That is the kind of failure a compact, inspectable task can reveal.
 
-The tuned adapter jumped from 2 of 10 to 9 of 10 exact-match masks, including all eight training cases and one of the two held-out cases. Every attempt is in a [retained run trace](https://github.com/ryanbaumann/fieldwork/tree/main/evals/field-mask) with the prompt, raw output, and grade per case.
+Across all ten saved cases, nine tuned outputs match their expected masks and one base output does. The summary reports two base matches. These are counts of the checked-in record, not a newly reproduced model result.
 
-Base E4B under-fetches by returning only the first field and dropping the rest. On a prompt-injection request, it over-fetches four fields. The tuned model returns the minimal correct mask and an empty list for the injection. Its one held-out miss dropped `places.servesWine` from a request about dogs and wine.
+![The saved field-mask summary reports two base matches, while counting the individual recorded outputs gives one.](/img/writing/fine-tuning-evidence.svg)
 
-## What I learned
+There is a second gap in the [evaluation script](https://github.com/ryanbaumann/fieldwork/blob/main/evals/field-mask/test_mlx.py). It can attempt live inference and count matches, but when the saved record exists, it prints that record's summary instead of its newly calculated results. It also doesn't write the per-case record. Running the command and seeing a score therefore doesn't establish where the published outputs came from.
 
-Tuning works when the job is narrow and the output is gradeable. [Harvey's post-training experiment](https://www.harvey.ai/blog/post-training-open-legal-agents-with-baseten-research) ran forty steps of GRPO on an open 9B model and watched held-out pass rates jump from 42% to 63%; as the score went up, the agent stopped making sloppy grep calls and started reading more characters per rollout. Held-out performance moved, and the tool-use behavior moved with it.
+My earlier version described a verified improvement from 2 of 10 to 9 of 10. The public artifacts don't support that claim. They need an evaluation path that retains each attempt, computes its summary from those outputs, and records the exact model, adapter, and case split used. The answer key also needs checking against the current API fields before the score means anything about correctness.
 
-It works for style, too. A [recent UMich study](https://news.umich.edu/when-ai-learns-an-authors-voice-even-experts-prefer-it/) found that fine-tuning a model on a writer's full body of work makes even writing experts prefer the generated text over the human original. The model adopts the author's actual rhythm and constraints.
+## What has to travel beyond the adapter
 
-Ten cases, with two held out, is an early signal. The next version needs a larger held-out set and an answer key checked against live billing tiers. Still, the lesson is clear: whether you're teaching a model an author's voice or an API's field mask, grounded examples work. A grader that knows what the job costs can make a small model nail a narrow, expensive task that a bigger base model gets wrong.
+That evidence problem comes before distribution, but it makes distribution more concrete. An adapter reaches only the deployment that loads it. It doesn't change the base model another developer downloads tomorrow or the hosted model another team calls. A developer platform has many tasks, APIs, and agent environments to support.
 
-## The hard part is distribution
+![A developer-platform distribution pyramid moves from directly controlled context and tools through an owned adapter and open traces to a public benchmark, trading direct control for broader potential reach.](/img/writing/fine-tuning-distribution-pyramid.svg)
 
-My adapter fixes one job on one deployment. It doesn't help the base model another developer downloads tomorrow or the hosted model another team calls. A developer platform doesn't have one narrow job: it has hundreds of core developer tasks across dozens of APIs, and its developers run models and agents the platform will never touch. Tuning an adapter per task and hoping everyone loads it doesn't scale.
+Docs reach humans. SDKs reach applications. Skills and an MCP service reach the agent harness. An adapter can change the behavior of a model I run. Open training examples let another team inspect and reuse the work, but only if that team chooses to train on them. A public benchmark makes comparisons possible without training a model itself.
 
-![A developer-platform distribution pyramid moves from directly controlled context and tools through an owned adapter and open traces to a held-out public benchmark, trading direct control for broader reach and more dependence on adoption.](/img/writing/fine-tuning-distribution-pyramid.svg)
+There are examples worth studying. [Harvey's post-training experiment](https://www.harvey.ai/blog/post-training-open-legal-agents-with-baseten-research) reports a held-out criterion pass rate rising from 42.5% to 63.0% after a 40-step GRPO run on a 9B model. Its tool-use patterns changed alongside that score. Separately, a [study of author-style fine-tuning](https://arxiv.org/abs/2510.13939) describes readers preferring fine-tuned literary excerpts in a controlled comparison. Neither result validates my field-mask run; each depends on its own task, data, and evaluation.
 
-Docs reach humans. SDKs reach applications. Skills and an MCP service reach the agent harness. Only open traces and benchmarks reach the model weights. Each rung down that ladder trades control for reach. Context and tools give me the most direct control and carry current facts into a session, though the agent has to load them. An owned adapter bakes stable behavior into weights for the surfaces I run, but still reaches only my deployment. Open traces make that evidence reusable so another team can inspect the attempts and train on them, while a held-out public benchmark gives model builders a durable target and lets every developer see whether the gap closed without training anything by itself.
-
-Call it share of gradient: whether the next generation of models gets shaped by your platform or by everything else on the internet. For a platform team, the order falls out of that: keep fast-changing facts in context, fine-tune the stable jobs you can grade, publish traces when you want the signal to travel past your own deployment, and publish a benchmark when you want the result to stay measurable across every model your developers might pick.
-
-The field-mask run is one rung on that ladder. Scaling it past ten cases and one job is the work, and so is getting those traces somewhere a model builder will actually train on them. If you're working the same gap between runtime context and learned model behavior, how are you handling it? Share your traces and benchmarks in the comments.
+For this experiment, the next useful artifact is a reproducible run with a larger held-out set. Once that exists, I can ask whether publishing the adapter, examples, or benchmark helps someone beyond my own deployment. If you're working on that handoff, what evidence do you require before reusing another team's fine-tuning result?

@@ -30,6 +30,7 @@ content/            the CMS: flat files, edit and rebuild
   pages/*.md        standalone pages (e.g. /about/)
 static/             copied verbatim (favicon, decks/, previews/, images)
 build.mjs           the entire generator (zero deps)
+lib/csp.mjs         per-page inline script hashes for the gateway CSP
 style.css           the entire design system, inlined at build time
 serve.mjs           tiny preview server
 ```
@@ -75,6 +76,8 @@ a bucket, any CDN). In production it serves at the domain root (the default
 ```bash
 BASE_PATH=/some-subpath/ node build.mjs
 ```
+
+The build writes `csp-hashes.json` after all HTML, including copied decks, is final. The gateway loads those hashes once at startup to permit each page's inline scripts. Deploy the HTML and manifest together and restart the gateway after rebuilding. Missing or invalid metadata leaves inline scripts blocked. Other static hosts must configure their own response headers; copying this JSON file alone does not enable CSP there.
 
 ## License
 
