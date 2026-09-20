@@ -1099,18 +1099,23 @@ const server = http.createServer(async (req, res) => {
       const collection = data.collection || 'writing';
       const slug = data.slug;
       let headMarkdown = data.headMarkdown;
-      if (headMarkdown === undefined) {
-        if (slug) {
-          const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
+      const baseParam = data.base || parsedUrl.searchParams.get('base');
+      if (headMarkdown === undefined && slug) {
+        const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
+        const tryRefs = baseParam ? [baseParam] : ['HEAD', 'main', 'origin/main', 'HEAD~1'];
+        for (const ref of tryRefs) {
           try {
-            const proc = spawn('git', ['show', `HEAD:${relPath}`], { cwd: ROOT_DIR });
+            const proc = spawn('git', ['show', `${ref}:${relPath}`], { cwd: ROOT_DIR });
             let out = '';
             proc.stdout.on('data', d => { out += d.toString('utf8'); });
-            await new Promise((resolve) => { proc.on('close', resolve); });
-            headMarkdown = out;
-          } catch {
-            headMarkdown = '';
-          }
+            const code = await new Promise((resolve) => { proc.on('close', resolve); });
+            if (code === 0 && out) {
+              headMarkdown = out;
+              if (data.rawMarkdown && out.trim() !== data.rawMarkdown.trim()) {
+                break;
+              }
+            }
+          } catch {}
         }
       }
       let rawMarkdown = data.rawMarkdown;
@@ -1131,17 +1136,40 @@ const server = http.createServer(async (req, res) => {
       if (!slug) return sendJson(res, 400, { error: 'Missing slug parameter' });
       
       const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
-      const proc = spawn('git', ['show', `HEAD:${relPath}`], { cwd: ROOT_DIR });
+      const baseParam = parsedUrl.searchParams.get('base');
+      const tryRefs = baseParam ? [baseParam] : ['HEAD', 'main', 'origin/main', 'HEAD~1'];
+      
       let headOutput = '';
-      proc.stdout.on('data', d => { headOutput += d.toString('utf8'); });
-      proc.on('close', code => {
-        sendJson(res, 200, {
-          success: code === 0,
-          headMarkdown: code === 0 ? headOutput : '',
-          relPath
-        });
+      let success = false;
+      let matchedRef = 'HEAD';
+
+      for (const ref of tryRefs) {
+        const proc = spawn('git', ['show', `${ref}:${relPath}`], { cwd: ROOT_DIR });
+        let out = '';
+        proc.stdout.on('data', d => { out += d.toString('utf8'); });
+        const code = await new Promise((resolve) => { proc.on('close', resolve); });
+        if (code === 0 && out) {
+          headOutput = out;
+          success = true;
+          matchedRef = ref;
+          const filePath = path.join(ROOT_DIR, relPath);
+          if (fs.existsSync(filePath)) {
+            const diskContent = fs.readFileSync(filePath, 'utf8');
+            if (out.trim() !== diskContent.trim()) {
+              break;
+            }
+          } else {
+            break;
+          }
+        }
+      }
+
+      return sendJson(res, 200, {
+        success,
+        headMarkdown: headOutput,
+        relPath,
+        base: matchedRef
       });
-      return;
     }
 
 function extractModelOutput(stdout) {
@@ -1219,19 +1247,38 @@ function extractModelOutput(stdout) {
       if (!slug) return sendJson(res, 400, { error: 'Missing slug parameter' });
       
       const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
-      
-      // Get git diff against HEAD
-      const proc = spawn('git', ['diff', 'HEAD', '--', relPath], { cwd: ROOT_DIR });
-      let diffOutput = '';
-      proc.stdout.on('data', d => { diffOutput += d.toString('utf8'); });
-      proc.on('close', () => {
-        sendJson(res, 200, {
-          relPath,
-          diff: diffOutput,
-          hasChanges: diffOutput.trim().length > 0
-        });
+      const baseParam = parsedUrl.searchParams.get('base');
+
+      const runGitDiff = (args) => new Promise((resolve) => {
+        const proc = spawn('git', args, { cwd: ROOT_DIR });
+        let out = '';
+        proc.stdout.on('data', d => { out += d.toString('utf8'); });
+        proc.on('close', () => resolve(out));
       });
-      return;
+
+      let diffOutput = '';
+      let baseUsed = 'HEAD';
+
+      if (baseParam) {
+        diffOutput = await runGitDiff(['diff', baseParam, '--', relPath]);
+        baseUsed = baseParam;
+      } else {
+        diffOutput = await runGitDiff(['diff', 'HEAD', '--', relPath]);
+        if (!diffOutput.trim()) {
+          const mainDiff = await runGitDiff(['diff', 'main...HEAD', '--', relPath]);
+          if (mainDiff.trim()) {
+            diffOutput = mainDiff;
+            baseUsed = 'main';
+          }
+        }
+      }
+
+      return sendJson(res, 200, {
+        relPath,
+        diff: diffOutput,
+        hasChanges: diffOutput.trim().length > 0,
+        base: baseUsed
+      });
     }
 
     // Default: Serve the Writer Studio SPA
@@ -2117,6 +2164,8 @@ function getWriterAppHtml() {
       richDiffDebounceTimer = setTimeout(async () => {
         if (!currentPost) return;
         try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const baseParam = urlParams.get('base') || undefined;
           const res = await fetch('/api/render-rich-diff', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2124,7 +2173,8 @@ function getWriterAppHtml() {
               rawMarkdown: rawEditor.value,
               collection: currentPost.collection,
               slug: currentPost.slug,
-              theme: previewTheme
+              theme: previewTheme,
+              base: baseParam
             })
           });
           const html = await res.text();
@@ -2498,7 +2548,9 @@ function getWriterAppHtml() {
       if (!currentPost) return;
       diffBody.innerHTML = '<span class="spinner"></span> Loading git diff...';
       try {
-        const res = await fetch(\`/api/git-diff?collection=\${currentPost.collection}&slug=\${currentPost.slug}\`);
+        const urlParams = new URLSearchParams(window.location.search);
+        const baseParam = urlParams.get('base') ? \`&base=\${encodeURIComponent(urlParams.get('base'))}\` : '';
+        const res = await fetch(\`/api/git-diff?collection=\${currentPost.collection}&slug=\${currentPost.slug}\${baseParam}\`);
         const data = await res.json();
         lastFetchedDiff = data.diff || '';
 
@@ -2527,7 +2579,9 @@ function getWriterAppHtml() {
           }
         }).join('');
 
-        diffStatsBadge.textContent = \`Git Diff: +\${adds} / -\${dels} lines modified\`;
+        diffStatsBadge.textContent = data.base && data.base !== 'HEAD'
+          ? \`Git Diff (vs \${data.base}): +\${adds} / -\${dels} lines modified\`
+          : \`Git Diff: +\${adds} / -\${dels} lines modified\`;
         diffBody.innerHTML = formatted;
       } catch (err) {
         console.error('Git diff error:', err);

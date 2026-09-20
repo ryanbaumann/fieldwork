@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Editorial Revision: "A Model Router Needs a Scoreboard" (`portfolio/content/writing/the-model-that-picks-your-platform-doesnt-write-the-code.md`)**:
+  - Restored authentic essay voice, eliminating meta-commentary fourth-wall breaks about earlier drafts and git commits.
+  - Grounded opening in real developer friction: observing a lightweight model burn 42,000 tokens in a retry loop on a routine dependency bump.
+  - Articulated the hidden cost of under-capable routes: thrashing on schemas, mangled lockfiles, and expensive rescue turns.
+  - Framed correctness as the hard gate: single-run completions say nothing about variance; routing decisions require empirical testing on held-out tasks.
+  - Highlighted the five core scoreboard metrics (pass rate, retry count, wall-clock latency, total tokens, effective cost) and the architectural separation between planning orchestrators and worker coders.
+  - Incorporated local Gemma 4 and Hemmingway model critiques to eliminate corporate fluff and sharpen active verbs and rhythm.
+
+
 - **Editorial Revision: "Fine-Tuning Was the Easy Part" (`portfolio/content/writing/fine-tuning-was-the-easy-part.md`)**:
   - Grounded the opening hook in concrete developer billing traps: autonomous coding agents default to kitchen-sink field requests on Place Details, turning inexpensive calls into high-tier billing events.
   - Reinforced the core anti-slop eval principle: code syntax graders (valid JSON) fail to catch over-fetching; eval graders must penalize economic friction to enforce model restraint.
