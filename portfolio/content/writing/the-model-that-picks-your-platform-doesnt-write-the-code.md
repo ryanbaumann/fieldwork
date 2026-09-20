@@ -1,8 +1,8 @@
 ---
 title: A Model Router Needs a Scoreboard
-summary: A routing policy is a hypothesis until the same held-out tasks preserve quality and measure retries, latency, tokens, and cost across capability profiles.
+summary: Routing tasks to cheaper capability tiers is an easy policy to write, but it remains a hypothesis until held-out runs prove quality holds and measure the real cost of retries, latency, and rescues.
 date: 2026-07-20
-updated: 2026-08-07
+updated: 2026-09-20
 canonical: https://ryanbaumann.dev/writing/the-model-that-picks-your-platform-doesnt-write-the-code/
 image: /img/writing/model-tiers-header.svg
 imageAlt: One routing policy assigns bounded tasks to several capability profiles, with measurement still required before calling a route efficient.
@@ -15,7 +15,9 @@ draft: false
 noindex: false
 ---
 
-The public [Loop Engineering prompt](https://github.com/ryanbaumann/fieldwork/blob/main/agent-scripts/coding-agent-loop/SYSTEM_PROMPT.md#capability-and-model-routing) defines a routing policy, but it does not yet record a routing result. The policy maps bounded task families to capability tiers:
+I watched a lightweight model burn 42,000 tokens looping on a routine dependency bump. It patched the wrong manifest, broke the lockfile, and failed five consecutive linter checks before a frontier model had to step in and revert the mess.
+
+Tiered routing was supposed to prevent that bill. In the public [Loop Engineering prompt](https://github.com/ryanbaumann/fieldwork/blob/main/agent-scripts/coding-agent-loop/SYSTEM_PROMPT.md#capability-and-model-routing), we mapped bounded task families to capability tiers:
 
 ```text
 Tools      deterministic discovery, transformation, verification
@@ -24,28 +26,50 @@ Balanced   implementation, debugging, test repair, scoped review
 Deep       architecture, security, data consistency, difficult synthesis
 ```
 
-That mapping is plausible, but I haven't measured whether it saves tokens, lowers latency, or completes the same work as reliably as a stronger default. I claimed those efficiency gains in the first draft of this Note before earning them with data.
+The mapping looks tidy on paper. Why pay frontier token rates for a regex bump or a file lookup?
 
-## What the package actually proves
+A routing policy is just a bet: without a scoreboard, you cannot prove what your cheap route actually costs.
 
-The package ships one operating contract, four role overlays, an installation task, a deterministic structural check, and 17 specified regression scenarios. The check passes, but I have not yet recorded behavioral trial results, task costs, or cross-profile comparisons.
+## The hidden cost of cheap routes
 
-The scenarios are still useful because they define the bar. A diagnosis request should remain read-only. An agent should preserve a dirty worktree, stop when authority is missing, resist instructions hidden in repository data, and verify a UI change in the browser when the environment allows it. Those scenarios set the baseline requirements for a routing experiment. They do not prove that one route costs less.
+On paper, swapping a frontier model for a lightweight worker slashes token rates by 80 or 90 percent. Inside a live worktree, the math falls apart.
+
+Weak models don't error out: they thrash. They misread tool schemas, patch the wrong files, mangle indentation, and invent package imports. That burns four or five blind repair loops before a human or an orchestrator steps in to rescue the branch.
+
+A fast run that needs three rescues burns more tokens, burns more clock time, and drains more developer focus than calling the deep model first. When a run silently corrupts git state, the cost per useful task is infinite.
+
+## Correctness is the gate
+
+Sticker prices and average token counts never prove a router works. Correctness is the hard gate: does the build pass? Do unit tests run clean? Did the worktree stay intact?
+
+A candidate route earns its tier only when it clears that gate every time. Run tests repeatedly: one lucky pass proves nothing. To prove a model family handles a task family, run held-out tasks against frozen repository fixtures and automated verifiers.
 
 ![A routing scoreboard compares candidate capability profiles on the same held-out work before any lower-cost route is called a win.](/img/writing/model-tiers-devx.svg)
 
-## What the scoreboard has to retain
+## What the scoreboard has to measure
 
-Take one task family, such as a mechanical dependency edit, and freeze a held-out set. Run each task through the candidate profiles with the same repository fixture, tools, permissions, and acceptance checks. Keep the selected route, final repository state, retries, latency, token use, and cost for every attempt.
+To turn a routing policy into empirical evidence, your test harness must track five numbers across every run:
 
-Correctness stays the gate. A cheaper run that breaks the repository is not efficient. A fast run that requires three rescue attempts costs more than the stronger profile it replaced. Repetition matters because one lucky completion says very little about routing variance.
+1. **Pass rate**: did the run clear the compiler, linters, and regression tests without a human rescue?
+2. **Retry count**: how many failed tool calls, syntax repairs, or loop resets piled up?
+3. **Wall-clock latency**: did three fast retry loops take longer than a single deep pass?
+4. **Total tokens**: all prompt context, output tokens, and tool calls spent across the entire session.
+5. **Effective cost**: total dollars spent divided by passing runs, counting every token burned on aborted attempts.
 
-Only then can the router prove something durable: which task family clears the quality bar on Fast, which one still needs Balanced, and which security change requires Deep. Capability labels carry no weight until a harness measures them against live runs.
+When you benchmark profiles side by side against frozen fixtures, tiers stop being guesswork. Simple jobs, like deterministic transforms and narrow schema extractions, land cleanly on Fast. Harder jobs, like fixing subtle race conditions or migrating breaking APIs, collapse into retry loops unless they run on Balanced or Deep.
 
-## Measuring platform handoffs
+## Planning models choose the platform
 
-I still see planning models steer which platform, API, and authentication boundary a developer ends up with. The worker writing the code often just executes a decision made earlier in the session. But my original Note treated that split as observed fact without a trace to prove it.
+Watch the planner: the model that designs the architecture is rarely the one that writes the code.
 
-To test it, trace the planning decision through every downstream handoff. Record where the platform was first selected, whether a worker changed it, and which verifier caught a bad choice. That evidence turns the hypothesis into something a platform team can act on.
+In tiered agent sessions, a deep reasoning model evaluates trade-offs, plans the system, and selects the APIs, tools, and auth boundaries. Then it hands bounded coding jobs to lightweight workers.
 
-For now, the router is a policy with a good question inside it. If you have a public routing benchmark that follows cost and quality back to individual attempts, let's compare notes in the discussion below.
+Your developer platform meets this loop twice. If your platform docs and tool schemas are opaque to the planner, your service never gets picked. If your client SDKs and error messages confuse the worker, the worker botches the implementation and fails the verifier.
+
+Building developer tools for agents demands two distinct surfaces: crisp capability contracts for the planner, and deterministic, foolproof interfaces for the worker.
+
+## Measure before you route
+
+The policy assigns: the scoreboard decides. Before you hardcode capability tiers into your agent prompts, build the test harness, freeze your task fixtures, and let live execution traces earn the tiers.
+
+If you benchmark model routing across capability tiers or track effective cost per completed task in your own loops, what does your scoreboard track? Drop your metrics and setup in the comments below!
