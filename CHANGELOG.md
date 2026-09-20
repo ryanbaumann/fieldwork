@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Essay revision: "Can I Build an AI Agent That Doesn't Write Slop?" (`portfolio/content/writing/`)**:
+  - Incorporated reader critique feedback: added a compact evaluation scorecard with pass rates, 95% confidence intervals, and failure mode analysis.
+  - Addressed Task 1 and Task 2 difference comparisons to highlight Pipeline C's direct phrasing and outcome-first ordering.
+  - Translated academic odds ratios into plain English so statistical findings are accessible without prior training.
+  - Restructured "What I learned" to break artificial 3x3 template symmetry and clarify citation hallucination limits.
+  - Applied local fine-tuned model review refinements: sharpened synthesis lead sentence into direct builder phrasing and refined verdict flow.
+
+- **Fieldwork Writer Studio: Scrollable Unified Diff & In-Situ Rich Diff Preview (`scripts/writer_app.mjs`)**:
+  - Fixed CSS grid and flexbox overflow clamping (`min-height: 0`, `min-width: 0`, `overflow-y: auto`, `height: calc(100% - 40px)`) so the unified `git diff` view scrolls smoothly across long diffs.
+  - Implemented an in-situ **Rich Diff** mode (`mode-rich-diff-btn`) featuring block-level chunking, longest-common-subsequence word-level diffing (`<ins>` / `<del>`), and added/removed block callouts rendered directly in the site's typography and theme system.
+  - Fixed mobile preview device frames and rich diff responsive overflow: added 320 px Small Mobile alongside 375 px Mobile, constrained frame heights to available vertical space, and added flex wrapping to prevent banner and table blowout on mobile viewports.
+
+- **Global site footer & article disclosure (`portfolio/build.mjs`, `scripts/writer_app.mjs`)**:
+  - Updated footer on all pages and article colophons to: "Written by Ryan Baumann, with copyediting assistance by AI."
+
 - **Repository security, performance, content, and UX audit (`gateway/`,
   `portfolio/`, `demos/`, `docs/`)**: Implemented the confirmed technical and
   interface findings from PR #259. Essay copy remains unchanged after owner
