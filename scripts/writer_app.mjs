@@ -319,7 +319,7 @@ body {
       </div>
 
       <div class="article-colophon">
-        <p class="article-disclosure">Written by Ryan Baumann. Fine-tuned local language models assist with copyediting and voice consistency; all ideas, analysis, and code are my own.</p>
+        <p class="article-disclosure">Written by Ryan Baumann, with copyediting assistance by AI.</p>
       </div>
 
       <p class="share-links">
@@ -837,7 +837,7 @@ del.rich-diff-del {
       </div>
 
       <div class="article-colophon">
-        <p class="article-disclosure">Written by Ryan Baumann. Fine-tuned local language models assist with copyediting and voice consistency; all ideas, analysis, and code are my own.</p>
+        <p class="article-disclosure">Written by Ryan Baumann, with copyediting assistance by AI.</p>
       </div>
 
       <p class="back">← All ${collectionName === 'writing' ? 'notes' : collectionName}</p>

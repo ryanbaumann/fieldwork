@@ -14,8 +14,10 @@ All notable changes to this project will be documented in this file.
 - **Fieldwork Writer Studio: Scrollable Unified Diff & In-Situ Rich Diff Preview (`scripts/writer_app.mjs`)**:
   - Fixed CSS grid and flexbox overflow clamping (`min-height: 0`, `min-width: 0`, `overflow-y: auto`, `height: calc(100% - 40px)`) so the unified `git diff` view scrolls smoothly across long diffs.
   - Implemented an in-situ **Rich Diff** mode (`mode-rich-diff-btn`) featuring block-level chunking, longest-common-subsequence word-level diffing (`<ins>` / `<del>`), and added/removed block callouts rendered directly in the site's typography and theme system.
-  - Added URL parameter deep linking (`?collection=...&slug=...` and `?mode=...`) with bidirectional `history.replaceState` and `popstate` synchronization so links reliably open the requested article and preview mode.
   - Fixed mobile preview device frames and rich diff responsive overflow: added 320 px Small Mobile alongside 375 px Mobile, constrained frame heights to available vertical space, and added flex wrapping to prevent banner and table blowout on mobile viewports.
+
+- **Global site footer & article disclosure (`portfolio/build.mjs`, `scripts/writer_app.mjs`)**:
+  - Updated footer on all pages and article colophons to: "Written by Ryan Baumann, with copyediting assistance by AI."
 
 - **Repository security, performance, content, and UX audit (`gateway/`,
   `portfolio/`, `demos/`, `docs/`)**: Implemented the confirmed technical and
