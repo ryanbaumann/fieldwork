@@ -32,15 +32,15 @@ A routing policy is just a bet: without a scoreboard, you cannot prove what your
 
 ## The hidden cost of cheap routes
 
-On paper, swapping a frontier model for a lightweight worker slashes token rates by 80 or 90 percent. Inside a live worktree, the math falls apart.
+On paper, swapping a frontier model for a lightweight worker slashes token rates by 80 or 90 percent. But you have to judge the task output to really know.
 
-Weak models don't error out: they thrash. They misread tool schemas, patch the wrong files, mangle indentation, and invent package imports. That burns four or five blind repair loops before a human or an orchestrator steps in to rescue the branch.
+Weak models don't error out: they can also "thrash", wasting tokens. They misread tool schemas, patch the wrong files, mangle indentation, and invent package imports. That burns four or five blind repair loops before a human or an orchestrator steps in to rescue the branch.
 
 A fast run that needs three rescues burns more tokens, burns more clock time, and drains more developer focus than calling the deep model first. When a run silently corrupts git state, the cost per useful task is infinite.
 
-## Correctness is the gate
+## Correctness gates
 
-Sticker prices and average token counts never prove a router works. Correctness is the hard gate: does the build pass? Do unit tests run clean? Did the worktree stay intact?
+Sticker prices and average token counts never prove a router works. Correctness is the hard gate: does the build pass? Do unit tests run clean? Did the agent complete the task?
 
 A candidate route earns its tier only when it clears that gate every time. Run tests repeatedly: one lucky pass proves nothing. To prove a model family handles a task family, run held-out tasks against frozen repository fixtures and automated verifiers.
 
@@ -70,6 +70,6 @@ Building developer tools for agents demands two distinct surfaces: crisp capabil
 
 ## Measure before you route
 
-The policy assigns: the scoreboard decides. Before you hardcode capability tiers into your agent prompts, build the test harness, freeze your task fixtures, and let live execution traces earn the tiers.
+The policy assigns models, but your eval scoreboard decides. Before you hardcode capability tiers into your agent prompts, build the test harness, keep an eye on cost per task, and human review / judge outputs.
 
 If you benchmark model routing across capability tiers or track effective cost per completed task in your own loops, what does your scoreboard track? Drop your metrics and setup in the comments below!
