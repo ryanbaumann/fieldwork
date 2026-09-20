@@ -609,10 +609,15 @@ body {
   background-color: var(--bg);
   color: var(--ink);
   transition: background-color 0.2s ease, color 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 .prose {
   margin: 0 auto;
   max-width: var(--prose);
+  width: 100%;
+  box-sizing: border-box;
 }
 [data-src-line] {
   cursor: pointer;
@@ -624,6 +629,8 @@ body {
 }
 .preview-header-bar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
@@ -631,6 +638,7 @@ body {
   border-bottom: 1px solid var(--line);
   font-size: 0.85rem;
   color: var(--faint);
+  max-width: 100%;
 }
 .preview-badge {
   display: inline-flex;
@@ -659,6 +667,8 @@ ins.rich-diff-ins {
   padding: 0.05rem 0.25rem;
   border-radius: 3px;
   font-weight: 500;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 [data-theme="dark"] ins.rich-diff-ins {
   background-color: rgba(34, 197, 94, 0.25);
@@ -672,6 +682,8 @@ del.rich-diff-del {
   opacity: 0.85;
   padding: 0.05rem 0.25rem;
   border-radius: 3px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 [data-theme="dark"] del.rich-diff-del {
   background-color: rgba(239, 68, 68, 0.25);
@@ -681,17 +693,34 @@ del.rich-diff-del {
 .rich-diff-block-ins {
   background: rgba(34, 197, 94, 0.08);
   border-left: 4px solid #22c55e;
-  padding: 0.85rem 1.15rem;
+  padding: 0.75rem 0.85rem;
   margin: 1.25rem 0;
   border-radius: 0 8px 8px 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .rich-diff-block-del {
   background: rgba(239, 68, 68, 0.08);
   border-left: 4px solid #ef4444;
-  padding: 0.85rem 1.15rem;
+  padding: 0.75rem 0.85rem;
   margin: 1.25rem 0;
   border-radius: 0 8px 8px 0;
   opacity: 0.85;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.rich-diff-block-ins .table-scroll,
+.rich-diff-block-del .table-scroll,
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  margin: 0.5rem 0;
 }
 .rich-diff-tag {
   display: inline-block;
@@ -715,28 +744,30 @@ del.rich-diff-del {
   background: var(--surface);
   border: 1px solid var(--accent);
   border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.75rem;
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 1.5rem;
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   align-items: center;
   justify-content: space-between;
   font-size: 0.82rem;
   color: var(--ink);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-sizing: border-box;
+  max-width: 100%;
 }
 .rich-diff-banner-left {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  color: var(--accent-ink);
+  gap: 0.4rem;
 }
 .rich-diff-legend {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.85rem;
-  font-size: 0.78rem;
-  color: var(--muted);
+  gap: 0.75rem;
 }
 .legend-item {
   display: flex;
@@ -751,6 +782,30 @@ del.rich-diff-del {
 }
 .legend-swatch.ins { background: #22c55e; }
 .legend-swatch.del { background: #ef4444; }
+
+@media (max-width: 600px) {
+  body {
+    padding: 1rem 0.75rem 3rem;
+  }
+  h1 {
+    font-size: 1.65rem;
+    line-height: 1.25;
+  }
+  .preview-header-bar {
+    font-size: 0.75rem;
+  }
+  .rich-diff-banner {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.65rem;
+  }
+  .rich-diff-banner-left span:nth-child(2) {
+    display: none;
+  }
+  .rich-diff-block-ins,
+  .rich-diff-block-del {
+    padding: 0.5rem 0.65rem;
+  }
+}
   </style>
 </head>
 <body>
@@ -1598,20 +1653,41 @@ function getWriterAppHtml() {
       transition: all 0.2s ease;
     }
     .preview-frame-container.mobile {
-      padding: 1.5rem;
+      padding: 1rem;
+      align-items: center;
+      overflow: auto;
     }
     .preview-frame-container.mobile iframe {
       width: 375px;
-      height: 667px;
-      border-radius: 12px;
+      max-width: calc(100% - 1rem);
+      height: 100%;
+      max-height: 812px;
+      border-radius: 20px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-      border: 2px solid var(--border);
+      border: 3px solid var(--border);
+    }
+    .preview-frame-container.mobile-sm {
+      padding: 1rem;
+      align-items: center;
+      overflow: auto;
+    }
+    .preview-frame-container.mobile-sm iframe {
+      width: 320px;
+      max-width: calc(100% - 1rem);
+      height: 100%;
+      max-height: 650px;
+      border-radius: 14px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      border: 3px solid var(--border);
     }
     .preview-frame-container.tablet {
-      padding: 1.5rem;
+      padding: 1rem;
+      align-items: center;
+      overflow: auto;
     }
     .preview-frame-container.tablet iframe {
       width: 768px;
+      max-width: calc(100% - 1rem);
       height: 100%;
       border-radius: 8px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
@@ -1827,7 +1903,8 @@ function getWriterAppHtml() {
         <div id="device-switcher" class="device-switcher">
           <button class="device-btn active" data-device="desktop">💻 Desktop</button>
           <button class="device-btn" data-device="tablet">📱 Tablet</button>
-          <button class="device-btn" data-device="mobile">📱 Mobile</button>
+          <button class="device-btn" data-device="mobile">📱 Mobile (375px)</button>
+          <button class="device-btn" data-device="mobile-sm">📱 Small (320px)</button>
         </div>
       </div>
       <div id="frame-container" class="preview-frame-container">

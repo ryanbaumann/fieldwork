@@ -9,13 +9,13 @@ All notable changes to this project will be documented in this file.
   - Addressed Task 1 and Task 2 difference comparisons to highlight Pipeline C's direct phrasing and outcome-first ordering.
   - Translated academic odds ratios into plain English so statistical findings are accessible without prior training.
   - Restructured "What I learned" to break artificial 3x3 template symmetry and clarify citation hallucination limits.
-  - Corrected grammar, typos, and hedging terms ("copyedit", "MacBook", comma splice, and specific dataset and rules examples).
+  - Applied local fine-tuned model review refinements: sharpened synthesis lead sentence into direct builder phrasing and refined verdict flow.
 
 - **Fieldwork Writer Studio: Scrollable Unified Diff & In-Situ Rich Diff Preview (`scripts/writer_app.mjs`)**:
   - Fixed CSS grid and flexbox overflow clamping (`min-height: 0`, `min-width: 0`, `overflow-y: auto`, `height: calc(100% - 40px)`) so the unified `git diff` view scrolls smoothly across long diffs.
   - Implemented an in-situ **Rich Diff** mode (`mode-rich-diff-btn`) featuring block-level chunking, longest-common-subsequence word-level diffing (`<ins>` / `<del>`), and added/removed block callouts rendered directly in the site's typography and theme system.
-  - Added `/api/render-rich-diff` and `/api/git-head` endpoints supporting live debounced updates against git HEAD.
   - Added URL parameter deep linking (`?collection=...&slug=...` and `?mode=...`) with bidirectional `history.replaceState` and `popstate` synchronization so links reliably open the requested article and preview mode.
+  - Fixed mobile preview device frames and rich diff responsive overflow: added 320 px Small Mobile alongside 375 px Mobile, constrained frame heights to available vertical space, and added flex wrapping to prevent banner and table blowout on mobile viewports.
 
 - **Repository security, performance, content, and UX audit (`gateway/`,
   `portfolio/`, `demos/`, `docs/`)**: Implemented the confirmed technical and

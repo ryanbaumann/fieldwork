@@ -106,12 +106,12 @@ The instructions: critique this draft against our editorial and voice standards.
 
 ## What I learned
 
-Local fine-tuning showed me where model weights help, where context engineering suffices, and where human judgment remains the only reliable gate.
+Fine-tuning on a local LoRA adapter taught an open model my rhythm and cadence. It did not teach editorial judgment.
 
 ### What weights actually solve
 
-- **Cadence and rhythm**: Sentence variety, colon pivots, and concise phrasing lived directly in the weights without a thirty-line prompt constraint.
-- **Peer critique**: In Task 3, the model acted like a skeptical peer. It flagged consensus tells, spotted false antithesis flips, and challenged inflated credit without needing a cheerleader preface.
+- **Cadence and rhythm**: I trained the LoRA on a curated diff of my own essays to bake in sentence variety and colon pivots without repeating thirty-line context rules.
+- **Peer critique**: In Task 3, the model acted like a skeptical peer: it flagged consensus tells, spotted false antithesis flips, and challenged inflated credit without needing a cheerleader preface.
 - **Metric retention in rewrites**: On straightforward status updates, it preserved latencies and dollar figures without dropping numbers or inventing claims.
 
 ### Where weights broke down
@@ -135,6 +135,6 @@ A regex catches mechanical rules instantly. Prompted models handle structural fl
 
 Fine-tuning shapes cadence and phrasing. I still handle the thinking.
 
-A locally fine-tuned model provides a fast style check and peer critique layer. But the core craft of writing: deciding what matters, verifying evidence, and earning attention stays with the author. As it should.
+A locally fine-tuned model provides a fast style check and peer critique layer. But the core craft of writing stays with the author: deciding what matters, verifying evidence, and earning attention. As it should: great writing for humans is deeply personal, and not something I want AI to do for me.
 
 If you are running local fine-tuning or building automated checks for your writing, what workflows are working for you? Share your setup in the comments below.
