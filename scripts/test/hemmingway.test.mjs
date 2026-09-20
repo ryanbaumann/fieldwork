@@ -9,7 +9,10 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.dirname(path.dirname(__dirname));
 const CLI_PATH = path.join(ROOT_DIR, 'scripts', 'hemmingway.mjs');
 
-test('hemmingway.mjs runs --help cleanly and exits 0', () => {
+const hasUv = spawnSync('which', ['uv']).status === 0;
+const isAppleSilicon = process.platform === 'darwin';
+
+test('hemmingway.mjs runs --help cleanly and exits 0', { skip: !isAppleSilicon || !hasUv ? 'Requires Apple Silicon (darwin) and uv' : false }, () => {
   const res = spawnSync('node', [CLI_PATH, '--help'], {
     encoding: 'utf-8',
     cwd: ROOT_DIR,
