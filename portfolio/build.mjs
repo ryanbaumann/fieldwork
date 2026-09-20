@@ -601,7 +601,7 @@ ${WRITER_MODE ? '<div class="writer-banner" role="status">Private writer preview
 ${content}
 </main>
 <footer class="site-footer">
-  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.brandByline || `${brand} by ${site.name}`)}</p>
+  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.brandByline || `${brand} by ${site.name}`)} &middot; Written by Ryan Baumann, with copyediting assistance by AI</p>
   <p class="footer-links">
     <a href="${site.links.github}" target="_blank" rel="noopener noreferrer">GitHub</a>
     <a href="${site.links.linkedin}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
@@ -928,7 +928,7 @@ function sectionHeader(eyebrow, title, moreHref, moreLabel) {
 function articleDisclosure(isWriting) {
   if (!isWriting) return '';
   return `<div class="article-colophon">
-  <p class="article-disclosure">Written by Ryan Baumann. Fine-tuned local language models assist with copyediting and voice consistency; all ideas, analysis, and code are my own.</p>
+  <p class="article-disclosure">Written by Ryan Baumann, with copyediting assistance by AI.</p>
 </div>`;
 }
 
