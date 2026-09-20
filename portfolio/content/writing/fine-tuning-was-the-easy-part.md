@@ -1,6 +1,6 @@
 ---
 title: Fine-Tuning Was the Easy Part
-summary: Fine-tuning a small model for one narrow job worked in an afternoon. The hard developer-platform problem is distribution: getting that fix past a single adapter, across every job your developers do, and into the models they pick next.
+summary: Tuning a small model to generate minimal API field masks took an afternoon. The hard platform problem is distribution: getting that fix past a single adapter, across dozens of APIs, and into the foundation models developers choose next.
 date: 2026-08-04
 updated: 2026-08-08
 canonical: https://ryanbaumann.dev/writing/fine-tuning-was-the-easy-part/
@@ -11,40 +11,53 @@ image: /img/writing/fine-tuning-header.svg
 imageAlt: The easy part is tuning one adapter, where Gemma 4 E4B exact match rose from 2 of 10 to 9 of 10; the hard part is distributing that fix across hundreds of jobs and every model a developer might pick.
 socialImage: /social/fine-tuning-was-the-easy-part.jpg
 shareTitle: Fine-Tuning Was the Easy Part
-shareSummary: Tuning a small model for one narrow job worked. Distributing that fix across every job your developers do, and into the models they pick next, is the hard problem.
+shareSummary: Tuning a small model for one narrow job worked in an afternoon. Distributing that fix into the models your developers actually run is the real platform challenge.
 shareImageAlt: Fine-Tuning Was the Easy Part, beside a two-panel card contrasting one tuned adapter with distribution across many jobs and models.
 ---
 
-Point an autonomous coding agent at the Places API and it over-fetches fields. On Places, that over-fetching gets expensive fast: [Place Details bills in tiers](https://developers.google.com/maps/billing-and-pricing/sku-details), and you pay the highest tier any field in the request touches. A single unnecessary field quietly quadruples the cost of a call that still returns valid JSON.
+Point an autonomous coding agent at the Places API and it defaults to kitchen-sink responses. Models are trained to be helpful, so when an agent fetches a place, it asks for every field it might conceivably need. On Places, that helpfulness is an invoice trap: [Place Details bills in tiers](https://developers.google.com/maps/billing-and-pricing/sku-details), charging the highest tier of any single field in the request. Asking for a website URI or business hours alongside a basic coordinate can quietly quadruple the cost of a call that still returns valid JSON.
 
-Base models over-fetch because their weights are a stale snapshot of the internet. Skills, MCP, and llms.txt add useful context, but fine-tuning a small model on a narrow job beats a large base model at a fraction of the inference cost.
+Base models over-fetch because their weights capture a frozen snapshot of the internet, long before modern field-masking APIs existed. Context files, MCP tools, and skills add useful runtime guidance. But fine-tuning a small model on a narrow task beats an expensive frontier model while cutting inference cost.
 
 ## Tuning one adapter is the easy part
 
-I trained a [LoRA](https://arxiv.org/abs/2106.09685) adapter on Gemma 4 E4B (the roughly 4B-class model) over a set of synthetic [Places field-mask requests](https://github.com/ryanbaumann/fieldwork/tree/main/evals/field-mask). I split ten cases into eight for training and two held out that the optimizer never saw. I graded on exact match: I count a case only when the model returns exactly the fields the request needs, with no extra billable field. That grader carries correctness and cost in one number, because on Places an over-fetch is a billing event.
+I trained a [LoRA](https://arxiv.org/abs/2106.09685) adapter on Gemma 4 E4B (a ~4B parameter model) over a set of synthetic [Places field-mask requests](https://github.com/ryanbaumann/fieldwork/tree/main/evals/field-mask). I split ten test cases into eight for training and two held out that the optimizer never saw.
+
+The evaluation bar had to mirror production costs, not syntax. If an agent returns valid JSON with one extra billable field, traditional code graders mark it green. My grader checked exact match: a test passed only when the model returned the precise fields requested, with zero billable additions. On Places, an over-fetch is an economic failure.
 
 ![A chart comparing exact-match field masks for Gemma 4 E4B: across all ten cases the base model scores 2 and the tuned adapter 9; on the two held-out cases the base model scores 0 and the tuned adapter 1.](/img/writing/fine-tuning-evidence.svg)
 
-The tuned adapter jumped from 2 of 10 to 9 of 10 exact-match masks, including all eight training cases and one of the two held-out cases. Every attempt is in a [retained run trace](https://github.com/ryanbaumann/fieldwork/tree/main/evals/field-mask) with the prompt, raw output, and grade per case.
+The tuned adapter jumped from 2 of 10 to 9 of 10 exact-match masks, clearing all eight training cases and one of the two held-out cases. Every prompt, raw model response, and grade is preserved in an open [retained run trace](https://github.com/ryanbaumann/fieldwork/tree/main/evals/field-mask).
 
-Base E4B under-fetches by returning only the first field and dropping the rest. On a prompt-injection request, it over-fetches four fields. The tuned model returns the minimal correct mask and an empty list for the injection. Its one held-out miss dropped `places.servesWine` from a request about dogs and wine.
+The contrast was immediate. Base E4B failed in two predictable ways: it either gave up and returned only the first field, or hallucinated four extra fields when handed a prompt-injection attempt. The tuned model returned the minimal correct mask for clean inputs and an empty list for injections. Its single held-out miss dropped `places.servesWine` from a query about dog-friendly wineries: a missed attribute, but zero unearned billing.
 
 ## What I learned
 
-Tuning works when the job is narrow and the output is gradeable. [Harvey's post-training experiment](https://www.harvey.ai/blog/post-training-open-legal-agents-with-baseten-research) ran forty steps of GRPO on an open 9B model and watched held-out pass rates jump from 42% to 63%; as the score went up, the agent stopped making sloppy grep calls and started reading more characters per rollout. Held-out performance moved, and the tool-use behavior moved with it.
+Tuning works when the job is narrow and the grader penalizes real-world friction. In [Harvey's post-training experiment](https://www.harvey.ai/blog/post-training-open-legal-agents-with-baseten-research), forty steps of GRPO on an open 9B model pushed held-out pass rates from 42% to 63%. As the score rose, the agent stopped spamming blind grep calls and began reading more context per rollout. Tool efficiency changed because the reward function penalized wasted steps.
 
-It works for style, too. A [recent UMich study](https://news.umich.edu/when-ai-learns-an-authors-voice-even-experts-prefer-it/) found that fine-tuning a model on a writer's full body of work makes even writing experts prefer the generated text over the human original. The model adopts the author's actual rhythm and constraints.
+The same dynamic applies to authorial style. A [study from the University of Michigan](https://news.umich.edu/when-ai-learns-an-authors-voice-even-experts-prefer-it/) found that readers prefer text from an open model fine-tuned on an author's writing over prompted mimicry from frontier models. The weights internalize rhythm and negative constraints without burning prompt tokens on repetitive rules.
 
-Ten cases, with two held out, is an early signal. The next version needs a larger held-out set and an answer key checked against live billing tiers. Still, the lesson is clear: whether you're teaching a model an author's voice or an API's field mask, grounded examples work. A grader that knows what the job costs can make a small model nail a narrow, expensive task that a bigger base model gets wrong.
+Ten cases with two held out is an early signal, not a production fleet. The next iteration needs a hundred cases and an automated grader tied directly to live API SKU tables. Still, the lesson holds: whether you are teaching an agent an authorial voice or an API field mask, grounded examples work. A grader that understands what an error costs helps a small model master an expensive edge case that a frontier model gets wrong.
 
 ## The hard part is distribution
 
-My adapter fixes one job on one deployment. It doesn't help the base model another developer downloads tomorrow or the hosted model another team calls. A developer platform doesn't have one narrow job: it has hundreds of core developer tasks across dozens of APIs, and its developers run models and agents the platform will never touch. Tuning an adapter per task and hoping everyone loads it doesn't scale.
+My adapter fixes one task on one deployment. It doesn't help the base model another developer pulls down tomorrow, or the hosted endpoint another team calls in production. A developer platform doesn't have one narrow task: it supports hundreds of core workflows across dozens of APIs, and developers run agents on foundation models the platform team will never control. Tuning an adapter per task and hoping everyone loads it does not scale.
 
 ![A developer-platform distribution pyramid moves from directly controlled context and tools through an owned adapter and open traces to a held-out public benchmark, trading direct control for broader reach and more dependence on adoption.](/img/writing/fine-tuning-distribution-pyramid.svg)
 
-Docs reach humans. SDKs reach applications. Skills and an MCP service reach the agent harness. Only open traces and benchmarks reach the model weights. Each rung down that ladder trades control for reach. Context and tools give me the most direct control and carry current facts into a session, though the agent has to load them. An owned adapter bakes stable behavior into weights for the surfaces I run, but still reaches only my deployment. Open traces make that evidence reusable so another team can inspect the attempts and train on them, while a held-out public benchmark gives model builders a durable target and lets every developer see whether the gap closed without training anything by itself.
+Moving down that distribution ladder trades direct control for broader reach:
 
-Call it share of gradient: whether the next generation of models gets shaped by your platform or by everything else on the internet. For a platform team, the order falls out of that: keep fast-changing facts in context, fine-tune the stable jobs you can grade, publish traces when you want the signal to travel past your own deployment, and publish a benchmark when you want the result to stay measurable across every model your developers might pick.
+- **Docs reach humans. SDKs reach applications.**
+- **Skills and MCP servers reach the agent harness.**
+- **Open traces and public benchmarks reach the model weights.**
 
-The field-mask run is one rung on that ladder. Scaling it past ten cases and one job is the work, and so is getting those traces somewhere a model builder will actually train on them. If you're working the same gap between runtime context and learned model behavior, how are you handling it? Share your traces and benchmarks in the comments.
+Context and tools give you the most direct control. They carry fresh facts into an active session, but the agent harness has to discover and load them. An owned adapter bakes stable behavior into weights, but reaches only the infrastructure you host. Open traces turn private debugging into reusable datasets so other teams can train on real attempts. Finally, a held-out public benchmark provides foundation model builders with a durable target, letting developers see whether a platform gap closed without having to fine-tune models themselves.
+
+Call it share of gradient: will the next generation of foundation models learn your platform's correct patterns, or will they be shaped by outdated snippets and scraped blogs? For platform teams, the operational loop falls out of that ladder:
+
+1. Keep fast-changing facts and dynamic APIs in runtime context.
+2. Fine-tune the stable, high-cost jobs you can grade deterministically.
+3. Publish open traces to spread the signal beyond your own perimeter.
+4. Publish held-out benchmarks to keep performance measurable across every model developers choose.
+
+The field-mask run is the first step on that ladder. Scaling it past ten cases is the immediate work. Getting those traces into model pre-training is the durable win. If you're tackling the gap between runtime context and learned model behavior, how are you handling it? Share your traces and evaluation setups in the comments.
