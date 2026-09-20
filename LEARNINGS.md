@@ -2,6 +2,16 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-09-20 - Forensic rewrites must never bleed git meta-commentary into published prose
+
+Context: An earlier evidence pass on "The Model That Picks Your Platform Doesn't Write the Code" attempted to qualify unsubstantiated routing claims, but inadvertently rewrote the essay into a self-flagellating fourth-wall-breaking confession ("I claimed those efficiency gains in the first draft of this Note before earning them with data... But my original Note treated that split as observed fact without a trace to prove it") and a dry inventory of repo test cases.
+
+Learning: Editorial and claim reviews must protect the reader experience. A published essay should present the thesis, friction, mechanism, and evidence directly to the reader; it should never read like a git diff apology or PR review comment. When a claim lacks empirical backing, replace the unearned assertion with the real engineering problem (e.g., explaining why capability routing remains a hypothesis without a scoreboard) rather than describing the author's previous commits.
+
+Evidence: Rewrote `the-model-that-picks-your-platform-doesnt-write-the-code.md` around the concrete friction of model thrashing and the five scoreboard metrics. Passed local Gemma 4 and Hemmingway editorial critiques to ensure authentic practitioner voice without corporate fluff. Verified clean builds and zero content errors with `npm run check:content`.
+
+Use next time: Reject any edit that mentions "the first draft of this note" or explains past commits in reader-facing prose. State the current mechanism, friction, and verifiable evidence directly.
+
 ## 2026-09-20 - Clean stdout separation and dynamic model remapping for local MLX review runners
 
 Context: Setting up local inference for `Altworld/Hemmingway-1` (27B creative writing and un-slop critique model built on Qwen 3.8 27B) so that editorial critique can be invoked via `npx hemmingway review <file>` and piped directly into subagents for automated revision.
