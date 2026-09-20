@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Editorial Revision: "Fine-Tuning Was the Easy Part" (`portfolio/content/writing/fine-tuning-was-the-easy-part.md`)**:
+  - Grounded the opening hook in concrete developer billing traps: autonomous coding agents default to kitchen-sink field requests on Place Details, turning inexpensive calls into high-tier billing events.
+  - Reinforced the core anti-slop eval principle: code syntax graders (valid JSON) fail to catch over-fetching; eval graders must penalize economic friction to enforce model restraint.
+  - Paced cadence with natural periods instead of dense semicolon chains.
+  - Clarified the distribution ladder (humans/apps -> agent harness -> model weights) and grounded "share of gradient" in whether future models learn current platform APIs or outdated web snippets.
+
 - **Local Hemmingway Writing Review Model & CLI (`scripts/local_hemmingway.py`, `scripts/hemmingway.mjs`, `scripts/hemmingway-local.sh`, `package.json`)**:
   - Implemented local Apple Silicon Metal MLX runner for `Altworld/Hemmingway-1` (and local 4-bit Qwen 3.8 27B architecture) following the same architecture as the existing fine-tuned Gemma 4 copyediting runner.
   - Added native dynamic architecture mapping (`qwen3_5_text` -> `qwen3_5`) in `mlx_lm.utils.MODEL_REMAPPING`.
