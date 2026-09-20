@@ -2,7 +2,13 @@
   "name": "fieldwork",
   "private": true,
   "description": "Fieldwork by Ryan Baumann: Field Notes, shipped work, talks, and Labs.",
+  "bin": {
+    "hemmingway": "./scripts/hemmingway.mjs"
+  },
   "scripts": {
+    "hemmingway": "node ./scripts/hemmingway.mjs",
+    "hemmingway:review": "node ./scripts/hemmingway.mjs review",
+    "hemmingway:edit": "node ./scripts/hemmingway.mjs edit",
     "setup": "node scripts/setup.mjs",
     "build": "node scripts/build-local.mjs",
     "start": "node --env-file=.env gateway/server.js",

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Local Hemmingway Writing Review Model & CLI (`scripts/local_hemmingway.py`, `scripts/hemmingway.mjs`, `scripts/hemmingway-local.sh`, `package.json`)**:
+  - Implemented local Apple Silicon Metal MLX runner for `Altworld/Hemmingway-1` (and local 4-bit Qwen 3.8 27B architecture) following the same architecture as the existing fine-tuned Gemma 4 copyediting runner.
+  - Added native dynamic architecture mapping (`qwen3_5_text` -> `qwen3_5`) in `mlx_lm.utils.MODEL_REMAPPING`.
+  - Enforced pure stdout output for critique results with diagnostic/progress logging routed strictly to `stderr`, enabling seamless piping directly to subagents (`npx hemmingway review <file> | subagent`).
+  - Added `hemmingway` binary to `package.json` with npm scripts (`hemmingway`, `hemmingway:review`, `hemmingway:edit`).
+  - Added comprehensive test coverage in `scripts/test/hemmingway_test.py` and `scripts/test/hemmingway.test.mjs`.
+  - Updated `.agents/skills/portfolio-review/SKILL.md` to include Hemmingway in the local verification and review toolchain.
+
 - **Essay revision: "Can I Build an AI Agent That Doesn't Write Slop?" (`portfolio/content/writing/`)**:
   - Incorporated reader critique feedback: added a compact evaluation scorecard with pass rates, 95% confidence intervals, and failure mode analysis.
   - Addressed Task 1 and Task 2 difference comparisons to highlight Pipeline C's direct phrasing and outcome-first ordering.
