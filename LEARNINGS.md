@@ -2,6 +2,16 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-09-20 - Clean stdout separation and dynamic model remapping for local MLX review runners
+
+Context: Setting up local inference for `Altworld/Hemmingway-1` (27B creative writing and un-slop critique model built on Qwen 3.8 27B) so that editorial critique can be invoked via `npx hemmingway review <file>` and piped directly into subagents for automated revision.
+
+Learning: Piping local LLM output directly into agent pipelines requires strict stream discipline: diagnostic messages (model loading, GPU allocation, download status) must route exclusively to `stderr`, leaving `stdout` as pure, unadorned critique. Additionally, MLX requires mapping `qwen3_5_text` to `qwen3_5` in `mlx_lm.utils.MODEL_REMAPPING` to instantiate the hybrid linear/full attention architecture on Metal, and handling `EPIPE` prevents unhandled exceptions when downstream tools (such as `head` or piping subagents) close standard input early.
+
+Evidence: Tested `npx hemmingway review <text>` on Apple Silicon Metal; `stderr` received model initialization and generation progress, while `stdout` emitted purely the structured critique with zero transport or thinking artifacts. `hemmingway_test.py` and `hemmingway.test.mjs` pass.
+
+Use next time: For any CLI tool designed for subagent piping, enforce pure stdout output with stderr logging, register model type remappings dynamically before `mlx_lm.load()`, and add EPIPE stream handlers for unix pipeline resilience.
+
 ## 2026-09-09 - Serialized identity claims need exact type and presence checks
 
 Context: The writer OAuth callback validated claims returned by Google's token-info endpoint.
