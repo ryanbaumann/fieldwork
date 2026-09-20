@@ -84,6 +84,11 @@ function serializeFrontMatter(meta, body) {
 
 function inlineMd(text) {
   let html = escapeHtml(text);
+  html = html
+    .replace(/&lt;ins class=&quot;([^&]+)&quot;&gt;/g, '<ins class="$1">')
+    .replace(/&lt;\/ins&gt;/g, '</ins>')
+    .replace(/&lt;del class=&quot;([^&]+)&quot;&gt;/g, '<del class="$1">')
+    .replace(/&lt;\/del&gt;/g, '</del>');
   const codeSpans = [];
   html = html.replace(/`([^`]+)`/g, (_, code) => {
     codeSpans.push(`<code>${code}</code>`);
@@ -348,6 +353,461 @@ body {
 </html>`;
 }
 
+function lcsTokens(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < n; j++) {
+      if (a[i] === b[j]) dp[i + 1][j + 1] = dp[i][j] + 1;
+      else dp[i + 1][j + 1] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const result = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+      result.unshift({ type: 'same', val: a[i - 1] });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      result.unshift({ type: 'add', val: b[j - 1] });
+      j--;
+    } else if (i > 0) {
+      result.unshift({ type: 'del', val: a[i - 1] });
+      i--;
+    }
+  }
+  return result;
+}
+
+function wordDiffInline(oldStr, newStr) {
+  if (oldStr === newStr) return escapeHtml(newStr);
+  if (!oldStr) return `<ins class="rich-diff-ins">${escapeHtml(newStr)}</ins>`;
+  if (!newStr) return `<del class="rich-diff-del">${escapeHtml(oldStr)}</del>`;
+
+  const a = oldStr.match(/\S+\s*/g) || [];
+  const b = newStr.match(/\S+\s*/g) || [];
+  const rawDiff = lcsTokens(a, b);
+  const merged = [];
+  for (const item of rawDiff) {
+    const last = merged[merged.length - 1];
+    if (last && last.type === item.type) {
+      last.val += item.val;
+    } else {
+      merged.push({ ...item });
+    }
+  }
+  return merged.map(item => {
+    if (item.type === 'same') return escapeHtml(item.val);
+    if (item.type === 'add') return `<ins class="rich-diff-ins">${escapeHtml(item.val)}</ins>`;
+    if (item.type === 'del') return `<del class="rich-diff-del">${escapeHtml(item.val)}</del>`;
+  }).join('');
+}
+
+function parseBlocks(markdown) {
+  const lines = markdown.split(/\r?\n/);
+  const blocks = [];
+  let index = 0;
+  while (index < lines.length) {
+    const line = lines[index];
+    if (line.trim() === '') { index++; continue; }
+    if (line.trim().startsWith('<!--')) {
+      const start = index;
+      while (index < lines.length && !lines[index].includes('-->')) index++;
+      index++;
+      blocks.push({ type: 'comment', raw: lines.slice(start, index).join('\n') });
+      continue;
+    }
+    if (line.startsWith('```')) {
+      const start = index; index++;
+      while (index < lines.length && !lines[index].startsWith('```')) index++;
+      index++;
+      blocks.push({ type: 'code', raw: lines.slice(start, index).join('\n') });
+      continue;
+    }
+    if (/^#{1,6}\s+/.test(line)) {
+      blocks.push({ type: 'heading', raw: line });
+      index++;
+      continue;
+    }
+    if (/^(-{3,}|\*{3,})$/.test(line.trim())) {
+      blocks.push({ type: 'hr', raw: line });
+      index++;
+      continue;
+    }
+    if (line.includes('|') && /^\s*\|?\s*:?-{3,}/.test(lines[index + 1] || '')) {
+      const start = index; index += 2;
+      while (index < lines.length && lines[index].includes('|') && lines[index].trim()) index++;
+      blocks.push({ type: 'table', raw: lines.slice(start, index).join('\n') });
+      continue;
+    }
+    if (/^\s*[-*]\s+/.test(line) || /^\s*\d+\.\s+/.test(line)) {
+      const start = index;
+      while (index < lines.length && (/^\s*[-*]\s+/.test(lines[index]) || /^\s*\d+\.\s+/.test(lines[index]) || (lines[index].startsWith(' ') && lines[index].trim() !== ''))) {
+        index++;
+      }
+      blocks.push({ type: 'list', raw: lines.slice(start, index).join('\n') });
+      continue;
+    }
+    if (line.startsWith('> ') || line === '>') {
+      const start = index;
+      while (index < lines.length && (lines[index].startsWith('> ') || lines[index] === '>')) index++;
+      blocks.push({ type: 'blockquote', raw: lines.slice(start, index).join('\n') });
+      continue;
+    }
+    const start = index;
+    while (index < lines.length && lines[index].trim() !== '' && !/^(#{1,6}\s|```|>\s|>\s*$|\s*[-*]\s|\s*\d+\.\s|\s*<!--|\|)/.test(lines[index])) {
+      index++;
+    }
+    blocks.push({ type: 'paragraph', raw: lines.slice(start, index).join('\n') });
+  }
+  return blocks;
+}
+
+function renderRichDiffBody(headBody, curBody) {
+  const headBlocks = parseBlocks(headBody || '');
+  const curBlocks = parseBlocks(curBody || '');
+
+  const m = headBlocks.length, n = curBlocks.length;
+  const dp = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < n; j++) {
+      if (headBlocks[i].raw === curBlocks[j].raw) dp[i + 1][j + 1] = dp[i][j] + 1;
+      else dp[i + 1][j + 1] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+
+  const steps = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && headBlocks[i - 1].raw === curBlocks[j - 1].raw) {
+      steps.unshift({ type: 'same', block: curBlocks[j - 1] });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      steps.unshift({ type: 'add', block: curBlocks[j - 1] });
+      j--;
+    } else if (i > 0) {
+      steps.unshift({ type: 'del', block: headBlocks[i - 1] });
+      i--;
+    }
+  }
+
+  const chunks = [];
+  let curr = null;
+  for (const step of steps) {
+    if (step.type === 'same') {
+      if (curr) { chunks.push(curr); curr = null; }
+      chunks.push({ type: 'same', block: step.block });
+    } else {
+      if (!curr) curr = { type: 'change', dels: [], adds: [] };
+      if (step.type === 'del') curr.dels.push(step.block);
+      if (step.type === 'add') curr.adds.push(step.block);
+    }
+  }
+  if (curr) chunks.push(curr);
+
+  const outHtml = [];
+  for (const chunk of chunks) {
+    if (chunk.type === 'same') {
+      outHtml.push(markdownToHtml(chunk.block.raw));
+      continue;
+    }
+
+    if (chunk.dels.length === 1 && chunk.adds.length === 1 && chunk.dels[0].type === 'paragraph' && chunk.adds[0].type === 'paragraph') {
+      outHtml.push(`<p>${wordDiffInline(chunk.dels[0].raw, chunk.adds[0].raw)}</p>`);
+      continue;
+    }
+
+    if (chunk.dels.length === 1 && chunk.adds.length === 1 && chunk.dels[0].type === 'heading' && chunk.adds[0].type === 'heading') {
+      const matchLevel = chunk.adds[0].raw.match(/^(#{1,6})\s+(.*)$/);
+      const level = matchLevel ? Math.min(Math.max(matchLevel[1].length, 2), 5) : 2;
+      const oldTxt = chunk.dels[0].raw.replace(/^#{1,6}\s+/, '');
+      const newTxt = chunk.adds[0].raw.replace(/^#{1,6}\s+/, '');
+      outHtml.push(`<h${level}>${wordDiffInline(oldTxt, newTxt)}</h${level}>`);
+      continue;
+    }
+
+    if (chunk.dels.length === chunk.adds.length && chunk.dels.every((d, idx) => d.type === chunk.adds[idx].type)) {
+      for (let k = 0; k < chunk.dels.length; k++) {
+        const d = chunk.dels[k];
+        const a = chunk.adds[k];
+        if (d.type === 'paragraph') {
+          outHtml.push(`<p>${wordDiffInline(d.raw, a.raw)}</p>`);
+        } else if (d.type === 'heading') {
+          const matchLevel = a.raw.match(/^(#{1,6})\s+(.*)$/);
+          const level = matchLevel ? Math.min(Math.max(matchLevel[1].length, 2), 5) : 2;
+          const oldTxt = d.raw.replace(/^#{1,6}\s+/, '');
+          const newTxt = a.raw.replace(/^#{1,6}\s+/, '');
+          outHtml.push(`<h${level}>${wordDiffInline(oldTxt, newTxt)}</h${level}>`);
+        } else if (d.type === 'list' && a.type === 'list') {
+          const dLines = d.raw.split('\n').filter(Boolean);
+          const aLines = a.raw.split('\n').filter(Boolean);
+          const isOrdered = /^\s*\d+\.\s+/.test(aLines[0] || '');
+          const tag = isOrdered ? 'ol' : 'ul';
+          const items = [];
+          const maxLen = Math.max(dLines.length, aLines.length);
+          for (let l = 0; l < maxLen; l++) {
+            const dLine = (dLines[l] || '').replace(/^\s*([-*]|\d+\.)\s+/, '');
+            const aLine = (aLines[l] || '').replace(/^\s*([-*]|\d+\.)\s+/, '');
+            items.push(`<li>${inlineMd(wordDiffInline(dLine, aLine))}</li>`);
+          }
+          outHtml.push(`<${tag}>${items.join('')}</${tag}>`);
+        } else {
+          outHtml.push(`<div class="rich-diff-block-del"><span class="rich-diff-tag removed">REMOVED</span>${markdownToHtml(d.raw)}</div>`);
+          outHtml.push(`<div class="rich-diff-block-ins"><span class="rich-diff-tag added">ADDED</span>${markdownToHtml(a.raw)}</div>`);
+        }
+      }
+      continue;
+    }
+
+    for (const del of chunk.dels) {
+      outHtml.push(`<div class="rich-diff-block-del"><span class="rich-diff-tag removed">- REMOVED BLOCK</span>${markdownToHtml(del.raw)}</div>`);
+    }
+    for (const add of chunk.adds) {
+      outHtml.push(`<div class="rich-diff-block-ins"><span class="rich-diff-tag added">+ ADDED BLOCK</span>${markdownToHtml(add.raw)}</div>`);
+    }
+  }
+
+  return outHtml.join('\n');
+}
+
+function renderRichDiffArticleHtml(headMarkdown, rawMarkdown, collectionName = 'writing', theme = 'system') {
+  const head = parseFrontMatter(headMarkdown || '');
+  const cur = parseFrontMatter(rawMarkdown || '');
+
+  const curTitle = cur.meta.title || 'Untitled';
+  const headTitle = head.meta.title || '';
+  const titleHtml = headTitle && headTitle !== curTitle 
+    ? wordDiffInline(headTitle, curTitle) 
+    : escapeHtml(curTitle);
+
+  const curSummary = cur.meta.summary || '';
+  const headSummary = head.meta.summary || '';
+  const summaryHtml = headSummary && headSummary !== curSummary 
+    ? wordDiffInline(headSummary, curSummary) 
+    : escapeHtml(curSummary);
+
+  const period = cur.meta.period || cur.meta.date || '';
+  const org = cur.meta.org || cur.meta.venue || '';
+  const role = cur.meta.role || '';
+  const metaParts = [org, role, period].filter(Boolean).join(' · ');
+
+  const bodyHtml = renderRichDiffBody(head.body || '', cur.body || '');
+  const css = fs.existsSync(STYLE_CSS_PATH) ? fs.readFileSync(STYLE_CSS_PATH, 'utf8') : '';
+
+  return `<!DOCTYPE html>
+<html lang="en" data-theme="${escapeHtml(theme)}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(curTitle)} - Rich Diff</title>
+  <style>
+${css}
+
+/* Live Preview Overrides & Enhancements */
+body {
+  padding: 1.5rem 1rem 4rem;
+  background-color: var(--bg);
+  color: var(--ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.prose {
+  margin: 0 auto;
+  max-width: var(--prose);
+}
+[data-src-line] {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+[data-src-line]:hover {
+  outline: 1px dashed var(--accent);
+}
+.preview-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--faint);
+}
+.preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+.preview-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3b82f6;
+}
+
+/* Rich Diff Styling */
+ins.rich-diff-ins {
+  background-color: rgba(34, 197, 94, 0.22);
+  color: #15803d;
+  text-decoration: none;
+  border-bottom: 2px solid #22c55e;
+  padding: 0.05rem 0.25rem;
+  border-radius: 3px;
+  font-weight: 500;
+}
+[data-theme="dark"] ins.rich-diff-ins {
+  background-color: rgba(34, 197, 94, 0.25);
+  color: #86efac;
+}
+
+del.rich-diff-del {
+  background-color: rgba(239, 68, 68, 0.18);
+  color: #b91c1c;
+  text-decoration: line-through;
+  opacity: 0.85;
+  padding: 0.05rem 0.25rem;
+  border-radius: 3px;
+}
+[data-theme="dark"] del.rich-diff-del {
+  background-color: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+.rich-diff-block-ins {
+  background: rgba(34, 197, 94, 0.08);
+  border-left: 4px solid #22c55e;
+  padding: 0.85rem 1.15rem;
+  margin: 1.25rem 0;
+  border-radius: 0 8px 8px 0;
+}
+.rich-diff-block-del {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 4px solid #ef4444;
+  padding: 0.85rem 1.15rem;
+  margin: 1.25rem 0;
+  border-radius: 0 8px 8px 0;
+  opacity: 0.85;
+}
+.rich-diff-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  margin-bottom: 0.6rem;
+}
+.rich-diff-tag.added {
+  background: #22c55e;
+  color: #fff;
+}
+.rich-diff-tag.removed {
+  background: #ef4444;
+  color: #fff;
+}
+.rich-diff-banner {
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.rich-diff-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+.rich-diff-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.legend-swatch.ins { background: #22c55e; }
+.legend-swatch.del { background: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="prose">
+    <div class="preview-header-bar">
+      <span class="preview-badge"><span class="preview-dot"></span> ✨ Rich Prose Diff vs Git HEAD</span>
+      <span>${collectionName === 'writing' ? 'Field Notes' : collectionName.toUpperCase()}</span>
+    </div>
+
+    <div class="rich-diff-banner">
+      <div class="rich-diff-banner-left">
+        <span>✨ Rich Prose Diff</span>
+        <span style="font-weight: 400; color: var(--muted);">Visual formatting and typography comparison</span>
+      </div>
+      <div class="rich-diff-legend">
+        <span class="legend-item"><span class="legend-swatch ins"></span> Added</span>
+        <span class="legend-item"><span class="legend-swatch del"></span> Removed</span>
+      </div>
+    </div>
+
+    <article>
+      <p class="eyebrow">${collectionName === 'writing' ? 'Field Notes' : escapeHtml(collectionName)}</p>
+      <h1>${titleHtml}</h1>
+      ${metaParts ? `<p class="article-meta">${escapeHtml(metaParts)}</p>` : ''}
+      ${summaryHtml ? `<p class="lede">${summaryHtml}</p>` : ''}
+      
+      <div class="article-body">
+        ${bodyHtml}
+      </div>
+
+      <div class="article-colophon">
+        <p class="article-disclosure">Written by Ryan Baumann. Fine-tuned local language models assist with copyediting and voice consistency; all ideas, analysis, and code are my own.</p>
+      </div>
+
+      <p class="back">← All ${collectionName === 'writing' ? 'notes' : collectionName}</p>
+    </article>
+  </div>
+
+  <script>
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-src-line]');
+      if (el) {
+        const line = parseInt(el.getAttribute('data-src-line'), 10);
+        window.parent.postMessage({ type: 'jump-to-line', line }, '*');
+      }
+    });
+
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'set-theme') {
+        document.documentElement.dataset.theme = e.data.theme;
+      }
+    });
+  </script>
+</body>
+</html>`;
+}
+
 // ---------------------------------------------------------------------------
 // Local Gemma 4 Model Execution (Apple Silicon Metal / MLX)
 // ---------------------------------------------------------------------------
@@ -576,6 +1036,57 @@ const server = http.createServer(async (req, res) => {
       const data = await readBodyJson(req);
       const html = renderFullArticleHtml(data.rawMarkdown || '', data.collection || 'writing', data.theme || 'system');
       return sendHtml(res, 200, html);
+    }
+
+    // API: Render Rich Diff Preview
+    if (pathname === '/api/render-rich-diff' && req.method === 'POST') {
+      const data = await readBodyJson(req);
+      const collection = data.collection || 'writing';
+      const slug = data.slug;
+      let headMarkdown = data.headMarkdown;
+      if (headMarkdown === undefined) {
+        if (slug) {
+          const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
+          try {
+            const proc = spawn('git', ['show', `HEAD:${relPath}`], { cwd: ROOT_DIR });
+            let out = '';
+            proc.stdout.on('data', d => { out += d.toString('utf8'); });
+            await new Promise((resolve) => { proc.on('close', resolve); });
+            headMarkdown = out;
+          } catch {
+            headMarkdown = '';
+          }
+        }
+      }
+      let rawMarkdown = data.rawMarkdown;
+      if (rawMarkdown === undefined && slug) {
+        const filePath = path.join(ROOT_DIR, 'portfolio', 'content', collection, `${slug}.md`);
+        if (fs.existsSync(filePath)) {
+          rawMarkdown = fs.readFileSync(filePath, 'utf8');
+        }
+      }
+      const html = renderRichDiffArticleHtml(headMarkdown || '', rawMarkdown || '', collection, data.theme || 'system');
+      return sendHtml(res, 200, html);
+    }
+
+    // API: Git HEAD Content
+    if (pathname === '/api/git-head' && (req.method === 'GET' || req.method === 'POST')) {
+      const collection = parsedUrl.searchParams.get('collection') || 'writing';
+      const slug = parsedUrl.searchParams.get('slug');
+      if (!slug) return sendJson(res, 400, { error: 'Missing slug parameter' });
+      
+      const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
+      const proc = spawn('git', ['show', `HEAD:${relPath}`], { cwd: ROOT_DIR });
+      let headOutput = '';
+      proc.stdout.on('data', d => { headOutput += d.toString('utf8'); });
+      proc.on('close', code => {
+        sendJson(res, 200, {
+          success: code === 0,
+          headMarkdown: code === 0 ? headOutput : '',
+          relPath
+        });
+      });
+      return;
     }
 
 function extractModelOutput(stdout) {
@@ -859,6 +1370,8 @@ function getWriterAppHtml() {
       border-right: 1px solid var(--border);
       background: var(--bg-panel);
       height: 100%;
+      min-height: 0;
+      min-width: 0;
       position: relative;
     }
 
@@ -1040,9 +1553,13 @@ function getWriterAppHtml() {
       flex-direction: column;
       background: var(--bg);
       height: 100%;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
     }
     .preview-toolbar {
       height: 40px;
+      flex-shrink: 0;
       background: var(--bg-card);
       border-bottom: 1px solid var(--border);
       display: flex;
@@ -1076,6 +1593,7 @@ function getWriterAppHtml() {
       align-items: stretch;
       background: #000;
       overflow: hidden;
+      min-height: 0;
       padding: 0;
       transition: all 0.2s ease;
     }
@@ -1113,6 +1631,8 @@ function getWriterAppHtml() {
       flex-direction: column;
       background: var(--bg-panel);
       overflow: hidden;
+      min-height: 0;
+      height: calc(100% - 40px);
     }
     .diff-header {
       padding: 0.6rem 1rem;
@@ -1122,16 +1642,35 @@ function getWriterAppHtml() {
       justify-content: space-between;
       align-items: center;
       font-size: 0.82rem;
+      flex-shrink: 0;
     }
     .diff-body {
       flex: 1;
       padding: 1rem;
       overflow-y: auto;
+      overflow-x: auto;
+      min-height: 0;
+      max-height: 100%;
       font-family: var(--font-mono);
       font-size: 0.85rem;
       line-height: 1.5;
       white-space: pre-wrap;
+      word-break: break-word;
       color: var(--text-muted);
+    }
+    .diff-body::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .diff-body::-webkit-scrollbar-track {
+      background: var(--bg-panel);
+    }
+    .diff-body::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .diff-body::-webkit-scrollbar-thumb:hover {
+      background: var(--text-faint);
     }
     .diff-line-add {
       background: rgba(34, 197, 94, 0.15);
@@ -1282,6 +1821,7 @@ function getWriterAppHtml() {
       <div class="preview-toolbar">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <button id="mode-preview-btn" class="mode-btn active">👁️ Live Preview</button>
+          <button id="mode-rich-diff-btn" class="mode-btn">✨ Rich Diff</button>
           <button id="mode-diff-btn" class="mode-btn">📑 Git Diff</button>
         </div>
         <div id="device-switcher" class="device-switcher">
@@ -1317,7 +1857,7 @@ function getWriterAppHtml() {
     let previewTheme = 'light';
     let activeSuggestion = null;
     let renderDebounceTimer = null;
-    let activeViewMode = 'preview'; // 'preview' | 'diff'
+    let activeViewMode = 'preview'; // 'preview' | 'rich-diff' | 'diff'
     let lastFetchedDiff = '';
 
     const postSelect = document.getElementById('post-select');
@@ -1330,6 +1870,7 @@ function getWriterAppHtml() {
     const diffRefreshBtn = document.getElementById('diff-refresh-btn');
     const diffCopyBtn = document.getElementById('diff-copy-btn');
     const modePreviewBtn = document.getElementById('mode-preview-btn');
+    const modeRichDiffBtn = document.getElementById('mode-rich-diff-btn');
     const modeDiffBtn = document.getElementById('mode-diff-btn');
     const deviceSwitcher = document.getElementById('device-switcher');
     const saveBtn = document.getElementById('save-btn');
@@ -1352,22 +1893,85 @@ function getWriterAppHtml() {
     // -----------------------------------------------------------------------
     // Initialization & Data Loading
     // -----------------------------------------------------------------------
+    function syncUrlParams() {
+      if (!currentPost) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('collection', currentPost.collection);
+      url.searchParams.set('slug', currentPost.slug);
+      if (activeViewMode && activeViewMode !== 'preview') {
+        url.searchParams.set('mode', activeViewMode);
+      } else {
+        url.searchParams.delete('mode');
+      }
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+
     async function loadPosts() {
       try {
         const res = await fetch('/api/posts');
         const data = await res.json();
         postSelect.innerHTML = '';
         
-        data.posts.forEach(p => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetSlug = (urlParams.get('slug') || urlParams.get('post') || urlParams.get('article') || urlParams.get('id') || '').trim().toLowerCase();
+        const targetCollection = (urlParams.get('collection') || '').trim().toLowerCase();
+        const targetMode = (urlParams.get('mode') || '').trim().toLowerCase();
+
+        let selectedIndex = -1;
+
+        // 1. Exact match on collection + slug
+        if (targetSlug && targetCollection) {
+          selectedIndex = data.posts.findIndex(p => 
+            p.collection.toLowerCase() === targetCollection && 
+            p.slug.toLowerCase() === targetSlug
+          );
+        }
+
+        // 2. Exact match on slug across any collection
+        if (selectedIndex === -1 && targetSlug) {
+          selectedIndex = data.posts.findIndex(p => p.slug.toLowerCase() === targetSlug);
+        }
+
+        // 3. Partial substring match on slug
+        if (selectedIndex === -1 && targetSlug) {
+          selectedIndex = data.posts.findIndex(p => p.slug.toLowerCase().includes(targetSlug));
+        }
+
+        // 4. Default: Prefer the slop post if no target requested
+        if (selectedIndex === -1 && !targetSlug) {
+          selectedIndex = data.posts.findIndex(p => p.slug.includes('slop'));
+        }
+
+        // 5. Fallback: First item in list
+        if (selectedIndex === -1 && data.posts.length > 0) {
+          selectedIndex = 0;
+        }
+
+        data.posts.forEach((p, idx) => {
           const opt = document.createElement('option');
           opt.value = JSON.stringify({ collection: p.collection, slug: p.slug });
           opt.textContent = \`[\${p.collection}] \${p.title} (\${p.wordCount}w)\`;
-          // Default to slop article if present
-          if (p.slug.includes('slop') || p.slug.includes('agent')) {
+          if (idx === selectedIndex) {
             opt.selected = true;
           }
           postSelect.appendChild(opt);
         });
+
+        if (targetMode && ['preview', 'rich-diff', 'diff'].includes(targetMode)) {
+          activeViewMode = targetMode;
+          modePreviewBtn.classList.toggle('active', targetMode === 'preview');
+          modeRichDiffBtn.classList.toggle('active', targetMode === 'rich-diff');
+          modeDiffBtn.classList.toggle('active', targetMode === 'diff');
+          if (targetMode === 'diff') {
+            frameContainer.style.display = 'none';
+            deviceSwitcher.style.display = 'none';
+            diffViewContainer.style.display = 'flex';
+          } else {
+            frameContainer.style.display = 'flex';
+            deviceSwitcher.style.display = 'flex';
+            diffViewContainer.style.display = 'none';
+          }
+        }
 
         if (postSelect.value) {
           loadSelectedPost();
@@ -1390,14 +1994,22 @@ function getWriterAppHtml() {
         isDirty = false;
         updateSaveStatus('saved');
         updateStats();
-        triggerLivePreview();
+        syncUrlParams();
+
+        if (activeViewMode === 'rich-diff') {
+          triggerRichDiffPreview();
+        } else if (activeViewMode === 'diff') {
+          renderGitDiff();
+        } else {
+          triggerLivePreview();
+        }
       } catch (err) {
         console.error('Failed to load post content:', err);
       }
     }
 
     // -----------------------------------------------------------------------
-    // Live Preview Rendering (Debounced)
+    // Live Preview & Rich Diff Rendering (Debounced)
     // -----------------------------------------------------------------------
     function triggerLivePreview() {
       clearTimeout(renderDebounceTimer);
@@ -1418,6 +2030,30 @@ function getWriterAppHtml() {
           previewFrame.srcdoc = html;
         } catch (err) {
           console.error('Preview render error:', err);
+        }
+      }, 30);
+    }
+
+    let richDiffDebounceTimer = null;
+    function triggerRichDiffPreview() {
+      clearTimeout(richDiffDebounceTimer);
+      richDiffDebounceTimer = setTimeout(async () => {
+        if (!currentPost) return;
+        try {
+          const res = await fetch('/api/render-rich-diff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rawMarkdown: rawEditor.value,
+              collection: currentPost.collection,
+              slug: currentPost.slug,
+              theme: previewTheme
+            })
+          });
+          const html = await res.text();
+          previewFrame.srcdoc = html;
+        } catch (err) {
+          console.error('Rich diff render error:', err);
         }
       }, 30);
     }
@@ -1693,7 +2329,11 @@ function getWriterAppHtml() {
     rawEditor.addEventListener('input', () => {
       updateSaveStatus('unsaved');
       updateStats();
-      triggerLivePreview();
+      if (activeViewMode === 'rich-diff') {
+        triggerRichDiffPreview();
+      } else if (activeViewMode === 'preview') {
+        triggerLivePreview();
+      }
     });
 
     saveBtn.addEventListener('click', saveCurrentPost);
@@ -1820,16 +2460,22 @@ function getWriterAppHtml() {
 
     function setViewMode(mode) {
       activeViewMode = mode;
+      modePreviewBtn.classList.toggle('active', mode === 'preview');
+      modeRichDiffBtn.classList.toggle('active', mode === 'rich-diff');
+      modeDiffBtn.classList.toggle('active', mode === 'diff');
+      syncUrlParams();
+
       if (mode === 'preview') {
-        modePreviewBtn.classList.add('active');
-        modeDiffBtn.classList.remove('active');
         frameContainer.style.display = 'flex';
         deviceSwitcher.style.display = 'flex';
         diffViewContainer.style.display = 'none';
         triggerLivePreview();
+      } else if (mode === 'rich-diff') {
+        frameContainer.style.display = 'flex';
+        deviceSwitcher.style.display = 'flex';
+        diffViewContainer.style.display = 'none';
+        triggerRichDiffPreview();
       } else {
-        modePreviewBtn.classList.remove('active');
-        modeDiffBtn.classList.add('active');
         frameContainer.style.display = 'none';
         deviceSwitcher.style.display = 'none';
         diffViewContainer.style.display = 'flex';
@@ -1838,6 +2484,7 @@ function getWriterAppHtml() {
     }
 
     modePreviewBtn.addEventListener('click', () => setViewMode('preview'));
+    modeRichDiffBtn.addEventListener('click', () => setViewMode('rich-diff'));
     modeDiffBtn.addEventListener('click', () => setViewMode('diff'));
     diffRefreshBtn.addEventListener('click', renderGitDiff);
     diffCopyBtn.addEventListener('click', () => {
@@ -1847,6 +2494,32 @@ function getWriterAppHtml() {
         diffCopyBtn.textContent = '✓ Copied!';
         setTimeout(() => { diffCopyBtn.textContent = orig; }, 1500);
       });
+    });
+
+    window.addEventListener('popstate', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetSlug = (urlParams.get('slug') || urlParams.get('post') || urlParams.get('article') || '').trim().toLowerCase();
+      const targetCollection = (urlParams.get('collection') || '').trim().toLowerCase();
+      const targetMode = (urlParams.get('mode') || 'preview').trim().toLowerCase();
+
+      if (targetSlug) {
+        for (let i = 0; i < postSelect.options.length; i++) {
+          try {
+            const val = JSON.parse(postSelect.options[i].value);
+            if (val.slug.toLowerCase() === targetSlug && (!targetCollection || val.collection.toLowerCase() === targetCollection)) {
+              if (postSelect.selectedIndex !== i) {
+                postSelect.selectedIndex = i;
+                loadSelectedPost();
+              }
+              break;
+            }
+          } catch {}
+        }
+      }
+
+      if (targetMode && targetMode !== activeViewMode && ['preview', 'rich-diff', 'diff'].includes(targetMode)) {
+        setViewMode(targetMode);
+      }
     });
 
     function escapeHtml(str) {

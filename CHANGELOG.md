@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Essay revision: "Can I Build an AI Agent That Doesn't Write Slop?" (`portfolio/content/writing/`)**:
+  - Incorporated reader critique feedback: added a compact evaluation scorecard with pass rates, 95% confidence intervals, and failure mode analysis.
+  - Addressed Task 1 and Task 2 difference comparisons to highlight Pipeline C's direct phrasing and outcome-first ordering.
+  - Translated academic odds ratios into plain English so statistical findings are accessible without prior training.
+  - Restructured "What I learned" to break artificial 3x3 template symmetry and clarify citation hallucination limits.
+  - Corrected grammar, typos, and hedging terms ("copyedit", "MacBook", comma splice, and specific dataset and rules examples).
+
+- **Fieldwork Writer Studio: Scrollable Unified Diff & In-Situ Rich Diff Preview (`scripts/writer_app.mjs`)**:
+  - Fixed CSS grid and flexbox overflow clamping (`min-height: 0`, `min-width: 0`, `overflow-y: auto`, `height: calc(100% - 40px)`) so the unified `git diff` view scrolls smoothly across long diffs.
+  - Implemented an in-situ **Rich Diff** mode (`mode-rich-diff-btn`) featuring block-level chunking, longest-common-subsequence word-level diffing (`<ins>` / `<del>`), and added/removed block callouts rendered directly in the site's typography and theme system.
+  - Added `/api/render-rich-diff` and `/api/git-head` endpoints supporting live debounced updates against git HEAD.
+  - Added URL parameter deep linking (`?collection=...&slug=...` and `?mode=...`) with bidirectional `history.replaceState` and `popstate` synchronization so links reliably open the requested article and preview mode.
+
 - **Repository security, performance, content, and UX audit (`gateway/`,
   `portfolio/`, `demos/`, `docs/`)**: Implemented the confirmed technical and
   interface findings from PR #259. Essay copy remains unchanged after owner
