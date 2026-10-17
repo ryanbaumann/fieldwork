@@ -47,7 +47,7 @@
   left: 1rem;
   z-index: 1000;
   padding: 0.6rem 1.2rem;
-  background: var(--accent);
+  background: var(--accent-ink);
   color: var(--on-accent);
   font-weight: 700;
   font-size: 0.9rem;
@@ -57,7 +57,7 @@
 }
 .skip-link:focus {
   top: 0;
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
   color: var(--on-accent);
 }
@@ -152,46 +152,52 @@ img { max-width: 100%; height: auto; border-radius: 0.6rem; }
   padding-inline: clamp(1.25rem, 4vw, 2.5rem);
 }
 
+/* The whole header lives here plus one ≤720px block near the end of the
+   file. Keep it that way: four cascading header blocks used to fight. */
 .site-header {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  padding-block: 1.5rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.7rem;
   background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
 }
-.site-name { min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
+.site-name { min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; white-space: nowrap; }
 .site-name-short { display: none; }
 .site-nav-frame { min-width: 0; }
 .site-header nav {
   display: flex;
-  gap: clamp(0.75rem, 3vw, 1.35rem);
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(0.55rem, 2vw, 1rem);
   max-width: 100%;
 }
 .site-header nav a {
   flex: 0 0 auto;
-  text-decoration: none;
-  color: var(--muted);
-  font-size: 0.95rem;
-  padding: 0.35rem 0;
-  min-height: 44px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.35rem 0;
+  color: var(--muted);
+  font-size: clamp(0.78rem, 2.5vw, 0.92rem);
+  text-decoration: none;
   white-space: nowrap;
 }
 .site-header nav a:hover { color: var(--accent-ink); }
 .site-header nav a[aria-current="page"] { color: var(--ink); font-weight: 600; }
-.header-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+.header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
 .header-contact {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding-inline: 0.45rem;
   color: var(--muted);
   font-size: 0.82rem;
@@ -217,28 +223,6 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
 }
 .footer-links { display: flex; gap: 0.75rem 1.25rem; flex-wrap: wrap; }
 @media (max-width: 480px) {
-  .site-header {
-    align-items: center;
-    padding-block: 0.85rem;
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-  }
-  .site-name {
-    font-size: 0.95rem;
-  }
-  .site-header nav {
-    width: auto;
-    flex: 1;
-    padding-bottom: 0;
-    gap: 0.5rem;
-  }
-  .site-header nav a {
-    font-size: 0.85rem;
-  }
-  .header-actions {
-    flex-wrap: nowrap;
-    gap: 0.25rem;
-  }
   .site-footer { flex-direction: column; gap: 0.5rem; }
 }
 
@@ -259,11 +243,6 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
   margin: 0 0 0.75rem;
 }
 .lede { font-size: clamp(1.1rem, 2.5vw, 1.3rem); line-height: 1.6; max-width: var(--prose); color: var(--ink); }
-.hero { padding-block: clamp(0.5rem, 3vw, 1.5rem); }
-.hero h1 {
-  max-width: 100%;
-}
-.hero-meta { color: var(--muted); font-size: 0.95rem; }
 .profile-image {
   display: block;
   width: clamp(4.5rem, 18vw, 6.5rem);
@@ -292,7 +271,6 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
 .more { font-size: 0.92rem; color: var(--muted); text-decoration: none; white-space: nowrap; }
 .more:hover { color: var(--accent-ink); }
 .section-note { color: var(--muted); font-size: 0.95rem; max-width: var(--prose); margin-bottom: 1.25rem; }
-.hero-links { margin-top: 1.25rem; }
 
 /* ---- work cards ---- */
 
@@ -417,6 +395,8 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0 1.5rem; }
 .chip {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
@@ -425,6 +405,7 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
   background: var(--surface);
   border-radius: 999px;
   padding: 0.3rem 0.85rem;
+  transition: border-color 0.15s ease, transform 0.1s ease;
 }
 .chip:hover { border-color: var(--accent); }
 
@@ -531,41 +512,35 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
 }
 .empty-state h2 { color: var(--ink); }
 .empty-state p { margin: 0 auto; max-width: 30rem; }
-.placeholder-note { color: var(--faint); font-size: 0.9rem; margin-top: 1rem; }
-.about-teaser .lede { color: var(--muted); }
+
+/* Press feedback: the card drops its hover lift, rows deepen their fill. */
+.card:active { transform: translateY(0); }
+a.row:active,
+.featured-note:active { background: color-mix(in srgb, var(--surface) 60%, var(--line)); }
+.site-header nav a:active,
+.header-contact:active,
+.more:active,
+.back a:active { color: var(--ink); }
+
+/* Touch screens: small inline links still get a 44px hit area. */
+@media (pointer: coarse) {
+  .chip,
+  .more,
+  .back a,
+  .footer-links a { min-height: 44px; display: inline-flex; align-items: center; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
+  .card:hover,
+  .button:active,
+  .theme-toggle:active,
+  .chip:active { transform: none; }
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) { animation-duration: 0.01ms !important; }
 }
-
-
-.hero-split {
-  display: grid;
-  gap: clamp(1.5rem, 4vw, 3rem);
-  align-items: center;
-}
-
-.hero-figure { margin: 0; }
-.hero-image {
-  width: min(100%, 34rem);
-  height: auto;
-  border-radius: 1.5rem;
-  border: 1px solid var(--line);
-  box-shadow: 0 1rem 3rem rgb(0 0 0 / 12%);
-}
-.hero-image-caption { font-size: 0.85rem; color: var(--faint); margin-top: 0.6rem; }
-.hero-image-caption a { color: inherit; }
-
-@media (min-width: 860px) {
-  .hero-split {
-    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, .85fr);
-  }
-}
-
-/* ---- compact header, explicit theme toggle ---- */
+/* ---- explicit theme override (theme toggle) ---- */
 html[data-theme="light"] {
   color-scheme: light;
   --bg: #faf9f6;
@@ -592,51 +567,6 @@ html[data-theme="dark"] {
   --accent-ink: #93c5fd;
   --on-accent: #030712;
 }
-.site-header {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  padding-block: 0.7rem;
-  flex-wrap: nowrap;
-}
-.site-name { white-space: nowrap; }
-.site-header nav {
-  justify-content: end;
-  gap: clamp(0.55rem, 2vw, 1rem);
-}
-.site-header nav a {
-  min-height: 36px;
-  font-size: clamp(0.78rem, 2.5vw, 0.92rem);
-}
-.theme-toggle,
-.button {
-  min-height: 36px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 650;
-  padding: 0.25rem 0.7rem;
-  cursor: pointer;
-}
-.theme-toggle { width: 44px; padding: 0; border-color: transparent; background: transparent; font-size: 1.15rem; line-height: 1; }
-.theme-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.theme-toggle:hover,
-.button:hover { border-color: var(--accent); color: var(--accent-ink); }
-@media (max-width: 640px) {
-  .site-header {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 0.55rem;
-    padding-block: 0.5rem;
-    padding-inline: 0.8rem;
-  }
-  .site-name { max-width: 5.8rem; overflow: hidden; text-overflow: ellipsis; }
-  .site-header nav { width: auto; justify-content: start; }
-  .site-header nav a { min-height: 34px; }
-  .theme-toggle { padding-inline: 0.55rem; }
-}
 
 /* ---- resume and contact ---- */
 .resume-shell,
@@ -652,13 +582,6 @@ html[data-theme="dark"] {
   padding-bottom: 1.1rem;
   margin-bottom: 1.3rem;
 }
-.resume-section {
-  border-bottom: 1px solid var(--line);
-  padding: 1.1rem 0;
-}
-.resume-section article + article { margin-top: 1rem; }
-.resume-section h2 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-ink); }
-.resume-section h3 { margin-bottom: 0.2rem; }
 .resume-meta { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.4rem; }
 .resume-body h2 {
   margin-top: 1.8rem;
@@ -671,25 +594,6 @@ html[data-theme="dark"] {
 }
 .resume-body h3 { margin-top: 1.4rem; margin-bottom: 0.3rem; }
 .resume-body ul { padding-left: 1.2rem; }
-.contact-prompts {
-  display: grid;
-  gap: 0.75rem;
-  margin: 1.4rem 0;
-}
-.contact-prompts article {
-  border: 1px solid var(--line);
-  border-radius: 0.9rem;
-  background: var(--surface);
-  padding: 0.95rem;
-}
-.contact-prompts h2 {
-  margin-bottom: 0.25rem;
-  font-size: 1rem;
-}
-.contact-prompts p {
-  margin: 0;
-  color: var(--muted);
-}
 .contact-form {
   display: grid;
   gap: 1rem;
@@ -749,37 +653,49 @@ html[data-theme="dark"] {
   cursor: pointer;
 }
 .intent-options input { width: 1.1rem; height: 1.1rem; }
-.button { width: fit-content; padding-inline: 1rem; }
 @media (max-width: 560px) {
   .resume-header { display: block; }
 }
 
-/* ---- strategy-led shell and homepage ---- */
-.site-header {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.75rem;
-}
-.site-header nav {
-  justify-content: center;
-  overflow: visible;
-  flex-wrap: wrap;
-}
-.site-header nav a,
-.theme-toggle,
-.header-contact,
-.button {
-  min-height: 44px;
-}
-.site-header nav a { min-width: 44px; justify-content: center; }
-.header-actions { flex-wrap: nowrap; }
-.header-contact,
-.theme-toggle,
-.button {
+/* ---- controls: buttons + theme toggle ----
+   Hover = accent border and text. Focus = the global 2px offset ring.
+   Active = a 1px press. All three stay distinguishable in both schemes. */
+.button,
+.theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
+.button { width: fit-content; padding: 0.55rem 1rem; }
+.theme-toggle { width: 44px; padding: 0; border-color: transparent; background: transparent; font-size: 1.15rem; line-height: 1; }
+.theme-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.theme-toggle:hover,
+.button:hover { border-color: var(--accent); color: var(--accent-ink); }
+.button-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+  padding: 0.65rem 1.25rem;
+  font-size: 0.9rem;
+}
+.button-primary:hover { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--bg); }
+.button-secondary { background: transparent; border-color: var(--line); color: var(--ink); }
+.button-secondary:hover { background: var(--surface); }
+.button:active,
+.theme-toggle:active,
+.chip:active { transform: translateY(1px); }
 
 .hero {
   max-width: var(--max);
@@ -802,23 +718,7 @@ main > section.hero { margin-bottom: clamp(0.5rem, 1.5vw, 1.5rem); }
   gap: 0.75rem;
   margin-top: 1.25rem;
 }
-.button {
-  min-width: 44px;
-  padding: 0.55rem 1rem;
-  text-decoration: none;
-}
-.button-primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--bg);
-  padding: 0.65rem 1.25rem;
-  font-size: 0.9rem;
-}
-.button-primary:hover { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--bg); }
-.button-secondary { background: transparent; border-color: var(--line); color: var(--ink); }
-.button-secondary:hover { background: var(--surface); }
 .page-actions { margin-block: 1rem 1.5rem; }
-.text-link { color: var(--muted); font-size: 0.92rem; min-height: 44px; display: inline-flex; align-items: center; }
 
 /* ---- hero profile row + stats ---- */
 .hero-profile { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1rem; }
@@ -868,12 +768,12 @@ main > section.hero { margin-bottom: clamp(0.5rem, 1.5vw, 1.5rem); }
   transition: background-color 0.2s ease;
 }
 .featured-note:hover { background: var(--surface); color: inherit; }
+/* Ratio comes from the img width/height attributes (the real file), so the
+   social card is never cropped or stretched to match the text column. */
 .featured-note-thumb {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 1200 / 627;
-  object-fit: cover;
   border-radius: 0.5rem;
   border: 1px solid var(--line);
   background: var(--line);
@@ -888,13 +788,7 @@ main > section.hero { margin-bottom: clamp(0.5rem, 1.5vw, 1.5rem); }
 }
 .featured-note-action { color: var(--accent-ink); font-size: 0.88rem; font-weight: 700; }
 @media (min-width: 720px) {
-  .featured-note { 
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    align-items: stretch;
-  }
-  .featured-note-thumb {
-    height: 100%;
-  }
+  .featured-note { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
 }
 
 @media (min-width: 900px) {
@@ -935,7 +829,7 @@ main > section.hero { margin-bottom: clamp(0.5rem, 1.5vw, 1.5rem); }
 .writer-form input[type="datetime-local"] { min-height: 44px; padding: 0.6rem; border: 1px solid var(--line); border-radius: 0.6rem; background: var(--surface); color: var(--ink); font: inherit; }
 .writer-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .writer-edit, .writer-social, .writer-publish { border-top: 1px dashed var(--line); padding-top: 0.75rem; }
-.writer-edit summary, .writer-social summary, .writer-publish summary { cursor: pointer; color: var(--accent); font-weight: 650; }
+.writer-edit summary, .writer-social summary, .writer-publish summary { cursor: pointer; color: var(--accent-ink); font-weight: 650; padding-block: 0.6rem; }
 .writer-edit textarea { width: 100%; resize: vertical; padding: 0.75rem; border: 1px solid var(--line); border-radius: 0.6rem; background: var(--surface); color: var(--ink); font: 0.86rem/1.5 ui-monospace, "SF Mono", monospace; }
 .writer-review { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .writer-review label span { color: var(--muted); font-size: 0.88rem; font-weight: 400; }
@@ -952,32 +846,29 @@ main > section.hero { margin-bottom: clamp(0.5rem, 1.5vw, 1.5rem); }
 
 @media (max-width: 720px) {
   .site-header {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    flex-wrap: nowrap;
     padding: 0.4rem 0.5rem;
     gap: 0.2rem;
   }
   .site-name { min-width: 0; justify-content: flex-start; font-size: clamp(0.78rem, 3.6vw, 0.95rem); }
   .site-name-full { display: none; }
   .site-name-short { display: inline; }
-  .site-nav-frame {
-    grid-column: auto;
-    grid-row: auto;
-    width: 100%;
-  }
+  .site-nav-frame { width: 100%; }
+  /* One column per nav item, whatever the count: a 4-item build (no Labs)
+     must not leave a blank fifth column. */
   .site-header nav {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     width: 100%;
     gap: 0;
+    justify-content: stretch;
   }
-  /* Floor is a legibility minimum, not a fitting device: 0.66rem rendered at
-     10.56px. The one-line rule is held by padding and min-width, not by
+  /* Floor is a legibility minimum, not a fitting device: 0.75rem renders at
+     12px. The one-line rule is held by padding and min-width, not by
      shrinking type below readable size. Verify at 390px after changing. */
-  .site-header nav a { min-height: 44px; font-size: clamp(0.75rem, 2.5vw, 0.78rem); padding-inline: 0; }
-  .site-header nav a { min-width: 0; justify-content: center; }
+  .site-header nav a { min-width: 0; padding-inline: 0; font-size: clamp(0.75rem, 2.5vw, 0.78rem); }
   .header-actions { justify-self: end; gap: 0.35rem; }
-  .theme-toggle { min-height: 44px; font-size: 1.1rem; padding: 0; }
+  .theme-toggle { font-size: 1.1rem; }
   .header-contact { display: none; }
   main { padding-top: 0.75rem; }
   main > section { margin-bottom: 2rem; }

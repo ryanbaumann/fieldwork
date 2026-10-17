@@ -9,6 +9,7 @@ gmp-map-3d { display: block; height: 100%; width: 100%; }
 .map-hud { pointer-events: none; }
 .map-hud > * { pointer-events: auto; }
 .focus-ring:focus-visible { outline: 3px solid rgba(79,70,229,.45); outline-offset: 2px; }
+:is(button, a, input, select, summary, [tabindex]):focus-visible { outline: 3px solid #a5b4fc !important; outline-offset: 2px !important; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 /* Basic scrollbar styling */
 .sidebar-content::-webkit-scrollbar { width: 6px; }
@@ -207,8 +208,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.25rem;
-  min-height: 2.25rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 0.5rem;
@@ -231,8 +232,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .photo-pop-nav-btn:focus-visible,
 .photo-pop-frame:focus-visible,
 .photo-pop-dot:focus-visible {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
+  outline: 2px solid #6366f1 !important;
+  outline-offset: 2px !important;
 }
 .photo-pop-nav-btn {
   border-color: #e2e8f0;

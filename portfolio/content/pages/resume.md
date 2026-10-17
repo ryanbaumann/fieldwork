@@ -1,6 +1,6 @@
 ---
 title: Resume
-summary: Where I have led, what shipped, and what it moved.
+summary: Developer platform leadership, shipped developer tools, and open-source systems.
 eyebrow: Experience
 socialImage: /social/resume.jpg
 shareTitle: Ryan Baumann Resume
@@ -23,7 +23,7 @@ I lead Developer Experience Engineering and product for builder platforms. I tur
 - **Manufacturing Industry Solutions Manager, Google Cloud** (2021 to 2022). I led product and engineering for [Intelligent Product Essentials](https://cloud.google.com/blog/products/data-analytics/introducing-intelligent-products-essentials-for-manufacturers), from zero to launch with GE Appliances in nine months.
 - **Director, Solutions Architecture, Instabase** (2020 to 2021). I built the solutions architecture team for an AI platform focused on unstructured document automation.
 - **Senior Manager and Senior Solutions Architect, Mapbox** (2016 to 2020). I joined as the first customer-facing engineer, later led solutions architecture, and helped launch developer products and open-source partnerships.
-- **Technical Solutions Engineer, Caterpillar** (2012 to 2016). I built a cloud, IoT, mobile, and analytics worksite productivity solution for fleet operations.
+- **Technical Solutions Engineer, Caterpillar** (2012 to 2016). I built a cloud, IoT, mobile, and analytics worksite productivity system for fleet operations.
 
 ## Education and foundation
 

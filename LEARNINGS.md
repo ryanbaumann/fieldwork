@@ -2,6 +2,86 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-10-17 - Contact spam needs bot signals and visible evidence
+
+Context: Ryan received many contact emails and could not tell which senders were real.
+
+Learning: The filter only read message content. Every low-confidence message arrived with the same `[Likely advertising]` prefix and no reason. Scripted `POST`s reached the classifier because nothing checked for browser headers or fill time. Content guesses must stay non-destructive, but request signals are strong evidence: modern browsers send `Origin` on form `POST`s, and no person fills five required fields in under 3 seconds.
+
+Evidence: `gateway/test/server.test.js` covers the scripted, too-fast, and no-JavaScript cases. A Playwright run through the gateway sent `fill_ms=108` (dropped, `too_fast` logged) and `fill_ms=3567` (passed).
+
+Use next time: Drop silently only on hard bot signals. Tag everything else with a specific prefix and put the evidence in the email body. Stub `contactDns.resolveMx` in tests so they stay offline.
+
+## 2026-10-17 - An Origin-vs-Host CSRF check breaks Vite dev proxies
+
+Context: A new cross-site `POST` guard compared the `Origin` host to the `Host` header.
+
+Learning: Vite `server.proxy` with `changeOrigin: true` rewrites `Host` to the target but keeps the browser `Origin`. The comparison rejected legitimate same-origin calls from the hairstyle and infographic dev servers. Browsers send `Sec-Fetch-Site` on every fetch and form `POST`, and it reports the browser's own verdict.
+
+Evidence: `demos/hairstyle-ai-studio/vite.config.ts` and `demos/infographic-agent/vite.config.ts` set `changeOrigin: true`. A request with `Origin: http://localhost:5173` and `Host: localhost:8080` returned `403`. The `server.test.js` case for it now passes.
+
+Use next time: Trust `Sec-Fetch-Site` first (`same-origin`/`none` allow, `cross-site` block). Fall back to the `Origin` check only for `same-site` or a missing header.
+
+## 2026-10-17 - Tailwind v4 utilities live in a cascade layer
+
+Context: Baseline `:focus-visible` outlines in the Tailwind v4 demos either did nothing or overrode component focus rings.
+
+Learning: Tailwind v4 puts utilities in `@layer utilities`. Any unlayered rule beats every utility, whatever its specificity. A baseline inside `@layer base` lets component rings win. Only `!important` beats a `focus:outline-none` utility.
+
+Evidence: hairstyle-ai-studio uses an `@layer base` `:where(...)` outline. strava-explorer needed `!important` because its controls set `focus:outline-none`.
+
+Use next time: Put baselines in `@layer base`. Use `!important` only to override an explicit `outline-none` utility.
+
+## 2026-10-17 - Shell gotchas during audits
+
+Context: Validation chains reported success while a step failed.
+
+Learning: In `cmd | tail`, the exit status comes from `tail`. `rg` is not installed on this machine, and zsh expands an unquoted `--include=*.md` as a glob.
+
+Evidence: A failing build piped to `tail` returned exit 0. `grep --include=*.md` printed `zsh: no matches found`.
+
+Use next time: Write output to a log file, then `echo $?`. Use `grep` or `find`, and quote glob arguments.
+
+## 2026-10-17 - `<label for>` cannot name `gmp-place-autocomplete`
+
+Context: Places autocomplete inputs in aqi-map and isochrones had no accessible name.
+
+Learning: The element renders its input inside a shadow root, so a light-DOM `<label for>` does not reach it. An `aria-label` on the host element does.
+
+Evidence: `demos/aqi-map/src/main.js` and `demos/isochrones/src/main.js` now set `aria-label` with `setAttribute`.
+
+Use next time: Name Places UI Kit inputs with `aria-label` on the custom element.
+
+## 2026-10-17 - A status bar under a fixed overlay needs reserved space
+
+Context: The real-world-reasoning-agent home link is `position: fixed` and covered the right end of the status bar.
+
+Learning: Padding on an `overflow-x: auto` bar reserves space only at the scroll end. Items still scroll under the overlay. Reserve the overlay width plus the safe-area inset, and size the overlay to fit inside the bar.
+
+Evidence: `demos/real-world-reasoning-agent/src/styles/global.css` reserves `max(160px, env(safe-area-inset-right) + 152px)`. Desktop and mobile screenshots show the link inside the 35px bar.
+
+Use next time: For any fixed overlay above a bar, reserve its width in the bar and verify at desktop and mobile widths.
+
+## 2026-10-17 - Duplicate skills drift; compare content before you delete a copy
+
+Context: `portfolio-writing` and `google-maps-platform` existed both in the repo `.agents/skills/` and globally. The Maps skill also shipped in the `google_maps_platform` plugin.
+
+Learning: Same-name skill copies drift. The workspace copy wins by precedence, so the other copies go stale without notice. The global `portfolio-writing` copy was a week older than the repo copy. The repo Maps copy held repo-only CSP and theming checks. Antigravity docs say a plugin adds value only when it bundles several components (skills, agents, rules, MCP, hooks). A plugin that holds one skill already installed globally is a duplicate.
+
+Evidence: `diff -rq` showed different `SKILL.md` content and repo-only folders (`references/`, `evals/`). The plugin `SKILL.md` was byte-identical to `~/.agents/skills/google-maps-platform/SKILL.md`. `agy plugin list --json` showed one skill and no other components in the plugin.
+
+Use next time: Keep each skill in one location. Before you remove a copy, diff all copies, promote the newest content, and move repo-specific rules into `AGENTS.md`. Then confirm discovery with a headless `agy -p` probe.
+
+## 2026-10-17 - Custom agent frontmatter silently drops agents that pin a full model ID
+
+Context: The global loop-engineering agents (`orchestrator`, `worker`, `reviewer`, `verifier`) never appeared as invocable subagents in Antigravity sessions.
+
+Learning: Antigravity custom agent frontmatter accepts only `model: inherit | flash | pro`. A full model ID such as `gemini-3.8-flash-low`, or an unknown ID, causes the runtime to drop the agent silently. The runtime gives no error. Reasoning effort is a session setting (`agy --effort`, `/effort`), not an agent field.
+
+Evidence: Three probe agents differed only in `model`. Only the `model: flash` probe appeared in a headless `agy -p` session's subagent list. The `gemini-3.8-flash-low` and bogus-ID probes did not. `agy models` lists the exact variant IDs. The docs at antigravity.google/docs/subagents list only the tier values.
+
+Use next time: Pin a tier in frontmatter and record the intended variant in the agent body. After you add or edit an agent, confirm it loads with a headless `agy -p` probe. Do not trust that the file exists.
+
 ## 2026-09-20 - Forensic rewrites must never bleed git meta-commentary into published prose
 
 Context: An earlier evidence pass on "The Model That Picks Your Platform Doesn't Write the Code" attempted to qualify unsubstantiated routing claims, but inadvertently rewrote the essay into a self-flagellating fourth-wall-breaking confession ("I claimed those efficiency gains in the first draft of this Note before earning them with data... But my original Note treated that split as observed fact without a trace to prove it") and a dry inventory of repo test cases.

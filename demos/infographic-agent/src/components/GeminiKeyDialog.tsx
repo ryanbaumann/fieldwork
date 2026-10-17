@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Key, ExternalLink, Check, AlertCircle } from 'lucide-react';
+import { X, Key, ExternalLink, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { validateApiKey } from '../services/api.ts';
 
 interface GeminiKeyDialogProps {
@@ -19,6 +19,7 @@ export const GeminiKeyDialog: React.FC<GeminiKeyDialogProps> = ({
   const [isValidating, setIsValidating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [showKey, setShowKey] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -32,6 +33,7 @@ export const GeminiKeyDialog: React.FC<GeminiKeyDialogProps> = ({
     setInputVal(apiKey || '');
     setErrorMsg(null);
     setSuccessMsg(null);
+    setShowKey(false);
   }, [open, apiKey]);
 
   useEffect(() => {
@@ -90,16 +92,16 @@ export const GeminiKeyDialog: React.FC<GeminiKeyDialogProps> = ({
     try {
       const valid = await validateApiKey(trimmed);
       if (valid) {
-        setSuccessMsg('API Key validated successfully.');
+        setSuccessMsg('Key works. Connecting…');
         setTimeout(() => {
           onSaveKey(trimmed);
           onClose();
         }, 600);
       } else {
-        setErrorMsg('Invalid Gemini API Key. Please verify your key in Google AI Studio.');
+        setErrorMsg('Gemini rejected that key. Check it in Google AI Studio and try again.');
       }
     } catch {
-      setErrorMsg('Could not validate key. Please check your network and try again.');
+      setErrorMsg('Could not reach Gemini to check the key. Check your connection and try again.');
     } finally {
       setIsValidating(false);
     }
@@ -125,47 +127,59 @@ export const GeminiKeyDialog: React.FC<GeminiKeyDialogProps> = ({
       >
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Key size={18} color="#3b82f6" />
-            <h3 id="byok-title" className="modal-title">Gemini API Key</h3>
+            <Key size={18} color="#3b82f6" aria-hidden="true" />
+            <h3 id="byok-title" className="modal-title">Gemini API key</h3>
           </div>
           <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Close dialog">
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
         <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.4' }}>
-          By default, this demo uses a shared hosted daily free tier. To generate unlimited high-resolution infographics with custom model selection, add your personal Gemini API key.
+          This demo runs on a shared daily allowance. Add your own Gemini API key to keep generating after the allowance runs out.
         </p>
 
         <form onSubmit={handleSave}>
           <div className="form-group">
-            <label className="form-label" htmlFor="api-key-input">API Key</label>
-            <input
-              ref={inputRef}
-              id="api-key-input"
-              type="password"
-              className="form-input"
-              placeholder="AIzaSy..."
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-              autoComplete="off"
-              spellCheck="false"
-            />
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>
-              Stored in transient tab memory only. Never saved to localStorage or server disks.
+            <label className="form-label" htmlFor="api-key-input">API key</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                ref={inputRef}
+                id="api-key-input"
+                type={showKey ? 'text' : 'password'}
+                className="form-input"
+                placeholder="AIzaSy..."
+                value={inputVal}
+                onChange={(e) => setInputVal(e.target.value)}
+                autoComplete="off"
+                spellCheck="false"
+                aria-describedby="api-key-storage-note"
+                style={{ paddingRight: '3rem' }}
+              />
+              <button
+                type="button"
+                className="key-visibility-btn"
+                onClick={() => setShowKey((v) => !v)}
+                aria-label={showKey ? 'Hide API key' : 'Show API key'}
+              >
+                {showKey ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+              </button>
+            </div>
+            <p id="api-key-storage-note" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>
+              Kept in this tab's memory only. It is never written to localStorage or stored on the server.
             </p>
           </div>
 
           {errorMsg && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', fontSize: '0.8125rem', marginBottom: '1rem' }}>
-              <AlertCircle size={16} />
+            <div role="alert" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', fontSize: '0.8125rem', marginBottom: '1rem' }}>
+              <AlertCircle size={16} aria-hidden="true" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '0.8125rem', marginBottom: '1rem' }}>
-              <Check size={16} />
+            <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '0.8125rem', marginBottom: '1rem' }}>
+              <Check size={16} aria-hidden="true" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -178,7 +192,7 @@ export const GeminiKeyDialog: React.FC<GeminiKeyDialogProps> = ({
               style={{ fontSize: '0.8125rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
             >
               <span>Get a free Gemini API key in Google AI Studio</span>
-              <ExternalLink size={13} />
+              <ExternalLink size={13} aria-hidden="true" />
             </a>
           </div>
 
@@ -190,14 +204,14 @@ export const GeminiKeyDialog: React.FC<GeminiKeyDialogProps> = ({
                 onClick={handleClear}
                 style={{ marginRight: 'auto', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.3)' }}
               >
-                Disconnect Key
+                Remove key
               </button>
             )}
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="btn-primary" style={{ width: 'auto' }} disabled={isValidating}>
-              {isValidating ? 'Validating...' : 'Save & Connect'}
+              {isValidating ? 'Checking…' : 'Save key'}
             </button>
           </div>
         </form>

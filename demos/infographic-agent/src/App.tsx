@@ -308,12 +308,12 @@ export const App: React.FC = () => {
 
             {!isPlanning && !isRendering && !currentImage && (
               <div className="panel-card" style={{ textAlign: 'center', padding: '3.5rem 1.5rem' }}>
-                <Sparkles size={32} color="#3b82f6" style={{ margin: '0 auto 1rem', opacity: 0.8 }} />
+                <Sparkles size={32} color="#3b82f6" aria-hidden="true" style={{ margin: '0 auto 1rem', opacity: 0.8 }} />
                 <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  Ready to Architect Your Infographic
+                  No infographic yet
                 </h3>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 auto' }}>
-                  Enter any complex research topic or raw text on the left. The agent pairs Gemini 3.8 Flash research intelligence with Gemini 3.1 Flash image rendering to generate publication-grade visual posters.
+                  Paste a topic or some raw text on the left. Gemini 3.8 Flash researches it and plans the layout, then Gemini 3.1 Flash Image draws it.
                 </p>
               </div>
             )}

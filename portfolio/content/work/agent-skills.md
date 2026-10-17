@@ -18,7 +18,7 @@ order: 3
 
 ## The goal
 
-Grounded retrieval (Code Assist) tells an agent what's true. It doesn't teach an agent how to work. The goal: package the workflows too, so any agent can build with the platform the way an experienced platform engineer would.
+Grounded retrieval (Code Assist) tells an agent what's true. It doesn't teach an agent how to work. We set out to make the workflows portable too, so any agent can build with the platform the way an experienced platform engineer would.
 
 ## What shipped
 

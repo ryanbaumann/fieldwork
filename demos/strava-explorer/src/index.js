@@ -1799,6 +1799,8 @@ function initTourPlayer(urlState) {
         (state) => {
             debug(`Tour state changed: ${state}`);
             const telemetryDiv = document.getElementById('live-telemetry');
+            const playLabel = state === 'playing' ? 'Pause tour' : 'Play tour';
+            [tourPlayBtn, theaterPlayBtn].forEach((btn) => btn?.setAttribute('aria-label', playLabel));
             if (state === 'playing') {
                 if (playIcon) playIcon.classList.add('hidden');
                 if (pauseIcon) pauseIcon.classList.remove('hidden');

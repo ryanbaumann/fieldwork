@@ -10,6 +10,8 @@ Effective July 17, 2026. Fieldwork collects as little data as practical. Public 
 
 The contact form sends your selected intent, message, name, and email address to a server-managed email provider so Ryan can receive and reply to your note. The server may send the selected intent and message to Google's Gemini service to check for unsolicited advertising before delivery. Name and email are not included in that classifier request. The site does not publish your email address. Do not include secrets, customer data, or other sensitive information in the message.
 
+The email to Ryan also includes basic request details to help him find automated spam. These details are your IP address, browser and language headers, the page that sent you to the form, and how long you spent on the form. The email also shows whether your email domain accepts mail; the server checks this with a DNS lookup. When the server blocks an automated submission, its log records only the email domain, the selected intent, and the reason for the block.
+
 ## Email list
 
 The subscribe form sends your email address to Resend so Ryan can send occasional updates about new essays, talks, and Labs. Resend retains the contact, subscription status, and delivery history. Every marketing email includes an unsubscribe link. Unsubscribing changes your delivery preference; it does not necessarily delete the contact record. Only addresses that directly opt in, or that can be traced to a prior explicit opt-in, belong on this list.

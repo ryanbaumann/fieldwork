@@ -25,4 +25,4 @@ I led the OSS partnership with Uber that integrated Mapbox GL JS custom layers d
 
 ## What I learned
 
-Deep integration reduced the work developers needed to combine the projects.
+Integrating at the rendering layer deleted the glue code developers had been maintaining themselves.

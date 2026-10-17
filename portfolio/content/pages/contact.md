@@ -8,7 +8,7 @@ shareSummary: Start with the thing you are building and the friction in the way.
 shareImageAlt: Ryan Baumann beside an invitation to start with the thing you are trying to build.
 ---
 
-The most useful conversations start with the thing you are trying to build and the developer friction in the way.
+If you're building with maps, working on developer tools, or want to talk about an essay or speaking event, send me a note.
 
 Use the form for a developer-platform discussion, content collaboration, speaking opportunity, or another focused question. I'm not available for outside consulting while employed at Google.
 
