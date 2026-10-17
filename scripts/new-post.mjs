@@ -12,7 +12,8 @@
 //   npm run new:post -- "Ready to publish" --publish
 //   npm run new:post -- "Publish later" --schedule 2099-07-14T16:00:00Z
 //
-// Voice and structure guidance: .agents/skills/portfolio-writing/SKILL.md
+// Voice and structure guidance: the global portfolio-writing skill
+// (~/.gemini/config/skills/portfolio-writing/SKILL.md).
 
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -111,7 +112,7 @@ ${publishAt ? `publishAt: ${publishAt}\n` : ''}${external ? `external: ${externa
 
 console.log(`[new-post] created portfolio/content/writing/${slug}.md`);
 console.log('[new-post] preview:  cd portfolio && node build.mjs && node serve.mjs');
-console.log('[new-post] voice:    .agents/skills/portfolio-writing/SKILL.md');
+console.log('[new-post] voice:    ~/.gemini/config/skills/portfolio-writing/SKILL.md (global skill)');
 if (!external) {
   console.log('[new-post] visuals: replace the generic preview before publishing with a dedicated 1200x675 header, distinct 1200x627 social card, and at least one 1200x675 inline evidence image');
 }

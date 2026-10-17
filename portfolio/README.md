@@ -63,7 +63,7 @@ The repo ships generic agent skills that encode the standards, so any AI coding
 agent can maintain the site in the same voice and style:
 
 - `../.agents/skills/portfolio-content/`: the CMS how-to (schemas, where things go, new content types)
-- `../.agents/skills/portfolio-writing/`: how Ryan writes (voice, structure, banned words)
+- `portfolio-writing` (global skill at `~/.gemini/config/skills/portfolio-writing/`): how Ryan writes (voice, structure, banned words)
 - `../.agents/skills/portfolio-design/`: how Ryan designs (principles, tokens, performance budget)
 - `../.agents/skills/portfolio-presenting/`: how Ryan presents (demo-first format, adding decks)
 
