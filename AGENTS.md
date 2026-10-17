@@ -11,7 +11,8 @@ picture.
   markdown CMS (`content/`). This is the site at the root path — home, work,
   writing (the blog), talks, demos, about. Staged for extraction into its own
   repo; portable portfolio workflows live under `.agents/skills/portfolio-*`
-  for content, writing, design, and presenting. Its build reads the root `apps.json` (when present) to render
+  for content, design, presenting, and review. The `portfolio-writing` voice
+  skill is global (`~/.gemini/config/skills/portfolio-writing/`). Its build reads the root `apps.json` (when present) to render
   the homepage Ryan’s Lab section and nav.
 - `agent-scripts/`: reusable, vendor-neutral system prompts, role overlays, and
   behavioral evals. Each script is a self-contained GitHub package; public
@@ -38,8 +39,8 @@ picture.
   Use `--visibility unlisted` for direct-link previews or `--visibility private`
   for a password-gated demo; private scaffolds print the required server env var.
 - **Add a blog post:** `npm run new:post -- "Post title"` (add
-  `--external <url>` for a link-out entry). Voice guidance:
-  `.agents/skills/portfolio-writing/SKILL.md`.
+  `--external <url>` for a link-out entry). Voice guidance: the global
+  `portfolio-writing` skill (`~/.gemini/config/skills/portfolio-writing/`).
 - **Add an agent script:** copy `agent-scripts/_TEMPLATE/` to a kebab-case
   folder, add eval cases before tuning the prompt, then add the reader-facing
   entry under `portfolio/content/scripts/`. Keep model IDs out of evergreen
@@ -61,6 +62,7 @@ Prefer small, reviewable changes. Keep app-specific code, commands, and dependen
 3. Keep implementation details in source files and durable task workflows in local skills under `.agents/skills/`.
 4. Before editing secrets, auth flows, map API usage, or build config, identify the affected runtime and required environment variables.
 5. After changes, run the narrowest relevant validation command first, then a full app build when practical.
+6. Delegate through the global subagent roster (`runner`, `builder`, `analyst`, `strategist`) when it is installed; routing rules live in the user's global `GEMINI.md`. Custom agent frontmatter accepts only `model: inherit | flash | pro` (see LEARNINGS.md 2026-10-17).
 
 ## Commands
 
@@ -151,6 +153,15 @@ Run commands from the app directory unless noted.
 - Keep map container CSS isolated so global styles and utility frameworks do not accidentally override map internals.
 - Validate latitude/longitude ranges before rendering or sending geospatial data to APIs.
 - Batch API calls with documented limits and graceful fallback behavior.
+- Use the global `google-maps-platform` skill for all Maps work. Do not add a repo copy of it or of its sub-skills.
+
+### Repository web integration checks
+
+These checks are specific to this repository. They came from the former repo copy of the Maps skill.
+
+- In a dark host, Places UI Kit elements need an explicit matching `color-scheme` plus the relevant `--gmp-mat-color-*` surface and text tokens. Do not assume the host page theme crosses the component boundary.
+- Derive CSP from the app's actual outbound scripts, connections, images, frames, workers, and runtime schemes. Places media and reviewer avatars currently require `https://*.ggpht.com`. The Maps renderer uses `blob:`/`data:` resources, as the gateway tests cover. Verify these origins again when the integration changes.
+- Never select a security policy from display tags. Use the dedicated `csp` manifest field, validate it, and keep source-derived gateway/smoke assertions for every allowed origin.
 
 ## Frontend and UX Guidelines
 
@@ -190,19 +201,22 @@ runbook rather than duplicating the steps here.
 
 Use these repo-local skills when the task matches their scope:
 
-- `.agents/skills/google-maps-platform/SKILL.md` for **all** Google Maps Platform work: 2D and 3D Maps JavaScript API, Places, Routes, Geocoding, Environment APIs (Air Quality, Pollen, Solar, Weather), key security, and quota. This is the single Maps skill in the repo. It is an entry point, not a reference: its mandatory first action fetches the GMP Skills Index and loads the matching per-product sub-skills at runtime. Never vendor a copy of a sub-skill into this repo, and never skip the fetch because a topic feels familiar.
 - `.agents/skills/frontend-responsive-design/SKILL.md` for responsive layout, accessibility, CSS architecture, Tailwind utility usage, and visual QA work.
 - `.agents/skills/infographic-agent/SKILL.md` for generating professional infographics, visual summaries, charts, and data visualizations using Gemini.
 - `.agents/skills/portfolio-content/SKILL.md` for adding or updating content on this site (work entries, blog posts, talks, pages, static assets).
 - `.agents/skills/portfolio-design/SKILL.md` for design principles, page layouts, styling tokens, component styling, and visual review constraints.
 - `.agents/skills/portfolio-presenting/SKILL.md` for drafting talk abstracts, deck outlines, speaker notes, and presenting formats.
 - `.agents/skills/portfolio-review/SKILL.md` for the mandatory pre-publication audit of copy, claims, links, canonicals, redirects, images, metadata, accessibility, and rendered desktop/mobile output.
-- `.agents/skills/portfolio-writing/SKILL.md` for writing style, voice guide, metrics guardrails, social copy packaging, and structural patterns.
 - `.agents/skills/skill-improvement-loop/SKILL.md` before committing changes to an agent skill, agent prompt, role overlay, evaluation case, or learning-driven workflow; run `npm run skills:improve` for its deterministic gate.
+
+Use these global skills (`~/.gemini/config/skills/`) too. Do not copy them into this repo:
+
+- `google-maps-platform` for **all** Google Maps Platform work: 2D and 3D Maps JavaScript API, Places, Routes, Geocoding, Environment APIs (Air Quality, Pollen, Solar, Weather), key security, and quota. It is an entry point, not a reference: its first action fetches the GMP Skills Index and loads the matching per-product sub-skills at runtime. Never skip the fetch because a topic feels familiar. Apply the repository web integration checks in this file as well.
+- `portfolio-writing` for Ryan's writing style, voice guide, metrics guardrails, social copy packaging, and structural patterns.
 
 ## The agentic loop
 
-1. Read this file and the relevant `.agents/skills/*/SKILL.md` before changing a surface it governs (styling changes require `portfolio-design`, prose requires `portfolio-writing`).
+1. Read this file and the relevant skill (repo `.agents/skills/*/SKILL.md` or the global skills listed above) before changing a surface it governs (styling changes require `portfolio-design`, prose requires `portfolio-writing`).
 2. Do the work in small, reviewable commits.
 3. Run the narrowest validation first, then the app build, then `node scripts/smoke.mjs` for gateway/apps.json changes.
 4. Before finishing, update `CHANGELOG.md` (every user-visible or behavioral change) and `LEARNINGS.md` (every surprise, root-caused bug, or environment gotcha, using the Context/Learning/Evidence/Use next time format).
