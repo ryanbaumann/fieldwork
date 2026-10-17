@@ -54,12 +54,12 @@ export const TopicInput: React.FC<TopicInputProps> = ({
   return (
     <div className="panel-card">
       <div className="panel-title">
-        <Sparkles size={18} color="#3b82f6" />
+        <Sparkles size={18} color="#3b82f6" aria-hidden="true" />
         <span>Infographic Creator</span>
       </div>
 
       <div className="form-group">
-        <label className="form-label" htmlFor="topic-input">Topic or Raw Content</label>
+        <label className="form-label" htmlFor="topic-input">Topic or raw content</label>
         <textarea
           id="topic-input"
           className="form-textarea"
@@ -68,8 +68,8 @@ export const TopicInput: React.FC<TopicInputProps> = ({
           onChange={(e) => setTopic(e.target.value)}
           disabled={isLoading}
         />
-        <div className="starters-row">
-          <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', alignSelf: 'center' }}>Examples:</span>
+        <div className="starters-row" role="group" aria-labelledby="starters-label">
+          <span id="starters-label" style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', alignSelf: 'center' }}>Examples:</span>
           {STARTERS.map((s, idx) => (
             <button
               key={idx}
@@ -77,6 +77,8 @@ export const TopicInput: React.FC<TopicInputProps> = ({
               className="starter-chip"
               onClick={() => setTopic(s)}
               disabled={isLoading}
+              title={s}
+              aria-label={s}
             >
               {s.slice(0, 32)}...
             </button>
@@ -85,16 +87,17 @@ export const TopicInput: React.FC<TopicInputProps> = ({
       </div>
 
       <div className="form-group">
-        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <Layers size={14} />
-          <span>Visual Mode</span>
-        </label>
-        <div className="mode-grid">
+        <span id="mode-label" className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <Layers size={14} aria-hidden="true" />
+          <span>Visual mode</span>
+        </span>
+        <div className="mode-grid" role="group" aria-labelledby="mode-label">
           {MODES_LIST.map((m) => (
             <button
               key={m.id}
               type="button"
               className={`mode-btn ${mode === m.id ? 'active' : ''}`}
+              aria-pressed={mode === m.id}
               onClick={() => setMode(m.id)}
               disabled={isLoading}
             >
@@ -106,13 +109,14 @@ export const TopicInput: React.FC<TopicInputProps> = ({
       </div>
 
       <div className="form-group">
-        <label className="form-label">Aspect Ratio</label>
-        <div className="aspect-row">
+        <span id="aspect-label" className="form-label">Aspect ratio</span>
+        <div className="aspect-row" role="group" aria-labelledby="aspect-label">
           {ASPECT_LIST.map((ar) => (
             <button
               key={ar}
               type="button"
               className={`aspect-btn ${aspect === ar ? 'active' : ''}`}
+              aria-pressed={aspect === ar}
               onClick={() => setAspect(ar)}
               disabled={isLoading}
             >
@@ -123,36 +127,38 @@ export const TopicInput: React.FC<TopicInputProps> = ({
       </div>
 
       <div className="form-group">
-        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <ImageIcon size={14} />
-          <span>Image Render Model</span>
-        </label>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+        <span id="image-model-label" className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <ImageIcon size={14} aria-hidden="true" />
+          <span>Image model</span>
+        </span>
+        <div role="group" aria-labelledby="image-model-label" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
           <button
             type="button"
             className={`mode-btn ${imageModel === 'gemini-3.1-flash-lite-image' ? 'active' : ''}`}
+            aria-pressed={imageModel === 'gemini-3.1-flash-lite-image'}
             onClick={() => setImageModel('gemini-3.1-flash-lite-image')}
             disabled={isLoading}
           >
             <span className="mode-name">3.1 Flash Lite Image</span>
-            <span className="mode-desc">Default website fast tier</span>
+            <span className="mode-desc">Fast default</span>
           </button>
           <button
             type="button"
             className={`mode-btn ${imageModel === 'gemini-3.1-flash-image' ? 'active' : ''}`}
+            aria-pressed={imageModel === 'gemini-3.1-flash-image'}
             onClick={() => setImageModel('gemini-3.1-flash-image')}
             disabled={isLoading}
           >
             <span className="mode-name">3.1 Flash Image</span>
-            <span className="mode-desc">Studio high resolution</span>
+            <span className="mode-desc">Higher resolution, slower</span>
           </button>
         </div>
       </div>
 
       <div className="form-group">
         <label className="form-label" htmlFor="instructions-input" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <Sliders size={14} />
-          <span>Custom Instructions (Optional)</span>
+          <Sliders size={14} aria-hidden="true" />
+          <span>Custom instructions (optional)</span>
         </label>
         <input
           id="instructions-input"
@@ -171,8 +177,8 @@ export const TopicInput: React.FC<TopicInputProps> = ({
         onClick={onSubmit}
         disabled={isLoading || !topic.trim()}
       >
-        <Wand2 size={16} />
-        <span>{isLoading ? 'Architecting Infographic...' : 'Generate Infographic'}</span>
+        <Wand2 size={16} aria-hidden="true" />
+        <span>{isLoading ? 'Generating…' : 'Generate infographic'}</span>
       </button>
     </div>
   );

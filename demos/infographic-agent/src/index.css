@@ -8,7 +8,7 @@
   
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #7c8aa0;
   
   --accent-primary: #2563eb;
   --accent-primary-hover: #1d4ed8;
@@ -292,6 +292,7 @@ a:hover {
 .form-input:focus, .form-textarea:focus, .form-select:focus {
   outline: none;
   border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
 }
 
 .form-textarea {
@@ -761,4 +762,28 @@ a:hover {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Keyboard focus: one visible ring for every interactive control. */
+:where(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.key-visibility-btn {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.key-visibility-btn:hover {
+  color: var(--text-primary);
 }

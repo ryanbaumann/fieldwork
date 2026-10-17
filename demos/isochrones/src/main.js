@@ -362,6 +362,7 @@ async function attachPlaceSearch(originKey) {
   });
   autocomplete.id = `place-search-${originKey}`;
   autocomplete.placeholder = originKey === 'a' ? 'Where are you starting?' : 'Where are they starting?';
+  autocomplete.setAttribute('aria-label', originKey === 'a' ? 'Your starting place' : 'Their starting place');
   elements.searchSlots[originKey].append(autocomplete);
   autocomplete.addEventListener('gmp-select', async ({ placePrediction }) => {
     const place = placePrediction.toPlace();

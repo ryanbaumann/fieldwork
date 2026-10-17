@@ -103,3 +103,39 @@ test('the same evidence link in three entries is not a stock phrase', () => {
   ];
   assert.deepEqual(checkStockPhrases(docs), []);
 });
+
+test('spaced hyphens are caught in prose but exempt in table rows', () => {
+  assert.ok(rules(checkDocument(doc(ESSAY_FRONT, `Prose - with a spaced hyphen.\n\n![Alt.](/img/a.png)`))).includes('W-SPACED-HYPHEN'));
+  const table = '| Column - Name | Description |\n| --- | --- |\n| A - B | Details |\n\n![Alt.](/img/a.png)';
+  assert.deepEqual(checkDocument(doc(ESSAY_FRONT, table)), []);
+});
+
+test('competitor model names are caught in prose', () => {
+  assert.ok(rules(checkDocument(doc(ESSAY_FRONT, `Tested on Claude Opus.\n\n![Alt.](/img/a.png)`))).includes('W-COMPETITOR-MODEL'));
+  assert.ok(rules(checkDocument(doc(ESSAY_FRONT, `Compared against ChatGPT.\n\n![Alt.](/img/a.png)`))).includes('W-COMPETITOR-MODEL'));
+  assert.ok(rules(checkDocument(doc(ESSAY_FRONT, `Prompting GPT-4 directly.\n\n![Alt.](/img/a.png)`))).includes('W-COMPETITOR-MODEL'));
+});
+
+test('code spans and URLs are exempt from spaced-hyphen and competitor rules', () => {
+  const body = 'Run `a - b` in a shell, or read [the notes](https://example.com/gpt-4-notes).\n\n![Alt.](/img/a.png)';
+  const found = rules(checkDocument(doc(ESSAY_FRONT, body)));
+  assert.ok(!found.includes('W-SPACED-HYPHEN'));
+  assert.ok(!found.includes('W-COMPETITOR-MODEL'));
+});
+
+test('avoid words are caught in prose unless matching formal titles or domain tags', () => {
+  assert.ok(rules(checkDocument(doc(ESSAY_FRONT, `An end-to-end solution for developers.\n\n![Alt.](/img/a.png)`))).includes('W-AVOID-WORD'));
+  assert.ok(rules(checkDocument(doc(ESSAY_FRONT, `This platform empowers teams.\n\n![Alt.](/img/a.png)`))).includes('W-AVOID-WORD'));
+
+  // Formal job titles and domain tags are exempted
+  const titleProse = `I was a Senior Solutions Architect and led the solutions architecture team.\n\n![Alt.](/img/a.png)`;
+  assert.deepEqual(checkDocument(doc(ESSAY_FRONT, titleProse)), []);
+
+  const tagFront = ESSAY_FRONT.replace('tags: ["ai"]', 'tags: ["industry solutions"]');
+  assert.deepEqual(checkDocument(doc(tagFront, ESSAY_BODY)), []);
+});
+
+test('forbidden absolute "every launch" is caught', () => {
+  assert.ok(rules(checkDocument(doc(ESSAY_FRONT, `We measure every launch carefully.\n\n![Alt.](/img/a.png)`))).includes('W-ABSOLUTE'));
+});
+

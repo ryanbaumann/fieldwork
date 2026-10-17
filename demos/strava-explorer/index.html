@@ -51,11 +51,11 @@
                 </svg>
             </button>
             <div class="h-4 w-[1px] bg-white/15"></div>
-            <button id="theater-play-btn" class="p-1.5 rounded-full text-white hover:bg-white/10 transition-colors focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center" title="Play/Pause Tour">
+            <button id="theater-play-btn" class="p-1.5 rounded-full text-white hover:bg-white/10 transition-colors focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center" title="Play/Pause Tour" aria-label="Play tour">
                 <svg id="theater-play-icon" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 <svg id="theater-pause-icon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
             </button>
-            <button id="theater-stop-btn" class="p-1.5 rounded-full text-gray-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center" title="Stop Tour">
+            <button id="theater-stop-btn" class="p-1.5 rounded-full text-gray-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center" title="Stop Tour" aria-label="Stop tour">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>
             </button>
             <div class="h-4 w-[1px] bg-white/15"></div>
@@ -66,9 +66,9 @@
         <aside class="absolute top-[clamp(0.5rem,1.5vw,1rem)] left-3 z-10 w-[min(28rem,calc(100%-1.5rem))] flex flex-col premium-glass rounded-2xl shadow-2xl text-white overflow-hidden md:bottom-auto md:max-h-[calc(100vh-4rem)] max-md:fixed max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto max-md:w-full max-md:max-w-full max-md:rounded-none max-md:rounded-t-2xl max-md:border-t max-md:border-white/10 pb-[env(safe-area-inset-bottom)]" aria-label="Strava activity controls">
             
             <!-- Mobile Bottom Sheet Drag Handle (D6) -->
-            <div id="bottom-sheet-drag" class="md:hidden flex justify-center py-3 cursor-grab active:cursor-grabbing flex-shrink-0 select-none">
-                <div class="w-12 h-1 bg-white/20 rounded-full"></div>
-            </div>
+            <button id="bottom-sheet-drag" type="button" aria-label="Resize activity panel" class="md:hidden flex w-full items-center justify-center py-3 min-h-[44px] cursor-grab active:cursor-grabbing flex-shrink-0 select-none touch-none">
+                <span class="w-12 h-1 bg-white/20 rounded-full" aria-hidden="true"></span>
+            </button>
 
             <!-- Sidebar Header -->
             <div class='px-3 pt-3 pb-1.5 border-b border-white/10 flex-shrink-0 flex justify-between items-start flex-row'>
@@ -78,7 +78,7 @@
                      <nav class='flex flex-wrap gap-x-3 text-[10px] font-semibold mt-1' aria-label='Explore Ryan Baumann&apos;s portfolio'>
                          <a href='/work/' class='inline-flex min-h-[44px] items-center text-gray-400 hover:text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-400 rounded-sm'>How it was built</a>
                          <a href='/contact/?intent=platform' class='inline-flex min-h-[44px] items-center text-gray-400 hover:text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-400 rounded-sm'>Build with Ryan</a>
-                         <a href='https://github.com/ryanbaumann/fieldwork/tree/main/demos/strava-explorer' target='_blank' rel='noopener' class='inline-flex min-h-[44px] items-center text-gray-400 hover:text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-400 rounded-sm'>View Source</a>
+                         <a href='https://github.com/ryanbaumann/fieldwork/tree/main/demos/strava-explorer' target='_blank' rel='noopener' class='inline-flex min-h-[44px] items-center text-gray-400 hover:text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-400 rounded-sm'>View source</a>
                      </nav>
                  </div>
                  <!-- Imperial/Metric Unit Toggle (D5) -->
@@ -247,15 +247,15 @@
 
                         <!-- Player Buttons -->
                         <div class="flex items-center justify-center space-x-3">
-                            <button id="tour-stop-btn" class="p-2.5 rounded-full btn-secondary text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center" title="Stop & Reset" disabled>
+                            <button id="tour-stop-btn" class="p-2.5 rounded-full btn-secondary text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center" title="Stop & Reset" aria-label="Stop and reset tour" disabled>
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>
                             </button>
-                            <button id="tour-play-btn" class="p-3 rounded-full btn-primary text-white disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 min-h-[48px] min-w-[48px] flex items-center justify-center" title="Play Tour" disabled>
+                            <button id="tour-play-btn" class="p-3 rounded-full btn-primary text-white disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 min-h-[48px] min-w-[48px] flex items-center justify-center" title="Play Tour" aria-label="Play tour" disabled>
                                 <svg id="play-icon" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 <svg id="pause-icon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                             </button>
                             <!-- Theater Mode button (D3) -->
-                            <button id="theater-toggle-btn" class="p-2.5 rounded-full btn-secondary text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center" title="Collapse Sidebar (Theater Mode)" disabled>
+                            <button id="theater-toggle-btn" class="p-2.5 rounded-full btn-secondary text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center" title="Collapse Sidebar (Theater Mode)" aria-label="Collapse sidebar for theater mode" disabled>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v16.5h16.5V3.75H3.75zm1.5 1.5h13.5v13.5H5.25V5.25z M9 9h6v6H9V9z"/></svg>
                             </button>
                         </div>

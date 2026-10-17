@@ -17,7 +17,7 @@ shareSummary: I fine-tuned a model on my own writing. Tone transferred. Judgment
 shareImageAlt: "A share card illustrating the evaluation gap between automated code graders and human editorial judgment."
 ---
 
-"It's not slop - it's AI-Assisted writing". We've all seen it. And yes, I use AI to help copyedit all the time. But is the result good, and is it any faster than just writing it by hand? Raw model copy is cheerful, generic, and predictable, and fixing an agent's generic prose seems like it takes longer than writing from scratch.
+Anyone reviewing AI-assisted drafts starts recognizing the same tells within a paragraph. And yes, I use AI to help copyedit all the time. But is the result good, and is it any faster than just writing it by hand? Raw model copy is cheerful, generic, and predictable, and fixing an agent's generic prose seems like it takes longer than writing from scratch.
 
 I wanted an AI agent for editing copy that matched my style, challenged weak structure, and left narrative judgment to me. Here is what I experimented with and learned.
 
@@ -25,9 +25,9 @@ I wanted an AI agent for editing copy that matched my style, challenged weak str
 
 I started with context engineering: system prompts and skill files containing personal voice guidelines. I wrote detailed rules with caps letters and IMPORTANT! banning em-dashes, stripping hype, adding few-shot examples of my own writing, enforcing active voice, and killing corporate buzzwords.
 
-Agents with this context followed negative constraints reliably. They stopped using announcement clichés and stripped out obvious marketing filler. Yay. But as the rule list grew, the writing became stiff, dry, and repetitive. 
+Agents with this context followed negative constraints reliably. They stopped using announcement clichés and stripped out obvious marketing filler. But as the rule list grew, the writing became stiff, dry, and repetitive. 
 
-Different models failed to capture editing and copy style in distinct ways. Claude Opus 5 leaned heavily into self-referential commentary; it felt unusable. GPT 5.6 Sol handled technical syntax cleanly, but felt robotic. Gemini 3.7 Flash has better copywriting style (for me), but it still fell back on stock AI turns like "it's not X, it's Y!". None of them felt like an authentic collaborator.
+Every frontier model I tested, Gemini 3.7 Flash included, has a recognizable house style. One leaned heavily into self-referential commentary; another handled technical syntax cleanly but felt robotic. Even models with better copywriting style still fell back on stock AI turns like "it's not X, it's Y!". None of them felt like an authentic collaborator.
 
 ## Step 2: Do weights matter more than context?
 
@@ -89,7 +89,7 @@ I asked each pipeline to rewrite this into a direct builder voice without extra 
 
 ### Task 3: Editorial Critique
 
-This is one of the first drafts of this essay I wrote, and I wanted feedback on:
+This is one of the first drafts of this essay I wrote, and I wanted feedback on whether the opening hook earned the technical section:
 
 <!-- lint-ignore -->
 > *"We all know raw AI copy is bland. I don't want an AI to write for me; I want a rubber duck to help me get ideas from my head onto the page quickly."*
@@ -110,24 +110,15 @@ Fine-tuning on a local LoRA adapter taught an open model my rhythm and cadence. 
 
 ### What weights actually solve
 
-- **Cadence and rhythm**: I trained the LoRA on a curated diff of my own essays to bake in sentence variety and colon pivots without repeating thirty-line context rules.
-- **Peer critique**: In Task 3, the model acted like a skeptical peer: it flagged consensus tells, spotted false antithesis flips, and challenged inflated credit without needing a cheerleader preface.
-- **Metric retention in rewrites**: On straightforward status updates, it preserved latencies and dollar figures without dropping numbers or inventing claims.
+I trained the LoRA on a curated diff of my own essays to bake in sentence variety and colon pivots without repeating thirty-line context rules. In Task 3, the model acted like a skeptical peer: it flagged consensus tells, spotted false antithesis flips, and challenged inflated credit without needing a cheerleader preface. On straightforward status updates, it preserved latencies and dollar figures without dropping numbers or inventing claims.
 
 ### Where weights broke down
 
-- **Editorial judgment is absent**: A model can mimic cadence, but it cannot judge whether an opening lands on real developer friction, evaluate narrative weight, or decide if an essay earns its ending.
-- **Hallucinations wear familiar clothes**: Style transfers; facts do not. When pushed for supporting evidence, the model still invented plausible-sounding academic citations with fabricated arXiv links.
-- **Heavy maintenance tax**: A prompt update takes thirty seconds. A fine-tuned LoRA adapter requires curating diffs, retraining locally on Apple Silicon Metal, and regrading the eval suite every time your voice or domain shifts.
-- **Poor surgical restraint**: When asked to make a two-word fix, the model frequently rewrote the entire paragraph instead.
+A model can mimic cadence, but it cannot judge whether an opening lands on real developer friction, evaluate narrative weight, or decide if an essay earns its ending. Style transfers; facts do not. When pushed for supporting evidence, the model still invented plausible-sounding academic citations with fabricated arXiv links. A prompt update takes thirty seconds, while a fine-tuned LoRA adapter requires curating diffs, retraining locally on Apple Silicon Metal, and regrading the eval suite every time your voice or domain shifts. And when I asked for a two-word fix, the model frequently rewrote the entire paragraph instead.
 
 ### The modular pipeline
 
-This experiment pushed me away from monolithic writer agents and toward a decoupled pipeline:
-
-- **Style linter**: Fast, deterministic regex checks in CI for em-dashes, hype adjectives, and passive stock phrases.
-- **Structure checker**: A prompted frontier model tasked exclusively with identifying weak openings, rambling paragraphs, and missing transitions.
-- **Fact validator**: A script that tests links, verifies formatting, and flags ungrounded metrics against source diffs.
+This experiment pushed me away from monolithic writer agents and toward a decoupled pipeline: fast, deterministic regex checks in CI for em-dashes, hype adjectives, and passive stock phrases; a prompted frontier model that flags weak openings, rambling paragraphs, and missing transitions; and a validation script that checks links, formatting, and metrics against source diffs.
 
 A regex catches mechanical rules instantly. Prompted models handle structural flow. But spotting voice failures like the consensus tells in Task 3 requires fine-tuned critique or an honest human reader. Separating these concerns into small, atomic checks is easier to debug, simpler to maintain, and avoids the overhead of managing local fine-tuning runs.
 

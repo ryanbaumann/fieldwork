@@ -34,15 +34,17 @@ export function MapErrorNotice() {
           color: 'var(--text)',
         }}
       >
-        <AlertCircle size={20} color="var(--warn)" />
-        <div style={{ fontSize: 13 }}>
+        <AlertCircle size={20} color="var(--warn)" aria-hidden="true" />
+        <div role="status" style={{ fontSize: 13 }}>
           <strong style={{ color: 'var(--warn)', fontWeight: 600 }}>Rate limit reached.</strong> Some features may be temporarily unresponsive.
         </div>
-        <button 
+        <button
+          type="button"
+          aria-label="Dismiss rate limit notice"
           onClick={() => setApiHealth('ok')}
-          style={{ padding: 4, display: 'grid', placeItems: 'center', borderRadius: 4, background: 'rgba(255,255,255,0.05)' }}
+          style={{ minWidth: 44, minHeight: 44, margin: -10, display: 'grid', placeItems: 'center', borderRadius: 8, background: 'transparent' }}
         >
-          <X size={14} />
+          <X size={14} aria-hidden="true" />
         </button>
       </div>
     );

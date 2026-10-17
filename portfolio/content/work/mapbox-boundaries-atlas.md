@@ -21,12 +21,9 @@ As Mapbox's first customer-facing engineer, I kept hitting the same two blockers
 
 ## What shipped
 
-I drove both from zero to one as the founding product manager:
+I drove both products from zero to one as their founding product manager. Boundaries delivered a global administrative boundary data product that let customers join their business metrics to geography. Atlas packaged self-hosted Mapbox for on-premises and air-gapped infrastructure.
 
-- **Boundaries**: a global administrative boundary data product for joining customer data to geography.
-- **Atlas**: self-hosted Mapbox for on-premises and air-gapped environments.
-
-I led both from strategy through launch before handing them to dedicated product managers. Both remain in Mapbox's product portfolio.
+I led both from initial strategy through launch before handing them over to dedicated product managers; both remain active in Mapbox's portfolio.
 
 ## What I learned
 

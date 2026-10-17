@@ -4,6 +4,48 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Contact form spam filter and triage (`gateway/lib/contactSpam.js`, `gateway/server.js`, `portfolio/build.mjs`, `privacy.md`)**:
+  - Dropped certain bots silently: a filled honeypot, a `POST` with no `Origin` and no `Sec-Fetch-Site`, or a form filled in under 3 seconds. Each drop writes one log line with the reason, email domain, and intent only.
+  - Ran bot checks before the Gemini and DNS calls, so scripted spam uses no classifier quota.
+  - Added rules for development shops, marketing agencies, sponsored posts, crypto pitches, and opt-out footers. A rule match stays flagged even when the model allows the message.
+  - Replaced the `[Likely advertising]` subject prefix with `[Spam? <category>]` for likely pitches and `[Check]` for messages worth a second look.
+  - Added a triage block to each email: verdict, model reason, matched phrase, flags, fill time, sender domain and MX status, link count, IP, browser, language, referrer, and search links for the sender.
+  - Disclosed the new request details on the privacy page.
+
+- **Gateway security hardening (`gateway/server.js`, `gateway/lib/googleAuth.js`, `gateway/lib/infographicAgent.js`)**:
+  - Rejected cross-site `POST` requests to `/api/contact`, `/api/subscribe`, `/api/isochrones`, `/api/hairstyle-ai-studio/*`, and `/api/infographic-agent/*` with `403`. The guard trusts `Sec-Fetch-Site` first and compares `Origin` to `Host` only as a fallback.
+  - Escaped the error text on the Google login page. Rate-limited `/auth/google` and `/auth/google/callback`. Mapped status-coded login errors to an HTML page instead of a `500`.
+  - Stopped raw upstream Gemini error bodies from reaching the infographic client. Mapped `401`/`403`/`429` to plain messages.
+  - Accepted both `model`/`imageModel` and `previousImage`/`previousImageBase64` in infographic render requests.
+  - Added per-IP limits to BYOK text endpoints. Stripped CR/LF from contact `name` and `intent` before they reach the email subject.
+  - Added dark mode to the contact and subscribe confirmation page.
+- **Portfolio copy (`portfolio/content/**`, `apps.json`)**:
+  - Removed section intro subtitles. Rewrote the hero and talk bodies in first person.
+  - Removed competitor model names, sarcasm, and spaced-hyphen dashes from essays. Aligned the DevX essay metric with the evidence ledger.
+  - Renamed the Code Assist talk to "Grounding AI Agents in Geospatial Context" and regenerated its artifact card.
+- **Content rules (`scripts/lib/content-rules.mjs`, `scripts/lib/voice-lexicon.json`)**: added `W-SPACED-HYPHEN`, `W-COMPETITOR-MODEL`, `W-AVOID-WORD` (`solution`, `empower`; job titles exempt), and `W-ABSOLUTE` (`every launch`).
+- **Portfolio UX (`portfolio/build.mjs`, `portfolio/style.css`)**:
+  - Removed lede subtitles from work, talk, script, and standalone pages. Added a homepage closing call to action and per-section meta descriptions.
+  - Consolidated header rules. Added distinct press states, 44px coarse-pointer targets, and reduced-motion handling. Stopped featured-image cropping.
+  - Made wide tables keyboard-scrollable. Turned 404 links into buttons. Shortened the footer disclosure.
+- **Demo accessibility (`demos/*`)**:
+  - Added accessible names to Places autocomplete inputs (aqi-map, isochrones) and icon buttons (strava-explorer, real-world-reasoning-agent, infographic-agent).
+  - Kept the home link visible on mobile in aqi-map and isochrones.
+  - Turned the strava-explorer bottom-sheet handle into a labeled button. Stepped the follow camera every 2 s when reduced motion is on.
+  - Added baseline `:focus-visible` outlines to strava-explorer, hairstyle-ai-studio, and infographic-agent.
+  - infographic-agent: grouped controls with `aria-pressed`, added a show/hide toggle to the key field, and raised muted-text contrast.
+  - real-world-reasoning-agent: kept the status bar clear of the fixed home link.
+
+- **Agent workflow: subagent routing pointer (`AGENTS.md`, `LEARNINGS.md`)**:
+  - Added a pointer to the global `runner` / `builder` / `analyst` / `strategist` subagent roster and its routing rules.
+  - Recorded that agent frontmatter accepts only `model: inherit | flash | pro`; full model IDs drop the agent silently.
+
+- **Agent skills: removed repo duplicates of global skills (`.agents/skills/`, `AGENTS.md`, `scripts/new-post.mjs`, `portfolio/README.md`)**:
+  - Removed the repo copies of `portfolio-writing` and `google-maps-platform`. Both now load only from the global skills directory.
+  - Promoted the newer repo `portfolio-writing` content (Aug 8 version plus `references/`) into the global skill before removal.
+  - Moved the repo-only Maps checks (dark-host Places tokens, CSP origins, `csp` manifest field) into the `AGENTS.md` mapping guidelines.
+  - Removed the `google-maps-platform` frozen eval suite with its skill. `npm run skills:improve` now validates 8 local skills.
+
 - **Editorial Revision: "A Model Router Needs a Scoreboard" (`portfolio/content/writing/the-model-that-picks-your-platform-doesnt-write-the-code.md`)**:
   - Restored authentic essay voice, eliminating meta-commentary fourth-wall breaks about earlier drafts and git commits.
   - Grounded opening in real developer friction: observing a lightweight model burn 42,000 tokens in a retry loop on a routine dependency bump.

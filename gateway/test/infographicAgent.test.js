@@ -142,4 +142,99 @@ test('handleInfographicAgentApi maps upstream 429 to 429 GEMINI_QUOTA_EXHAUSTED 
   assert.match(result.json.error, /reached its provider quota/i);
 });
 
+test('handleInfographicAgentApi /render respects imageModel and previousImageBase64', async () => {
+  let upstreamBody;
+  const result = await handleInfographicAgentApi({
+    pathname: '/api/infographic-agent/render',
+    method: 'POST',
+    body: {
+      prompt: 'Refine this infographic',
+      imageModel: 'gemini-3.1-flash-lite-image',
+      previousImageBase64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    },
+    apiKey: 'AIzaSyValidGeminiKey123',
+    credentialSource: 'hosted',
+    fetchImpl: async (url, init) => {
+      upstreamBody = JSON.parse(init.body);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          steps: [{
+            type: 'model_output',
+            content: [{
+              type: 'image',
+              data: 'AQID',
+              mime_type: 'image/png',
+            }],
+          }],
+        }),
+      };
+    },
+  });
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(upstreamBody.model, 'gemini-3.1-flash-lite-image');
+  assert.equal(upstreamBody.input.length, 2);
+  assert.equal(upstreamBody.input[0].type, 'image');
+  assert.equal(upstreamBody.input[0].mime_type, 'image/png');
+  assert.equal(upstreamBody.input[1].type, 'text');
+  assert.equal(result.json.model, 'gemini-3.1-flash-lite-image');
+});
+
+test('handleInfographicAgentApi upstream 403, 429, and 500 do not leak details or raw body to client', async () => {
+  const secretLeakedString = 'SUPER_SECRET_INTERNAL_SERVER_DETAILS_XYZ';
+
+  // 403 upstream
+  const res403 = await handleInfographicAgentApi({
+    pathname: '/api/infographic-agent/prepare',
+    method: 'POST',
+    body: { topic: 'test' },
+    apiKey: 'AIzaSyValidGeminiKey123',
+    credentialSource: 'personal',
+    fetchImpl: async () => ({
+      ok: false,
+      status: 403,
+      text: async () => JSON.stringify({ error: secretLeakedString }),
+    }),
+  });
+  assert.equal(res403.statusCode, 401);
+  assert.equal(res403.json.details, undefined);
+  assert.equal(JSON.stringify(res403.json).includes(secretLeakedString), false);
+
+  // 429 upstream
+  const res429 = await handleInfographicAgentApi({
+    pathname: '/api/infographic-agent/prepare',
+    method: 'POST',
+    body: { topic: 'test' },
+    apiKey: 'AIzaSyValidGeminiKey123',
+    credentialSource: 'personal',
+    fetchImpl: async () => ({
+      ok: false,
+      status: 429,
+      text: async () => JSON.stringify({ error: secretLeakedString }),
+    }),
+  });
+  assert.equal(res429.statusCode, 429);
+  assert.equal(res429.json.details, undefined);
+  assert.equal(JSON.stringify(res429.json).includes(secretLeakedString), false);
+
+  // 500 upstream
+  const res500 = await handleInfographicAgentApi({
+    pathname: '/api/infographic-agent/prepare',
+    method: 'POST',
+    body: { topic: 'test' },
+    apiKey: 'AIzaSyValidGeminiKey123',
+    credentialSource: 'personal',
+    fetchImpl: async () => ({
+      ok: false,
+      status: 500,
+      text: async () => JSON.stringify({ error: secretLeakedString }),
+    }),
+  });
+  assert.equal(res500.statusCode, 500);
+  assert.equal(res500.json.details, undefined);
+  assert.equal(JSON.stringify(res500.json).includes(secretLeakedString), false);
+});
+
 

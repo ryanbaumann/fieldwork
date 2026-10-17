@@ -9,7 +9,7 @@ import { GeminiKeyDialog } from './components/GeminiKeyDialog';
 import { useAppFlow } from './hooks/useAppFlow';
 import { Scissors, ShieldCheck, ChevronRight, KeyRound, Code2, ArrowUpRight } from 'lucide-react';
 
-const FIELDWORK_URL = 'https://ryanbaumann.dev/';
+const FIELDWORK_URL = '/';
 const SOURCE_URL = 'https://github.com/ryanbaumann/fieldwork/tree/main/demos/hairstyle-ai-studio';
 
 export const App = () => {

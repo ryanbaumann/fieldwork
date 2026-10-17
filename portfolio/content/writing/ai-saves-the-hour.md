@@ -22,13 +22,13 @@ Pretty was the dangerous one. I'd be at the monitor with a senior engineer behin
 
 That was 2009, straight out of school, right as CAD, CFD, and cheap virtual simulation ate the middle of the job. Running cases by hand, checking one assumption at a time, grinding through scenarios to find the one that broke: that had been the work, and it shrank to an afternoon of setup and a night of compute.
 
-The job didn't get smaller. It moved up.
+The job didn't get smaller; it moved up.
 
 What was left was harder to see from outside. Define the constraint. Choose which cases are worth running, then read a clean output and know when it's lying to you. A mesh can be beautiful and meaningless, and the engineers who got good could sense the wrongness in a gorgeous converged result and go find the assumption that had walked away from the physics.
 
 Those three had always been the job. You just couldn't see them, because when a case took a week, choosing it looked like part of the week. Take the week away and the choosing stands by itself. Nobody had measured it, so nobody had staffed it.
 
-AI is running the same play on knowledge work, compressing the middle and handing back the constraint and the call. Which makes the tool's edges matter more than its average. In a [study of 758 consultants](https://pubsonline.informs.org/doi/10.1287/orsc.2025.21838), the same AI made people better on the tasks it fit and worse on one that sat just past the edge. The researchers named that boundary the jagged frontier. Simulation had one too, and output reads with the same confidence on both sides.
+AI is running the same play on knowledge work, compressing the middle and handing back the constraint and the call. That shift makes the tool's edges matter more than its average. In a [study of 758 consultants](https://pubsonline.informs.org/doi/10.1287/orsc.2025.21838), the same AI made people better on the tasks it fit and worse on one that sat just past the edge. The researchers named that boundary the jagged frontier. Simulation had one too, and output reads with the same confidence on both sides.
 
 ![The same tool made consultants better on tasks inside the jagged frontier and worse on one just outside it, with the boundary between them unmarked.](/img/writing/ai-jagged-frontier.svg)
 
@@ -36,7 +36,7 @@ My team's answer is to go measure where the edge is. We build task-based [evals]
 
 Measurement is one half. The other won't fit in a dashboard: hours inside the system, beside the people using it. A constraint isn't a fact you look up. It's a judgment about which of several true things is actually binding, and you get there by sitting with somebody long enough to see which wall they hit twice and how one piece of their workflow keeps taxing another. Miss that and AI walks you to the wrong product in half the usual time.
 
-So the hour lands on your calendar. Unclaimed.
+The saved hour lands on your calendar unclaimed.
 
 Nobody decides, which is exactly why the default wins. The hour turns into volume: more drafts, more tickets, and a quarter later the team is just as busy and no better at the hard part. A default is still a choice, just one nobody had to defend.
 
@@ -47,3 +47,5 @@ I'm relearning it slowly at home. At 2 a.m. with an infant daughter nothing you 
 I don't know where the frontier sits for what we ship next quarter, and I expect it to move. So give AI real work, watch the delta, and hunt for the task where it comes apart. Then spend what comes back on the two things that never got cheap: naming the right constraint, and the time beside the people you build for.
 
 The middle keeps getting cheaper. The mesh still won't tell you it's wrong.
+
+If you're tracking where AI time savings actually go on your team, [send me a note](/contact/).

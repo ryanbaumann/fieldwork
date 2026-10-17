@@ -17,7 +17,7 @@ order: 2
 
 ## The goal
 
-Developer acquisition is moving into agent sessions. We needed to meet builders there, strengthen the open-source libraries they use, and measure whether that distribution turned into adoption.
+More developers now start their evaluation and onboarding inside AI agent sessions. We needed to meet builders there, strengthen the open-source libraries they use, and measure whether that distribution turned into active API adoption.
 
 ## What shipped
 
@@ -27,4 +27,4 @@ We treated open source, agent context, product integrations, and measurement as 
 
 ## What I learned
 
-Distribution, product integration, and open source work best as one measured system. Keep the metrics separate, credit the team, and do not confuse presence in a workflow with proof of adoption. That is the core of [DevX Is a Growth Function](/writing/devx-is-a-growth-discipline/).
+Distribution, product integration, and open source work best as one measured system. Keep the metrics separate, credit the team, and don't confuse presence in a workflow with proof of adoption. That is the core of [DevX Is a Growth Function](/writing/devx-is-a-growth-discipline/).

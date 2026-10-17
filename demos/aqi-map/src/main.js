@@ -261,6 +261,7 @@ async function attachPlaceSearch(PlaceAutocompleteElement) {
     });
     autocomplete.id = 'place-search';
     autocomplete.placeholder = 'Search a city, address, or ZIP';
+    autocomplete.setAttribute('aria-label', 'Search a city, address, or ZIP');
     elements.searchSlot.append(autocomplete);
     autocomplete.addEventListener('gmp-select', async ({ placePrediction }) => {
       const place = placePrediction.toPlace();

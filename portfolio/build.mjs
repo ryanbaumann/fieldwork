@@ -45,6 +45,20 @@ const brand = site.brand || site.name;
 const headerBrand = site.headerBrand || brand;
 const brandShort = site.brandShort || brand.slice(0, 1);
 
+// Meta descriptions for index pages. These feed <meta name="description"> and
+// social cards only; nothing here renders as a visible subtitle. Each must stay
+// unique: the metadata validator rejects duplicate descriptions.
+const SECTION_DESCRIPTIONS = {
+  work: 'Work I shipped at Google Maps Platform, Google Cloud, and Mapbox, and what I learned from each.',
+  writing: 'Field notes on developer experience, evals, maps, and AI coding agents.',
+  talks: 'Recorded talks and fireside chats on developer tools, maps, and AI coding agents.',
+  demos: 'Live map and AI demos I built. Some are reference apps; some are experiments.',
+  ...(site.sectionDescriptions || {}),
+};
+function sectionDescription(name) {
+  return site.sectionIntros?.[name] || SECTION_DESCRIPTIONS[name] || site.description;
+}
+
 const validationErrors = [];
 
 function failValidation(message) {
@@ -388,7 +402,7 @@ function markdownToHtml(markdown) {
         rows.push(cells(lines[index]));
         index += 1;
       }
-      out.push(`<div class="table-scroll"><table><thead><tr>${headers.map((cell) => `<th>${inlineMd(cell)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${headers.map((_, cellIndex) => `<td>${inlineMd(row[cellIndex] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+      out.push(`<div class="table-scroll" tabindex="0" role="region" aria-label="Table, scrolls horizontally"><table><thead><tr>${headers.map((cell) => `<th>${inlineMd(cell)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${headers.map((_, cellIndex) => `<td>${inlineMd(row[cellIndex] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
       continue;
     }
 
@@ -601,7 +615,7 @@ ${WRITER_MODE ? '<div class="writer-banner" role="status">Private writer preview
 ${content}
 </main>
 <footer class="site-footer">
-  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.brandByline || `${brand} by ${site.name}`)} &middot; Written by Ryan Baumann, with copyediting assistance by AI</p>
+  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.brandByline || `${brand} by ${site.name}`)} &middot; I write everything here; AI helps me copyedit.</p>
   <p class="footer-links">
     <a href="${site.links.github}" target="_blank" rel="noopener noreferrer">GitHub</a>
     <a href="${site.links.linkedin}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
@@ -1147,7 +1161,7 @@ function detailPage(collection, entry, activeKey) {
   <p class="eyebrow">${escapeHtml(collection.label)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
   <p class="article-meta">${metaLine([meta.org || meta.venue, meta.role, meta.period || meta.date])}</p>
-  ${meta.summary ? `<p class="lede">${escapeHtml(meta.summary)}</p>` : ''}
+  ${isWriting && meta.summary ? `<p class="lede">${escapeHtml(meta.summary)}</p>` : ''}
   ${linkChips(meta.links)}
   ${heroImage(meta, collection.name)}
   ${markdownToHtml(entry.body)}
@@ -1321,7 +1335,7 @@ function buildHome(collections) {
     ? `
 <section>
   ${sectionHeader('', 'Labs', `${BASE}demos/`, 'Explore Labs')}
-  <p class="section-note">${escapeHtml(site.sectionIntros?.demos || '')}</p>
+  ${site.sectionIntros?.demos ? `<p class="section-note">${escapeHtml(site.sectionIntros.demos)}</p>` : ''}
   <div class="grid demo-grid">
     ${homeDemos.map(demoCard).join('\n')}
   </div>
@@ -1372,8 +1386,8 @@ ${demosSection}
 <section class="build-section home-close">
   <div>
     <p class="eyebrow">Collaborate</p>
-    <h2>Growing a developer platform, or getting one ready for agents?</h2>
-    <p>That's most of what I work on. Happy to collaborate or trade notes.</p>
+    <h2>Working on a developer platform, map tool, or agent workflow?</h2>
+    <p>Send a note if you want to compare notes or collaborate.</p>
   </div>
   <div>
     <a class="button button-primary" href="${BASE}contact/">Get in touch</a>
@@ -1396,7 +1410,7 @@ function buildDemosPage() {
   if (!demos.length) return;
   const content = `<section>
   <h1>Labs</h1>
-  <p class="lede">${escapeHtml(site.sectionIntros?.demos || '')}</p>
+  ${site.sectionIntros?.demos ? `<p class="lede">${escapeHtml(site.sectionIntros.demos)}</p>` : ''}
   <div class="grid demo-grid">
     ${demos.map(demoCard).join('\n')}
   </div>
@@ -1405,7 +1419,7 @@ function buildDemosPage() {
 
   writePage(join('demos', 'index.html'), layout({
     title: `Labs - ${brand}`,
-    description: site.sectionIntros?.demos || site.description,
+    description: sectionDescription('demos'),
     content,
     active: 'demos',
     canonical: absoluteUrl('/demos/'),
@@ -1449,7 +1463,7 @@ ${subscribeSection()}`;
 
   writePage(join(collection.name, 'index.html'), layout({
     title: `${collection.label} - ${brand}`,
-    description: site.sectionIntros?.[collection.name] || site.description,
+    description: sectionDescription(collection.name),
     content,
     active: collection.name,
     canonical: absoluteUrl(`/${collection.name}/`),
@@ -1474,7 +1488,6 @@ function resumePageContent(meta, body) {
     <div>
       <p class="eyebrow">Resume</p>
       <h1>${escapeHtml(site.name)}</h1>
-      <p class="lede">${escapeHtml(site.positioning || site.role)}</p>
     </div>
     <p class="resume-meta">${escapeHtml(site.location)} · <a href="${site.links.linkedin}" target="_blank" rel="noopener noreferrer">LinkedIn</a> · <a href="${site.links.github}" target="_blank" rel="noopener noreferrer">GitHub</a></p>
   </div>
@@ -1493,7 +1506,7 @@ function pageActions() {
 function contactPageContent(meta, body) {
   return `<section class="contact-shell">
   <p class="eyebrow">Contact</p>
-  <h1>Start a conversation.</h1>
+  <h1>Start a conversation</h1>
   <div class="prose">${markdownToHtml(body)}</div>
   <form id="contact-form" class="contact-form" action="${BASE}api/contact" method="post">
     <fieldset class="intent-options"><legend>What is this about?</legend>
@@ -1507,11 +1520,12 @@ function contactPageContent(meta, body) {
     <div class="contact-honeypot" aria-hidden="true">
       <label>Company fax number <input name="company_fax_number" tabindex="-1" autocomplete="off" /></label>
     </div>
+    <input type="hidden" name="fill_ms" value="" />
     <label class="human-check"><input name="human" type="checkbox" value="1" required /> <span>I am a person, and this is not an unsolicited sales pitch.</span></label>
     <button class="button" type="submit">Send note</button>
   </form>
   <p class="section-note">Your message may be checked for unsolicited advertising before delivery. See <a href="${BASE}privacy/">Privacy</a>.</p>
-  <script>(()=>{const value=new URLSearchParams(location.search).get('intent');const intents={platform:'Developer platform discussion',content:'Content collaboration',speaking:'Speaking opportunity',other:'Other'};const selected=intents[value];if(!selected)return;const input=[...document.querySelectorAll('input[name="intent"]')].find((item)=>item.value===selected);if(input)input.checked=true})();</script>
+  <script>(()=>{const form=document.getElementById('contact-form');const start=performance.now();form.addEventListener('submit',()=>{form.elements.fill_ms.value=String(Math.round(performance.now()-start))});const value=new URLSearchParams(location.search).get('intent');const intents={platform:'Developer platform discussion',content:'Content collaboration',speaking:'Speaking opportunity',other:'Other'};const selected=intents[value];if(!selected)return;const input=[...form.querySelectorAll('input[name="intent"]')].find((item)=>item.value===selected);if(input)input.checked=true})();</script>
 </section>`;
 }
 
@@ -1537,7 +1551,6 @@ function buildStandalonePages(pages) {
     const content = customContent || `<article class="prose">
   <p class="eyebrow">${escapeHtml(meta.eyebrow || site.name)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
-  ${meta.summary ? `<p class="lede">${escapeHtml(meta.summary)}</p>` : ''}
   ${slug === 'about' ? pageActions() : ''}
   ${heroImage(meta, 'pages', slug === 'about' ? ' profile-portrait' : '')}
   ${markdownToHtml(body)}
@@ -1567,9 +1580,9 @@ function buildNotFoundPage() {
   <p>I couldn't find that page.</p>
   <p class="hero-actions">
     <a class="button button-primary" href="${BASE}">Home</a>
-    <a href="${BASE}work/">Work</a>
-    <a href="${BASE}writing/">Notes</a>
-    ${demos.length ? `<a href="${BASE}demos/">Labs</a>` : ''}
+    <a class="button button-secondary" href="${BASE}work/">Work</a>
+    <a class="button button-secondary" href="${BASE}writing/">Notes</a>
+    ${demos.length ? `<a class="button button-secondary" href="${BASE}demos/">Labs</a>` : ''}
   </p>
 </section>`;
   writePage('404.html', layout({

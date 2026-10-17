@@ -15,12 +15,12 @@ export const Header: React.FC<HeaderProps> = ({ apiKey, onOpenKeyDialog }) => {
             ← Home
           </a>
           <div className="brand-icon">
-            <Sparkles size={20} />
+            <Sparkles size={20} aria-hidden="true" />
           </div>
           <div>
             <div className="brand-title">
               Infographic Agent
-              <span className="brand-badge">Gemini 3.7 + 3.1</span>
+              <span className="brand-badge">Gemini 3.8 + 3.1</span>
             </div>
           </div>
         </div>
@@ -30,19 +30,19 @@ export const Header: React.FC<HeaderProps> = ({ apiKey, onOpenKeyDialog }) => {
             type="button"
             className="key-status-btn"
             onClick={onOpenKeyDialog}
-            title={apiKey ? 'Personal Gemini API Key Active' : 'Hosted Daily Free Tier'}
+            title={apiKey ? "Using your Gemini API key" : "Using the shared daily allowance"}
             aria-label={apiKey ? 'Manage personal Gemini API key' : 'Connect a Gemini API key'}
           >
             {apiKey ? (
               <>
                 <CheckCircle2 size={15} color="#10b981" aria-hidden="true" />
-                <span>Personal Key Active</span>
+                <span>Your key</span>
               </>
             ) : (
               <>
                 <Key size={15} aria-hidden="true" />
-                <span>API Key / Free Tier</span>
-                <span className="status-dot" />
+                <span>Add API key</span>
+                <span className="status-dot" aria-hidden="true" />
               </>
             )}
           </button>

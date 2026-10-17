@@ -3040,3 +3040,22 @@ gmp-place-contextual {
     min-height: 44px;
   }
 }
+
+/* The fixed "ryanbaumann.dev" link sits over the status bar's right edge.
+   Reserve that space so status items never slide under it, and on desktop
+   keep the pill inside the 35px bar instead of hanging into the sidebar. */
+.atlas-statusbar {
+  padding-right: max(160px, calc(env(safe-area-inset-right) + 152px));
+}
+
+@media (pointer: fine) and (min-width: 761px) {
+  .fieldwork-home-link {
+    top: max(4px, env(safe-area-inset-top));
+    min-height: 27px;
+  }
+}
+
+.fieldwork-home-link:focus-visible {
+  outline: 2px solid var(--brand-b);
+  outline-offset: 2px;
+}

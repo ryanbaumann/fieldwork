@@ -89,7 +89,7 @@ const CARDS = [
   {
     file: 'talks/code-assist-video.svg',
     eyebrow: 'FIRESIDE CHAT · GOOGLE MAPS PLATFORM',
-    title: 'Grounding Agentic Solutions',
+    title: 'Grounding AI Agents',
     lines: ['trustworthy reasoning with grounded geographic context'],
     footer: 'youtu.be/L2V58kKIHvc',
   },

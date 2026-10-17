@@ -7,6 +7,17 @@ body {
   font-family: ui-sans-serif, system-ui, sans-serif;
 }
 
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid #7c3aed;
+    outline-offset: 2px;
+  }
+
+  .dark :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline-color: #a78bfa;
+  }
+}
+
 /* Custom scrollbar for modern feel */
 ::-webkit-scrollbar {
   width: 8px;

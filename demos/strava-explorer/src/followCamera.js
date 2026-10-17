@@ -43,6 +43,13 @@ let lastTargetAltitude = null;
 let currentProgress = 0; // 0.0 to 1.0 (tour progress)
 let lastFrameTime = null; // Timestamp of the last frame
 
+// Reduced motion: step the camera at a fixed interval instead of flying continuously.
+const REDUCED_MOTION_STEP_MS = 2000;
+let lastReducedMotionStep = null;
+function prefersReducedMotion() {
+    return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+}
+
 // Callbacks
 let onProgressUpdate = null; // function(progress, distanceElapsedKm)
 let onPlaybackStateChange = null; // function(state) -> 'playing' | 'paused' | 'stopped'
@@ -288,6 +295,7 @@ export async function playFollowCamera(routeCoords) {
     debug("Playing follow camera tour.");
     followCameraActive = true;
     lastFrameTime = null; // Reset frame timestamp
+    lastReducedMotionStep = null;
     
     // Reset triggers based on current play start distance
     const startDistanceKm = followCameraPathDistance * currentProgress;
@@ -404,7 +412,14 @@ function frame(time) {
         return;
     }
 
-    updateCameraForProgress(currentProgress, false);
+    if (prefersReducedMotion()) {
+        if (lastReducedMotionStep === null || time - lastReducedMotionStep >= REDUCED_MOTION_STEP_MS) {
+            lastReducedMotionStep = time;
+            updateCameraForProgress(currentProgress, true);
+        }
+    } else {
+        updateCameraForProgress(currentProgress, false);
+    }
 
     const distanceElapsedKm = followCameraPathDistance * currentProgress;
     if (onProgressUpdate) onProgressUpdate(currentProgress, distanceElapsedKm);

@@ -116,6 +116,28 @@ function parseJsonText(text) {
   return JSON.parse(normalized);
 }
 
+function sanitizeUpstreamError(status, fallbackMessage = 'Gemini could not complete the request. Please try again.') {
+  if (status === 401 || status === 403) {
+    return {
+      message: 'Gemini API key was rejected. Check the key and try again.',
+      code: 'INVALID_API_KEY',
+      statusCode: 401,
+    };
+  }
+  if (status === 429) {
+    return {
+      message: 'Gemini API quota or rate limit reached. Try again shortly or use another key.',
+      code: 'UPSTREAM_RATE_LIMITED',
+      statusCode: 429,
+    };
+  }
+  return {
+    message: fallbackMessage,
+    code: 'UPSTREAM_ERROR',
+    statusCode: status >= 400 && status < 600 ? status : 502,
+  };
+}
+
 async function createInteraction({ apiKey, model, input, responseFormat, thinkingConfig, tools, fetchImpl, signal }) {
   const timeoutSignal = AbortSignal.timeout(120_000);
   const response = await fetchImpl(INTERACTIONS_URL, {
@@ -137,12 +159,8 @@ async function createInteraction({ apiKey, model, input, responseFormat, thinkin
   });
 
   if (!response.ok) {
-    const statusCode = response.status === 400 ? 400
-      : response.status === 401 || response.status === 403 ? 401
-        : response.status === 429 ? 429
-          : 502;
-    const body = await response.text().catch(() => '');
-    throw Object.assign(new Error(`Gemini request failed: ${response.statusText}`), { statusCode, details: body });
+    const sanitized = sanitizeUpstreamError(response.status, `Gemini request failed: ${response.statusText}`);
+    throw Object.assign(new Error(sanitized.message), { statusCode: sanitized.statusCode, code: sanitized.code });
   }
   return response.json();
 }
@@ -220,7 +238,7 @@ Output valid JSON adhering to the schema.`;
       try {
         parsed = parseJsonText(responseText);
       } catch {
-        return result(502, { error: 'Failed to parse model research output as JSON.', raw: responseText });
+        return result(502, { error: 'Failed to parse model research output as JSON.' });
       }
 
       if (credentialSource === 'hosted') recordHostedGeminiSuccess();
@@ -236,10 +254,10 @@ Output valid JSON adhering to the schema.`;
       const prompt = cleanText(body?.prompt, 4000);
       const mode = cleanText(body?.mode, 40) || 'data-story';
       const aspect = cleanText(body?.aspect, 20) || '16:9';
-      const rawModel = cleanText(body?.model, 60);
+      const rawModel = cleanText(body?.model || body?.imageModel, 60);
       const imageModel = ALLOWED_IMAGE_MODELS.has(rawModel) ? rawModel : DEFAULT_IMAGE_MODEL;
       const editInstruction = cleanText(body?.editInstruction, 2000);
-      const previousImage = parseDataUrl(body?.previousImage);
+      const previousImage = parseDataUrl(body?.previousImage || body?.previousImageBase64);
 
       if (!SUPPORTED_ASPECTS.has(aspect)) {
         return result(400, { error: `Unsupported aspect ratio: ${aspect}` });
@@ -302,21 +320,18 @@ Output valid JSON adhering to the schema.`;
       return result(503, {
         error: 'The shared Gemini allowance is temporarily unavailable. Add your own key to continue.',
         code: 'FREE_TIER_UNAVAILABLE',
-        details: error.details,
       });
     }
     if (error?.statusCode === 429) {
       return result(429, {
         error: 'That Gemini API key has reached its provider quota. Check its quota or use another key.',
         code: 'GEMINI_QUOTA_EXHAUSTED',
-        details: error.details,
       });
     }
     const statusCode = error.statusCode || 502;
     return result(statusCode, {
       error: error.message || 'Infographic Agent API request failed.',
-      code: 'INFOGRAPHIC_AGENT_ERROR',
-      details: error.details,
+      code: error.code || 'INFOGRAPHIC_AGENT_ERROR',
     });
   }
 }

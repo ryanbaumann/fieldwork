@@ -16,7 +16,10 @@
     "announce": [
       "we(?:'|\u2019)?re\\s+excited\\s+to\\s+announce"
     ],
-    "emdash": ["\u2014"]
+    "emdash": ["\u2014"],
+    "avoid": [
+      "\\b(?:solutions?|empowers?)\\b"
+    ]
   },
   "model_output": {
     "hype": [

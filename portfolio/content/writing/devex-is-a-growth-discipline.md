@@ -15,7 +15,7 @@ tags: ["developer experience", "growth", "ai"]
 order: 3
 ---
 
-We more than doubled our unique active users across our open-source ecosystem in a year, driving direct growth in API engagement. We moved those metrics by treating DevX as a growth discipline, not a documentation queue. Our product, engineering, UX, and technical writing teams treated product, distribution, and measurement as one system, because presence in a workflow is not proof of adoption.
+Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, and API engagement for our open-source client libraries grew strongly. We moved those metrics by treating DevX as a growth discipline, not a documentation queue. Our product, engineering, UX, and technical writing teams treated product, distribution, and measurement as one system, because presence in a workflow is not proof of adoption.
 
 Documentation requests look like progress, but they usually mask friction that belongs in the product. Docs, code samples, advocacy, and tutorials all have a ceiling. The job is direct: identify the friction that stalls a builder, fix it in the experience, place the better path where they already work, and measure the shift in behavior.
 

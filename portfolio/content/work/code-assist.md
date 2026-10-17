@@ -18,11 +18,11 @@ order: 1
 
 ## The goal
 
-Developers increasingly let their agents read the docs for them. When an AI generates wrong Google Maps Platform code, the developer blames the platform. The goal: make AI coding agents generate correct, current platform code, and turn that field pain into a product surface we could operate and improve.
+Developers increasingly let their agents read the docs for them. When an AI generates wrong Google Maps Platform code, the developer blames the platform. We wanted to deliver correct, current platform code inside AI coding agents, and turn that field pain into a product surface we could operate and improve.
 
 ## What shipped
 
-Our team built and shipped [Code Assist](https://developers.google.com/maps/ai/code-assist): an MCP server that grounds AI coding agents in official Google Maps Platform documentation, code samples, and architecture guides through retrieval. I led the strategy and stayed close to the work as we took it from a GitHub alpha to a hosted remote MCP service that works with compatible MCP clients.
+Our team built and shipped [Code Assist](https://developers.google.com/maps/ai/code-assist): an MCP server that grounds AI coding agents in official Google Maps Platform documentation, code samples, and architecture guides through retrieval. I led the strategy as we took it from a GitHub alpha to a hosted remote MCP service that works with compatible MCP clients.
 
 With it connected, agents retrieve current official docs instead of relying only on training memory. That gives the agent current API surfaces, code samples, and architecture guidance inside the task.
 
