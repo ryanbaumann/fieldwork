@@ -16,7 +16,7 @@ order: 3
 
 Visualization platforms have deep capability and a steep path to the first useful result. AI assistance can shorten that path, but only when the platform gives the agent current facts, useful workflows, and a reliable way to test the output.
 
-The talk follows the path from a working visualization back to the libraries, current context, and checks that made it reliable. It asks what deck.gl and kepler.gl need to make the first useful result easier without hiding the underlying system.
+In this talk, I trace the path from a working visualization back to the libraries, current context, and checks that made it reliable. I also ask what deck.gl and kepler.gl need to make the first useful result easier without hiding the underlying system.
 
 Google Maps Platform sponsors [@vis.gl/react-google-maps](https://www.npmjs.com/package/@vis.gl/react-google-maps), which has more than 1 million weekly downloads. That public artifact shows the reach open-source client libraries can create when they are treated as product and distribution, not side projects.
 

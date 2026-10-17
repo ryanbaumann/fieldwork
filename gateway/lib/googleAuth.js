@@ -69,4 +69,13 @@ export function hasGoogleSession(request, env = process.env) {
   return email === (env.GOOGLE_OAUTH_ALLOWED_EMAIL || 'rsbaumann@gmail.com') && Number(expires) > Date.now() / 1000 && /^[a-f0-9]{32}$/.test(nonce) && equal(signature, sign(payload, env.GOOGLE_OAUTH_SESSION_SECRET));
 }
 
-export function googleLoginPage(error = '') { return `<!doctype html><title>Dashboard sign in</title><main><h1>Dashboard</h1><p>Sign in with the approved Google account to review private releases.</p>${error ? `<p role="alert">${error}</p>` : ''}<p><a href="/auth/google">Continue with Google</a></p></main>`; }
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+export function googleLoginPage(error = '') { return `<!doctype html><title>Dashboard sign in</title><main><h1>Dashboard</h1><p>Sign in with the approved Google account to review private releases.</p>${error ? `<p role="alert">${escapeHtml(error)}</p>` : ''}<p><a href="/auth/google">Continue with Google</a></p></main>`; }

@@ -28,6 +28,10 @@ const anyOf = (patterns) => new RegExp(patterns.join('|'), 'i');
 const HYPE = anyOf(LEXICON.site.hype);
 const ANNOUNCE = anyOf(LEXICON.site.announce);
 const EM_DASHES = LEXICON.site.emdash;
+const AVOID = anyOf(LEXICON.site.avoid || []);
+const SPACED_HYPHEN = /[a-z0-9] - [a-z]/i;
+const COMPETITOR_MODEL = /\b(Claude(?:\s+Opus)?|ChatGPT|GPT[- ][0-9])/i;
+const ABSOLUTE = /\bevery launch\b/i;
 const PROSE_META_FIELDS = ['title', 'summary', 'shareTitle', 'shareSummary'];
 
 function parseScalar(value) {
@@ -100,6 +104,30 @@ export function checkDocument({ path, collection, raw }) {
     const hype = HYPE.exec(unit.text);
     if (hype) {
       add(unit.line, 'W-HYPE', 'error', `Hype adjective "${hype[0]}". The evidence carries the excitement (portfolio-writing).`);
+    }
+    // The rules below target reader-facing prose; code spans and URLs are not prose.
+    const proseText = unit.text
+      .replace(/`[^`]*`/g, ' ')
+      .replace(/\]\([^)]*\)/g, ']')
+      .replace(/\bhttps?:\/\/\S+/gi, ' ');
+    if (!proseText.trim().startsWith('|') && SPACED_HYPHEN.test(proseText)) {
+      add(unit.line, 'W-SPACED-HYPHEN', 'error', 'Spaced hyphen in prose. Use a colon, a semicolon, or rewrite without a dash (portfolio-writing).');
+    }
+    const competitor = COMPETITOR_MODEL.exec(proseText);
+    if (competitor) {
+      add(unit.line, 'W-COMPETITOR-MODEL', 'error', `Competitor model "${competitor[0]}". Keep model IDs out of evergreen text (portfolio-writing).`);
+    }
+    if (AVOID.test(unit.text)) {
+      const sanitized = unit.text
+        .replace(/\b(?:industry\s+solutions)\b/gi, '')
+        .replace(/\b(?:technical\s+|senior\s+)?solutions\s+(?:architect(?:ure)?|engineer(?:ing)?|manager)(?:\s+team)?\b/gi, '');
+      const avoid = AVOID.exec(sanitized);
+      if (avoid) {
+        add(unit.line, 'W-AVOID-WORD', 'error', `Avoid word "${avoid[0]}". Use precise verbs and direct nouns instead (portfolio-writing).`);
+      }
+    }
+    if (ABSOLUTE.test(unit.text)) {
+      add(unit.line, 'W-ABSOLUTE', 'error', 'Forbidden absolute "every launch". Keep claims grounded and verifiable (portfolio-writing).');
     }
   }
 

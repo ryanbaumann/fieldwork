@@ -22,7 +22,7 @@ Google Cloud needed a repeatable connected-product stack for manufacturers. The 
 
 ## What shipped
 
-I led the product and engineering team from zero to launch in nine months. Intelligent Product Essentials combined edge AI and cloud analytics so manufacturers could ship smart, updatable, data-generating products. GE Appliances launched with the team.
+I led the product and engineering team from zero to launch in nine months, with GE Appliances as our launch customer. Intelligent Product Essentials combined edge AI and cloud analytics so manufacturers could ship smart, updatable, data-generating products.
 
 ## What I learned
 

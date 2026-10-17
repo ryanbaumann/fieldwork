@@ -6,16 +6,16 @@
   "brandByline": "Fieldwork by Ryan Baumann",
   "role": "DevX at Google Maps Platform",
   "location": "San Francisco",
-  "heroHeadline": "Builder platforms for humans and agents.",
+  "heroHeadline": "Developer tools, maps, and AI agents",
   "profileHeadline": "Building DevX at Google Maps Platform",
-  "intro": "I work on engineering and product teams to build developer tools and AI products that drive growth.",
+  "intro": "I lead Developer Experience Engineering at Google Maps Platform. I write here about building developer tools, open-source libraries, and AI agents.",
   "heroStats": [],
   "description": "Fieldwork is my developer notebook on builder platforms, developer tools, evals, and AI coding agents.",
   "sectionIntros": {
-    "work": "Shipped tools, libraries, and experiments: the problem, the artifact, and what I learned.",
-    "writing": "What I'm learning about agents, evals, and the platforms they run on.",
-    "talks": "Demo-first talks on developer tools, AI coding agents, and reliable generation.",
-    "demos": "Reference apps I shipped, and experiments that didn't have to work."
+    "work": "",
+    "writing": "",
+    "talks": "",
+    "demos": ""
   },
   "links": {
     "github": "https://github.com/ryanbaumann",

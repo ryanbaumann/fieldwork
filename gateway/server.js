@@ -40,7 +40,16 @@ import {
 import { publishWritingUpdate, requestWritingReview, saveWritingDraft } from './lib/writer.js';
 import { stageWriterSocialDraft } from './lib/buffer.js';
 import { beginGoogleLogin, finishGoogleLogin, googleLoginPage, hasGoogleSession } from './lib/googleAuth.js';
-import { classifyContactSubmission } from './lib/contactSpam.js';
+import {
+  classifyContactSubmission,
+  collectContactSignals,
+  contactBotReason,
+  contactFlags,
+  contactSubjectTag,
+  formatContactTriage,
+  lookupMailServer,
+  parseFillMs,
+} from './lib/contactSpam.js';
 import { errorPageHtml } from './lib/errorPage.js';
 import { proxyUpstream } from './lib/upstream.js';
 
@@ -157,11 +166,37 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+function isSameOriginRequest(request) {
+  const originHeader = request.headers.origin;
+  if (!originHeader || originHeader === 'null') return true;
+  try {
+    const originHost = new URL(originHeader).host;
+    return originHost === request.headers.host;
+  } catch {
+    return false;
+  }
+}
+
+// Browsers send Sec-Fetch-Site on every fetch and form POST. Trust it first:
+// a local Vite dev proxy (changeOrigin: true) rewrites Host but not Origin, so
+// an Origin-vs-Host comparison alone would reject legitimate same-origin calls.
+// Fall back to the Origin check only for `same-site` or clients that omit it.
+function isCrossSitePost(request) {
+  const secFetchSite = String(request.headers['sec-fetch-site'] || '').toLowerCase();
+  if (secFetchSite === 'same-origin' || secFetchSite === 'none') return false;
+  if (secFetchSite === 'cross-site') return true;
+  const originHeader = request.headers.origin;
+  if (originHeader && originHeader !== 'null') {
+    return !isSameOriginRequest(request);
+  }
+  return false;
+}
+
 function formResponsePage(title, message, statusCode = 200, { backHref = '/contact/', backLabel = 'Contact' } = {}) {
   const delivered = statusCode >= 200 && statusCode < 300;
   const deliveryState = delivered ? 'success' : 'failure';
   const liveRole = delivered ? 'status' : 'alert';
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="contact-delivery" content="${deliveryState}"><title>${escapeHtml(title)}</title><style>body{font-family:system-ui,sans-serif;max-width:42rem;margin:4rem auto;padding:0 1.25rem;line-height:1.6;color:#111827;background:#faf9f6}a{color:inherit}</style></head><body><header><nav aria-label="${escapeHtml(backLabel)}"><a href="${escapeHtml(backHref)}">← ${escapeHtml(backLabel)}</a></nav></header><main data-contact-delivery="${deliveryState}"><h1>${escapeHtml(title)}</h1><p role="${liveRole}" aria-live="${delivered ? 'polite' : 'assertive'}">${escapeHtml(message)}</p></main></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="contact-delivery" content="${deliveryState}"><title>${escapeHtml(title)}</title><style>:root{color-scheme:light dark}body{font-family:system-ui,sans-serif;max-width:42rem;margin:4rem auto;padding:0 1.25rem;line-height:1.6;color:#111827;background:#faf9f6}a{color:inherit}a:focus-visible{outline:3px solid currentColor;outline-offset:3px}@media (prefers-color-scheme:dark){body{color:#f9fafb;background:#030712}}</style></head><body><header><nav aria-label="${escapeHtml(backLabel)}"><a href="${escapeHtml(backHref)}">← ${escapeHtml(backLabel)}</a></nav></header><main data-contact-delivery="${deliveryState}"><h1>${escapeHtml(title)}</h1><p role="${liveRole}" aria-live="${delivered ? 'polite' : 'assertive'}">${escapeHtml(message)}</p></main></body></html>`;
 }
 
 const contactResponsePage = (title, message, statusCode = 200) => formResponsePage(title, message, statusCode);
@@ -182,6 +217,10 @@ const subscribeResponsePage = (title, message, statusCode = 200) => formResponse
 async function handleSubscribeRequest(request, response) {
   if (request.method !== 'POST') {
     sendJson(request, response, 405, { error: 'Method not allowed' });
+    return;
+  }
+  if (isCrossSitePost(request)) {
+    sendJson(request, response, 403, { error: 'Forbidden: cross-origin request not allowed.' });
     return;
   }
 
@@ -282,6 +321,10 @@ async function handleContactRequest(request, response) {
     sendJson(request, response, 405, { error: 'Method not allowed' });
     return;
   }
+  if (isCrossSitePost(request)) {
+    sendJson(request, response, 403, { error: 'Forbidden: cross-origin request not allowed.' });
+    return;
+  }
 
   let rawBody;
   try {
@@ -295,10 +338,10 @@ async function handleContactRequest(request, response) {
   const params = contentType.includes('application/x-www-form-urlencoded')
     ? new URLSearchParams(rawBody)
     : new URLSearchParams();
-  const name = String(params.get('name') || '').trim().slice(0, 120);
+  const name = String(params.get('name') || '').trim().replace(/[\r\n\t]+/g, ' ').slice(0, 120);
   const email = String(params.get('email') || '').trim().slice(0, 200);
   const message = String(params.get('message') || '').trim().slice(0, 5000);
-  const intent = String(params.get('intent') || '').trim();
+  const intent = String(params.get('intent') || '').trim().replace(/[\r\n\t]+/g, ' ');
   const humanConfirmed = params.get('human') === '1';
   const honeypot = String(params.get('company_fax_number') || '').trim();
 
@@ -317,14 +360,21 @@ async function handleContactRequest(request, response) {
     return;
   }
 
-  const { apiKey: geminiApiKey } = resolveProvider('gemini', process.env);
-  const classification = honeypot
-    ? { decision: 'reject', category: 'advertising', confidence: 1, source: 'honeypot' }
-    : await classifyContactSubmission({ intent, message, geminiApiKey });
+  const signals = collectContactSignals({
+    headers: request.headers,
+    ip: clientIp(request),
+    email,
+    message,
+    fillMs: parseFillMs(params.get('fill_ms')),
+  });
 
-  if (classification.decision === 'reject') {
+  const botReason = contactBotReason({ honeypot, signals });
+  if (botReason) {
     // Give automated senders a neutral success response without recording a
     // delivered lead. Only provider-confirmed mail receives delivered=1.
+    // The log line has no message text, name, or full address, so false
+    // positives can be audited in Cloud Run logs without storing content.
+    console.log(JSON.stringify({ severity: 'NOTICE', event: 'contact_filtered', reason: botReason, emailDomain: signals.domain, intent }));
     applySecurityHeaders(response);
     response.writeHead(303, {
       Location: '/contact-success/',
@@ -341,6 +391,13 @@ async function handleContactRequest(request, response) {
     return;
   }
 
+  const { apiKey: geminiApiKey } = resolveProvider('gemini', process.env);
+  const [mailServer, classification] = await Promise.all([
+    lookupMailServer(signals.domain),
+    classifyContactSubmission({ intent, message, geminiApiKey }),
+  ]);
+  signals.mailServer = mailServer;
+  const flags = contactFlags(classification, signals);
   let upstream;
   try {
     upstream = await fetch('https://api.resend.com/emails', {
@@ -353,8 +410,8 @@ async function handleContactRequest(request, response) {
         from: fromEmail,
         to: [toEmail],
         reply_to: email,
-        subject: `${classification.decision === 'review' ? '[Likely advertising] ' : ''}[${intent}] Portfolio contact from ${name}`,
-        text: `Intent: ${intent}\nName: ${name}\nEmail: ${email}\n\n${message}`,
+        subject: `${contactSubjectTag(classification, flags)}[${intent}] Portfolio contact from ${name}`,
+        text: `Intent: ${intent}\nName: ${name}\nEmail: ${email}\n\n${message}\n\n${formatContactTriage({ name, classification, signals, flags })}\n`,
       }),
       signal: AbortSignal.timeout(10_000),
     });
@@ -512,7 +569,8 @@ async function handleApi(request, response, pathname, searchParams) {
   // accepts both without requiring a client change.
   const isPhotoRoute = pathname === '/api/strava/photo' || pathname === '/api/photo-proxy';
   const isStravaRoute = pathname.startsWith('/api/strava/') || isPhotoRoute;
-  const policyName = rateLimitPolicyForPath(pathname);
+  const isByokHairstyleAnalyze = pathname === '/api/hairstyle-ai-studio/analyze' && Object.hasOwn(request.headers, 'x-gemini-api-key');
+  const policyName = isByokHairstyleAnalyze ? null : rateLimitPolicyForPath(pathname);
   if (policyName && !routeRateLimiters[policyName].check(`${policyName}:${ip}`)) {
     response.setHeader('Retry-After', String(Math.ceil(RATE_LIMIT_POLICIES[policyName].windowMs / 1000)));
     sendJson(request, response, 429, { error: 'Too many requests. Please try again later.' });
@@ -625,6 +683,10 @@ async function handleApi(request, response, pathname, searchParams) {
       sendJson(request, response, 405, { error: 'Method not allowed' });
       return;
     }
+    if (isCrossSitePost(request)) {
+      sendJson(request, response, 403, { error: 'Forbidden: cross-origin request not allowed.' });
+      return;
+    }
     let body;
     try {
       body = await readJsonBody(request);
@@ -667,18 +729,9 @@ async function handleApi(request, response, pathname, searchParams) {
       sendJson(request, response, 405, { error: 'Method not allowed' });
       return;
     }
-    const originHeader = request.headers.origin;
-    if (originHeader) {
-      let originHost;
-      try {
-        originHost = new URL(originHeader).host;
-      } catch {
-        originHost = null;
-      }
-      if (originHost !== request.headers.host) {
-        sendJson(request, response, 403, { error: 'Invalid request origin.' });
-        return;
-      }
+    if (isCrossSitePost(request)) {
+      sendJson(request, response, 403, { error: 'Forbidden: cross-origin request not allowed.' });
+      return;
     }
 
     const hasPersonalKeyHeader = Object.hasOwn(request.headers, 'x-gemini-api-key');
@@ -733,7 +786,7 @@ async function handleApi(request, response, pathname, searchParams) {
       geminiReserved = true;
     }
 
-    if (isImageRequest && credentialSource === 'byok') {
+    if ((isImageRequest || pathname === '/api/hairstyle-ai-studio/analyze') && credentialSource === 'byok') {
       const policy = RATE_LIMIT_POLICIES.hairstyleByokImage;
       if (!routeRateLimiters.hairstyleByokImage.check(`hairstyle-byok:${ip}`)) {
         response.setHeader('Retry-After', String(Math.ceil(policy.windowMs / 1000)));
@@ -845,18 +898,9 @@ async function handleApi(request, response, pathname, searchParams) {
       sendJson(request, response, 405, { error: 'Method not allowed' });
       return;
     }
-    const originHeader = request.headers.origin;
-    if (originHeader) {
-      let originHost;
-      try {
-        originHost = new URL(originHeader).host;
-      } catch {
-        originHost = null;
-      }
-      if (originHost !== request.headers.host) {
-        sendJson(request, response, 403, { error: 'Invalid request origin.' });
-        return;
-      }
+    if (isCrossSitePost(request)) {
+      sendJson(request, response, 403, { error: 'Forbidden: cross-origin request not allowed.' });
+      return;
     }
 
     const hasPersonalKeyHeader = Object.hasOwn(request.headers, 'x-gemini-api-key');
@@ -910,7 +954,7 @@ async function handleApi(request, response, pathname, searchParams) {
       geminiReserved = true;
     }
 
-    if (isImageRequest && credentialSource === 'byok') {
+    if ((isImageRequest || pathname === '/api/infographic-agent/prepare') && credentialSource === 'byok') {
       const policy = RATE_LIMIT_POLICIES.hairstyleByokImage;
       if (!routeRateLimiters.hairstyleByokImage.check(`infographic-byok:${ip}`)) {
         response.setHeader('Retry-After', String(Math.ceil(policy.windowMs / 1000)));
@@ -1034,18 +1078,52 @@ const server = createServer(async (request, response) => {
 
   try {
     if (pathname === '/auth/google') {
-      const location = beginGoogleLogin(request, response);
-      applySecurityHeaders(response);
-      response.writeHead(303, { Location: location, 'Cache-Control': 'no-store' });
-      response.end();
-      return;
+      const ip = clientIp(request);
+      if (!authRateLimiter.check(ip)) {
+        applySecurityHeaders(response);
+        response.writeHead(429, { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '60' });
+        response.end(googleLoginPage('Too many attempts. Try again shortly.'));
+        return;
+      }
+      try {
+        const location = beginGoogleLogin(request, response);
+        applySecurityHeaders(response);
+        response.writeHead(303, { Location: location, 'Cache-Control': 'no-store' });
+        response.end();
+        return;
+      } catch (err) {
+        if (err?.statusCode) {
+          applySecurityHeaders(response);
+          response.writeHead(err.statusCode, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+          response.end(googleLoginPage(err.message));
+          return;
+        }
+        throw err;
+      }
     }
     if (pathname === '/auth/google/callback') {
-      await finishGoogleLogin(request, response, searchParams);
-      applySecurityHeaders(response);
-      response.writeHead(303, { Location: '/writer/', 'Cache-Control': 'no-store' });
-      response.end();
-      return;
+      const ip = clientIp(request);
+      if (!authRateLimiter.check(ip)) {
+        applySecurityHeaders(response);
+        response.writeHead(429, { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '60' });
+        response.end(googleLoginPage('Too many attempts. Try again shortly.'));
+        return;
+      }
+      try {
+        await finishGoogleLogin(request, response, searchParams);
+        applySecurityHeaders(response);
+        response.writeHead(303, { Location: '/writer/', 'Cache-Control': 'no-store' });
+        response.end();
+        return;
+      } catch (err) {
+        if (err?.statusCode) {
+          applySecurityHeaders(response);
+          response.writeHead(err.statusCode, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+          response.end(googleLoginPage(err.message));
+          return;
+        }
+        throw err;
+      }
     }
     if (pathname === '/healthz' || pathname.startsWith('/api/')) {
       await handleApi(request, response, pathname, searchParams);
@@ -1202,4 +1280,6 @@ export {
   infographicFreeRateLimiter,
   infographicGlobalFreeRateLimiter,
   CONTACT_INTENTS,
+  isSameOriginRequest,
+  isCrossSitePost,
 };

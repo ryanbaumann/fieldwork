@@ -34,7 +34,7 @@ A routing policy is just a bet: without a scoreboard, you cannot prove what your
 
 On paper, swapping a frontier model for a lightweight worker slashes token rates by 80 or 90 percent. But you have to judge the task output to really know.
 
-Weak models don't error out: they can also "thrash", wasting tokens. They misread tool schemas, patch the wrong files, mangle indentation, and invent package imports. That burns four or five blind repair loops before a human or an orchestrator steps in to rescue the branch.
+Weak models don't just error out; they also "thrash", wasting tokens. They misread tool schemas, patch the wrong files, mangle indentation, and invent package imports. That burns four or five blind repair loops before a human or an orchestrator steps in to rescue the branch.
 
 A fast run that needs three rescues burns more tokens, burns more clock time, and drains more developer focus than calling the deep model first. When a run silently corrupts git state, the cost per useful task is infinite.
 
@@ -60,7 +60,7 @@ When you benchmark profiles side by side against frozen fixtures, tiers stop bei
 
 ## Planning models choose the platform
 
-Watch the planner: the model that designs the architecture is rarely the one that writes the code.
+That split also changes how platforms get chosen. Watch the planner: the model that designs the architecture is rarely the one that writes the code.
 
 In tiered agent sessions, a deep reasoning model evaluates trade-offs, plans the system, and selects the APIs, tools, and auth boundaries. Then it hands bounded coding jobs to lightweight workers.
 
@@ -70,6 +70,6 @@ Building developer tools for agents demands two distinct surfaces: crisp capabil
 
 ## Measure before you route
 
-The policy assigns models, but your eval scoreboard decides. Before you hardcode capability tiers into your agent prompts, build the test harness, keep an eye on cost per task, and human review / judge outputs.
+The policy assigns models, but your eval scoreboard decides. Before you hardcode capability tiers into your agent prompts, build the test harness, keep an eye on cost per task, and grade outputs with a human reviewer or an LLM judge.
 
 If you benchmark model routing across capability tiers or track effective cost per completed task in your own loops, what does your scoreboard track? Drop your metrics and setup in the comments below!

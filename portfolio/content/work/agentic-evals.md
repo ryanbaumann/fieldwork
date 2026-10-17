@@ -3,7 +3,7 @@ title: Agentic Eval Suite
 org: Google
 role: Strategy & engineering lead
 period: 2024 – present
-summary: Task-based evals that benchmark AI context products against a no-context baseline and inform launch and roadmap decisions.
+summary: Task-based evals that benchmark code-assist and skill releases against a no-context baseline and inform launch and roadmap decisions.
 tags: ["developer experience", "ai", "evals"]
 image: /img/work/agentic-evals.svg
 imageAlt: Panel showing the eval loop, from task to agent run to scored result to launch decision
@@ -21,7 +21,7 @@ order: 5
 
 ## What shipped
 
-My team and I built task-based evals for Google Maps Platform. We benchmark launches against a no-context baseline and use the delta to inform launch and roadmap decisions. The same tasks let us compare retrieval, skills, and agent integrations against one developer job.
+My team and I built task-based evals for Google Maps Platform. We benchmark code-assist and skill releases against a no-context baseline and use the delta to inform launch and roadmap decisions. The same tasks let us compare retrieval, skills, and agent integrations against one developer job.
 
 ## What I learned
 

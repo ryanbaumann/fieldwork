@@ -15,7 +15,7 @@ shareImageAlt: Evals Are How You Know an AI Developer Tool Got Better beside a t
 tags: ["developer experience", "ai", "evals"]
 ---
 
-"The demo looked great" is not a launch bar. A polished demo proves only that one path worked once in a controlled session.
+A polished agent demo can hide a brittle retrieval path until the week after launch. The demo proves only that one path worked once in a controlled session.
 
 Without task-based evals, a team can ship context, prompts, tools, and skills, but it has no way to tell whether the AI actually improved the developer's job.
 
@@ -59,3 +59,5 @@ That shared mechanism reduces opinion-driven debate and keeps AI Developer Exper
 ## Start with ten real tasks
 
 We're still mapping these patterns, but building a baseline is the necessary first step. Choose ten failures from issues, support, community questions, or traces. Run them with no added context. Inspect the failures, make one targeted change, and run the same tasks again. Let the delta decide what to fix next.
+
+If you're building eval harnesses for developer tools or agent skills, I'd love to hear what failure modes you track: [reach out](/contact/).

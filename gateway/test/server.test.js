@@ -4,10 +4,19 @@ import http from 'node:http';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { server, publicApps, appsByPathLength, apps } from '../server.js';
+import { server, publicApps, appsByPathLength, apps, isCrossSitePost, isSameOriginRequest } from '../server.js';
+import { googleLoginPage } from '../lib/googleAuth.js';
 import { toPublicApp } from '../lib/apps.js';
 import { CSP_POLICIES, CSP_MANIFEST_POLICIES, cspForApp } from '../lib/staticFiles.js';
 import { AUTH_COOKIE_NAME, setAuthCookie } from '../lib/auth.js';
+import { contactDns } from '../lib/contactSpam.js';
+
+// Keep contact-form MX lookups offline: `nomail.example` has no mail server,
+// every other domain does.
+contactDns.resolveMx = async (domain) => {
+  if (domain === 'nomail.example') throw Object.assign(new Error('not found'), { code: 'ENOTFOUND' });
+  return [{ exchange: `mx.${domain}`, priority: 10 }];
+};
 
 function request(port, path, headers = {}) {
   return new Promise((resolve, reject) => {
@@ -443,16 +452,18 @@ test('contact delivery validates intent and marks only provider-confirmed succes
     email: 'ada@example.com',
     message: 'I am building a developer platform and would like to compare notes.',
     human: '1',
+    fill_ms: '45000',
   };
+  const browser = { Origin: `http://localhost:${port}`, 'Sec-Fetch-Site': 'same-origin' };
 
   try {
-    const missingIntent = await postForm(port, '/api/contact', valid);
+    const missingIntent = await postForm(port, '/api/contact', valid, browser);
     assert.equal(missingIntent.res.statusCode, 400);
     assert.match(missingIntent.body, /data-contact-delivery="failure"/);
     assert.match(missingIntent.body, /role="alert"/);
     assert.doesNotMatch(missingIntent.body, /data-contact-delivery="success"/);
 
-    const invalidIntent = await postForm(port, '/api/contact', { ...valid, intent: 'Executive opportunity' });
+    const invalidIntent = await postForm(port, '/api/contact', { ...valid, intent: 'Executive opportunity' }, browser);
     assert.equal(invalidIntent.res.statusCode, 400);
     assert.doesNotMatch(invalidIntent.body, /data-contact-delivery="success"/);
 
@@ -460,7 +471,7 @@ test('contact delivery validates intent and marks only provider-confirmed succes
       ...valid,
       intent: 'Other',
       message: 'Too short',
-    });
+    }, browser);
     assert.equal(invalidMessage.res.statusCode, 400);
     assert.match(invalidMessage.body, /message with at least 20 characters/);
     assert.doesNotMatch(invalidMessage.body, /data-contact-delivery="success"/);
@@ -468,50 +479,63 @@ test('contact delivery validates intent and marks only provider-confirmed succes
     const success = await postForm(port, '/api/contact', {
       ...valid,
       intent: 'Developer platform discussion',
-    });
+    }, { ...browser, 'x-forwarded-for': '203.0.113.9, proxy', 'User-Agent': 'TestBrowser/1.0' });
     assert.equal(success.res.statusCode, 303);
     assert.equal(success.res.headers.location, '/contact-success/?delivered=1');
     assert.equal(success.body, '');
     assert.equal(delivered.length, 1);
     assert.equal(delivered[0].subject, '[Developer platform discussion] Portfolio contact from Ada Lovelace');
-    assert.match(delivered[0].text, /^Intent: Developer platform discussion\nName: Ada Lovelace\nEmail: ada@example\.com\n\n/);
+    assert.match(delivered[0].text, /^Intent: Developer platform discussion\nName: Ada Lovelace\nEmail: ada@example\.com\n\nI am building/);
+    assert.match(delivered[0].text, /\n-- \nTriage\nVerdict: allow · other · via rules\n/);
+    assert.match(delivered[0].text, /Flags: none/);
+    assert.match(delivered[0].text, /Form: browser form \(same-origin\) · filled in 45s/);
+    assert.match(delivered[0].text, /Sender: example\.com \(own domain, mail server found\)/);
+    assert.match(delivered[0].text, /Request: IP 203\.0\.113\.9/);
+    assert.match(delivered[0].text, /Browser: TestBrowser\/1\.0/);
+    assert.match(delivered[0].text, /Google: https:\/\/www\.google\.com\/search\?q=%22Ada%20Lovelace%22%20example\.com/);
+    assert.match(delivered[0].text, /Website: https:\/\/example\.com/);
+    assert.match(delivered[0].text, /IP lookup: https:\/\/ipinfo\.io\/203\.0\.113\.9/);
 
     const spamRegexMatch = await postForm(port, '/api/contact', {
       ...valid,
       intent: 'Other',
       message: 'Hello, I want to sell you SEO services to get you on the 1st page of google!',
-    }, { 'x-forwarded-for': '1.1.1.1, proxy' });
+    }, { ...browser, 'x-forwarded-for': '1.1.1.1, proxy' });
     assert.equal(spamRegexMatch.res.statusCode, 303);
     assert.equal(spamRegexMatch.res.headers.location, '/contact-success/?delivered=1');
     assert.equal(delivered.length, 2);
-    assert.match(delivered[1].subject, /^\[Likely advertising\]/);
+    assert.match(delivered[1].subject, /^\[Spam\? advertising\] \[Other\]/);
+    assert.match(delivered[1].text, /Matched phrase: "SEO services"/);
 
     const spamSeoConsultingMatch = await postForm(port, '/api/contact', {
       ...valid,
       intent: 'Content collaboration',
       email: 'daniel.websolution012@gmail.com',
       message: 'We recently ran a backend analysis of your website, and the results show that several important SEO (Search Engine Optimization) steps are incomplete.',
-    }, { 'x-forwarded-for': '1.1.1.2, proxy' });
+    }, { ...browser, 'x-forwarded-for': '1.1.1.2, proxy' });
     assert.equal(spamSeoConsultingMatch.res.statusCode, 303);
     assert.equal(spamSeoConsultingMatch.res.headers.location, '/contact-success/?delivered=1');
     assert.equal(delivered.length, 3);
-    assert.match(delivered[2].subject, /^\[Likely advertising\]/);
+    assert.match(delivered[2].subject, /^\[Spam\? advertising\]/);
+    assert.match(delivered[2].text, /Sender: gmail\.com \(webmail, mail server found\)/);
+    assert.doesNotMatch(delivered[2].text, /Website: /);
 
     const spamDotTrickMatch = await postForm(port, '/api/contact', {
       ...valid,
       intent: 'Other',
       email: 'a.b.c.d.e@gmail.com',
       message: 'This is a normal message, but the email has too many dots for a legit sender.',
-    }, { 'x-forwarded-for': '2.2.2.2, proxy' });
+    }, { ...browser, 'x-forwarded-for': '2.2.2.2, proxy' });
     assert.equal(spamDotTrickMatch.res.statusCode, 303);
     assert.equal(spamDotTrickMatch.res.headers.location, '/contact-success/?delivered=1');
     assert.equal(delivered.length, 4); // Dotted Gmail addresses are not evidence of spam.
+    assert.match(delivered[3].subject, /^\[Other\]/);
 
     const missingHumanCheck = await postForm(port, '/api/contact', {
       ...valid,
       intent: 'Other',
       human: '',
-    }, { 'x-forwarded-for': '2.2.2.3, proxy' });
+    }, { ...browser, 'x-forwarded-for': '2.2.2.3, proxy' });
     assert.equal(missingHumanCheck.res.statusCode, 400);
     assert.equal(delivered.length, 4);
 
@@ -519,16 +543,39 @@ test('contact delivery validates intent and marks only provider-confirmed succes
       ...valid,
       intent: 'Other',
       company_fax_number: '555-0100',
-    }, { 'x-forwarded-for': '2.2.2.4, proxy' });
+    }, { ...browser, 'x-forwarded-for': '2.2.2.4, proxy' });
     assert.equal(honeypotMatch.res.statusCode, 303);
     assert.equal(honeypotMatch.res.headers.location, '/contact-success/');
     assert.equal(delivered.length, 4);
+
+    // A POST with neither Origin nor Sec-Fetch-Site did not come from a browser form.
+    const scripted = await postForm(port, '/api/contact', { ...valid, intent: 'Other' }, { 'x-forwarded-for': '2.2.2.5, proxy' });
+    assert.equal(scripted.res.statusCode, 303);
+    assert.equal(scripted.res.headers.location, '/contact-success/');
+    assert.equal(delivered.length, 4);
+
+    const tooFast = await postForm(port, '/api/contact', { ...valid, intent: 'Other', fill_ms: '900' }, { ...browser, 'x-forwarded-for': '2.2.2.6, proxy' });
+    assert.equal(tooFast.res.statusCode, 303);
+    assert.equal(tooFast.res.headers.location, '/contact-success/');
+    assert.equal(delivered.length, 4);
+
+    // No timing (JavaScript off) and a domain without mail still deliver, tagged for a second look.
+    const noScript = await postForm(port, '/api/contact', {
+      ...valid,
+      intent: 'Other',
+      email: 'someone@nomail.example',
+      fill_ms: '',
+    }, { ...browser, 'x-forwarded-for': '2.2.2.7, proxy' });
+    assert.equal(noScript.res.headers.location, '/contact-success/?delivered=1');
+    assert.equal(delivered.length, 5);
+    assert.match(delivered[4].subject, /^\[Check\] \[Other\]/);
+    assert.match(delivered[4].text, /Flags: sent without JavaScript; email domain has no mail server/);
 
     globalThis.fetch = async () => ({ ok: false, status: 500 });
     const rejected = await postForm(port, '/api/contact', {
       ...valid,
       intent: 'Speaking opportunity',
-    }, { 'x-forwarded-for': '3.3.3.3, proxy' });
+    }, { ...browser, 'x-forwarded-for': '3.3.3.3, proxy' });
     assert.equal(rejected.res.statusCode, 502);
     assert.match(rejected.body, /data-contact-delivery="failure"/);
     assert.doesNotMatch(rejected.body, /data-contact-delivery="success"/);
@@ -796,6 +843,222 @@ test('server sends the Strava CSP on strava-explorer static files', async () => 
     stravaApp.available = originalAvailable;
     appsByPathLength.splice(0, appsByPathLength.length, ...originalByPath);
     rmSync(dir, { recursive: true, force: true });
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('googleLoginPage escapes HTML and script tags in error message', () => {
+  const dangerous = '<script>alert("xss")</script>&"\'';
+  const html = googleLoginPage(dangerous);
+  assert.ok(!html.includes('<script>'));
+  assert.ok(html.includes('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;&amp;&quot;&#039;'));
+});
+
+test('/auth/google and /auth/google/callback rate limits and status-coded error handling', async () => {
+  server.listen(0);
+  const port = server.address().port;
+
+  try {
+    // When Google sign-in is not configured, beginGoogleLogin throws 503
+    const unconfigured = await request(port, '/auth/google', { 'x-forwarded-for': '11.11.11.1, proxy' });
+    assert.equal(unconfigured.res.statusCode, 503);
+    assert.equal(unconfigured.res.headers['content-type'], 'text/html; charset=utf-8');
+    assert.match(unconfigured.body, /Google sign-in is not configured/);
+
+    // Rate limiting: 5 allowed per minute, 6th is rejected with 429
+    for (let i = 0; i < 4; i += 1) {
+      await request(port, '/auth/google', { 'x-forwarded-for': '11.11.11.1, proxy' });
+    }
+    const rateLimited = await request(port, '/auth/google', { 'x-forwarded-for': '11.11.11.1, proxy' });
+    assert.equal(rateLimited.res.statusCode, 429);
+    assert.equal(rateLimited.res.headers['retry-after'], '60');
+    assert.match(rateLimited.body, /Too many attempts/);
+
+    // /auth/google/callback also rate-limits
+    for (let i = 0; i < 5; i += 1) {
+      await request(port, '/auth/google/callback', { 'x-forwarded-for': '11.11.11.2, proxy' });
+    }
+    const callbackRateLimited = await request(port, '/auth/google/callback', { 'x-forwarded-for': '11.11.11.2, proxy' });
+    assert.equal(callbackRateLimited.res.statusCode, 429);
+    assert.match(callbackRateLimited.body, /Too many attempts/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('isCrossSitePost helper correctly identifies cross-site and same-origin requests', () => {
+  assert.equal(isCrossSitePost({ headers: { 'sec-fetch-site': 'cross-site' } }), true);
+  assert.equal(isCrossSitePost({ headers: { 'sec-fetch-site': 'same-origin' } }), false);
+  assert.equal(isCrossSitePost({ headers: { origin: 'https://evil.example', host: 'localhost:8080' } }), true);
+  assert.equal(isCrossSitePost({ headers: { origin: 'http://localhost:8080', host: 'localhost:8080' } }), false);
+  assert.equal(isCrossSitePost({ headers: { host: 'localhost:8080' } }), false);
+  assert.equal(isCrossSitePost({ headers: { origin: 'null', host: 'localhost:8080' } }), false);
+  // Vite dev proxy with changeOrigin: Host is rewritten, Origin is not.
+  assert.equal(isCrossSitePost({ headers: { 'sec-fetch-site': 'same-origin', origin: 'http://localhost:5173', host: 'localhost:8080' } }), false);
+  assert.equal(isCrossSitePost({ headers: { 'sec-fetch-site': 'same-site', origin: 'https://other.example', host: 'localhost:8080' } }), true);
+});
+
+test('cross-origin POST requests are rejected with 403 on protected routes', async () => {
+  server.listen(0);
+  const port = server.address().port;
+
+  try {
+    // /api/contact
+    const contactRes = await postForm(port, '/api/contact', { name: 'Test' }, {
+      Origin: 'https://evil.example',
+    });
+    assert.equal(contactRes.res.statusCode, 403);
+    assert.deepEqual(JSON.parse(contactRes.body), { error: 'Forbidden: cross-origin request not allowed.' });
+
+    // /api/subscribe
+    const subRes = await postForm(port, '/api/subscribe', { email: 'a@example.com' }, {
+      'Sec-Fetch-Site': 'cross-site',
+    });
+    assert.equal(subRes.res.statusCode, 403);
+    assert.deepEqual(JSON.parse(subRes.body), { error: 'Forbidden: cross-origin request not allowed.' });
+
+    // /api/isochrones
+    const isoRes = await postJson(port, '/api/isochrones', {}, {
+      Origin: 'https://evil.example',
+    });
+    assert.equal(isoRes.res.statusCode, 403);
+    assert.deepEqual(JSON.parse(isoRes.body), { error: 'Forbidden: cross-origin request not allowed.' });
+
+    // /api/infographic-agent/render
+    const infoRes = await postJson(port, '/api/infographic-agent/render', {}, {
+      Origin: 'https://evil.example',
+    });
+    assert.equal(infoRes.res.statusCode, 403);
+    assert.deepEqual(JSON.parse(infoRes.body), { error: 'Forbidden: cross-origin request not allowed.' });
+
+    // /api/hairstyle-ai-studio/analyze
+    const hairRes = await postJson(port, '/api/hairstyle-ai-studio/analyze', {}, {
+      Origin: 'https://evil.example',
+    });
+    assert.equal(hairRes.res.statusCode, 403);
+    assert.deepEqual(JSON.parse(hairRes.body), { error: 'Forbidden: cross-origin request not allowed.' });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('contact route strips CR and LF control characters from name and intent in subject', async () => {
+  const previousEnv = {
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  };
+  const originalFetch = globalThis.fetch;
+  let sentMail = null;
+  process.env.RESEND_API_KEY = 'test-resend-key';
+  process.env.CONTACT_TO_EMAIL = 'ryan@example.com';
+  delete process.env.GEMINI_API_KEY;
+  globalThis.fetch = async (url, options) => {
+    sentMail = JSON.parse(options.body);
+    return { ok: true, status: 200 };
+  };
+  server.listen(0);
+  const port = server.address().port;
+
+  try {
+    const res = await postForm(port, '/api/contact', {
+      name: 'Alice\r\nBcc: evil@example.com\tDeveloper',
+      email: 'alice@example.com',
+      message: 'Hello, this is a valid message that has at least twenty characters!',
+      intent: 'Speaking\r\nopportunity',
+      human: '1',
+    }, {
+      'x-forwarded-for': '12.12.12.1, proxy',
+      Origin: `http://localhost:${port}`,
+    });
+    assert.equal(res.res.statusCode, 303);
+    assert.ok(sentMail);
+    assert.ok(!sentMail.subject.includes('\r'));
+    assert.ok(!sentMail.subject.includes('\n'));
+    assert.match(sentMail.subject, /Alice Bcc: evil@example\.com Developer/);
+    assert.match(sentMail.subject, /\[Speaking opportunity\]/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const [key, value] of Object.entries(previousEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('BYOK rate limiting protects /api/hairstyle-ai-studio/analyze and /api/infographic-agent/prepare', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      candidates: [{
+        content: {
+          parts: [{ text: JSON.stringify({ analysis: {}, prompt: 'test' }) }],
+        },
+      }],
+      steps: [{
+        type: 'model_output',
+        content: [{
+          type: 'text',
+          text: JSON.stringify({ analysis: { title: 'Test' }, prompt: 'test prompt' }),
+        }],
+      }],
+    }),
+  });
+
+  server.listen(0);
+  const port = server.address().port;
+
+  try {
+    // 20 allowed per minute on hairstyleByokImage
+    const ipHair = '13.13.13.1';
+    for (let i = 0; i < 20; i += 1) {
+      const res = await postJson(port, '/api/hairstyle-ai-studio/analyze', {
+        base64Image: 'data:image/jpeg;base64,YWJj',
+        availableStyles: [],
+      }, {
+        'x-forwarded-for': `${ipHair}, proxy`,
+        'X-Gemini-API-Key': 'valid-personal-key-with-enough-characters-1234',
+        Origin: `http://localhost:${port}`,
+      });
+      assert.equal(res.res.statusCode, 200);
+    }
+    const hairLimited = await postJson(port, '/api/hairstyle-ai-studio/analyze', {
+      base64Image: 'data:image/jpeg;base64,YWJj',
+      availableStyles: [],
+    }, {
+      'x-forwarded-for': `${ipHair}, proxy`,
+      'X-Gemini-API-Key': 'valid-personal-key-with-enough-characters-1234',
+      Origin: `http://localhost:${port}`,
+    });
+    assert.equal(hairLimited.res.statusCode, 429);
+    assert.equal(JSON.parse(hairLimited.body).code, 'SITE_ABUSE_LIMIT');
+
+    // Infographic prepare BYOK flood protection
+    const ipInfo = '13.13.13.2';
+    for (let i = 0; i < 20; i += 1) {
+      const res = await postJson(port, '/api/infographic-agent/prepare', {
+        topic: 'Test Infographic Topic',
+      }, {
+        'x-forwarded-for': `${ipInfo}, proxy`,
+        'X-Gemini-API-Key': 'valid-personal-key-with-enough-characters-1234',
+        Origin: `http://localhost:${port}`,
+      });
+      assert.equal(res.res.statusCode, 200);
+    }
+    const infoLimited = await postJson(port, '/api/infographic-agent/prepare', {
+      topic: 'Test Infographic Topic',
+    }, {
+      'x-forwarded-for': `${ipInfo}, proxy`,
+      'X-Gemini-API-Key': 'valid-personal-key-with-enough-characters-1234',
+      Origin: `http://localhost:${port}`,
+    });
+    assert.equal(infoLimited.res.statusCode, 429);
+    assert.equal(JSON.parse(infoLimited.body).code, 'SITE_ABUSE_LIMIT');
+  } finally {
+    globalThis.fetch = originalFetch;
     await new Promise((resolve) => server.close(resolve));
   }
 });
