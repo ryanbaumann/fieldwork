@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- **Contact form spam filter and triage (`gateway/lib/contactSpam.js`, `gateway/server.js`, `portfolio/build.mjs`, `privacy.md`)**:
-  - Dropped certain bots silently: a filled honeypot, a `POST` with no `Origin` and no `Sec-Fetch-Site`, or a form filled in under 3 seconds. Each drop writes one log line with the reason, email domain, and intent only.
+- **Contact form spam filter and triage (`gateway/lib/contactSpam.js`, `gateway/lib/rateLimit.js`, `gateway/server.js`, `portfolio/build.mjs`, `privacy.md`)**:
+  - Dropped certain bots silently: a filled honeypot, a `POST` with no `Origin` and no `Sec-Fetch-Site`, a form filled in under 3 seconds, or a known form-stuffing bot template (`"I would like more information. Please contact me by email..."`, `"hear more about special offers..."`, `"interested in product news..."`) submitted without JavaScript timing. Each drop writes one log line with the reason, email domain, and intent only.
   - Ran bot checks before the Gemini and DNS calls, so scripted spam uses no classifier quota.
-  - Added rules for development shops, marketing agencies, sponsored posts, crypto pitches, and opt-out footers. A rule match stays flagged even when the model allows the message.
+  - Added rules for development shops, marketing agencies, AEO/GEO cold outreach, quote/price-list pitches, form-stuffing templates, sponsored posts, crypto pitches, and opt-out footers. A rule match stays flagged even when the model allows the message.
+  - Fixed `clientIp()` on Cloud Run direct ingress so single-hop `X-Forwarded-For` headers from the Google Front End link-local socket (`::ffff:169.254.169.126`) resolve the visitor's real IP instead of the GFE proxy address.
   - Replaced the `[Likely advertising]` subject prefix with `[Spam? <category>]` for likely pitches and `[Check]` for messages worth a second look.
   - Added a triage block to each email: verdict, model reason, matched phrase, flags, fill time, sender domain and MX status, link count, IP, browser, language, referrer, and search links for the sender.
   - Disclosed the new request details on the privacy page.
