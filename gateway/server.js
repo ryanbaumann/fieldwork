@@ -368,7 +368,7 @@ async function handleContactRequest(request, response) {
     fillMs: parseFillMs(params.get('fill_ms')),
   });
 
-  const botReason = contactBotReason({ honeypot, signals });
+  const botReason = contactBotReason({ honeypot, signals, message });
   if (botReason) {
     // Give automated senders a neutral success response without recording a
     // delivered lead. Only provider-confirmed mail receives delivered=1.

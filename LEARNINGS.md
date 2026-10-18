@@ -2,15 +2,25 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-10-17 - Cloud Run direct ingress sends a single-hop `X-Forwarded-For` from `169.254.169.126`
+
+Context: Live contact-form emails on `ryanbaumann.dev` showed `IP: ::ffff:169.254.169.126` instead of the visitor's IP, which also meant every normal visitor shared one rate-limit bucket.
+
+Learning: On Cloud Run direct ingress (custom domain without an external Cloud Load Balancer), Google Front End (GFE) connects from the link-local proxy socket `::ffff:169.254.169.126` and appends only the client IP to the end of `X-Forwarded-For`. Requiring `chain.length >= 2` and reading `chain.at(-2)` fails on direct ingress: normal visitors have `chain.length === 1`, and a visitor who sends a spoofed `X-Forwarded-For: <fake>` produces `['<fake>', '<real-ip>']` where `chain.at(-2)` would return `<fake>`. When `socket.remoteAddress` matches `169.254.0.0/16` (`/^(:{2}ffff:)?169\.254\./i`), `chain.at(-1)` is always the GFE-verified client IP.
+
+Evidence: Live Resend email `e860e8e5-7206-443a-8c3e-890aa45622a4` recorded `IP: ::ffff:169.254.169.126` while Cloud Run `httpRequest.remoteIp` logged `170.203.225.73`. `gateway/test/rateLimit.test.js` now covers both direct sockets and GFE link-local sockets with spoofed prefixes.
+
+Use next time: On Cloud Run direct ingress, when `socket.remoteAddress` is in `169.254.0.0/16`, read `chain.at(-1)` from `X-Forwarded-For`.
+
 ## 2026-10-17 - Contact spam needs bot signals and visible evidence
 
-Context: Ryan received many contact emails and could not tell which senders were real.
+Context: Ryan received many contact emails and could not tell which senders were real. Auditing all 25 historical Resend emails showed 22 came from headless form-stuffing bots (`"I would like more information. Please contact me by email — start a conversation."`) that spoofed `Sec-Fetch-Site: same-origin` and omitted `fill_ms` (no JS).
 
-Learning: The filter only read message content. Every low-confidence message arrived with the same `[Likely advertising]` prefix and no reason. Scripted `POST`s reached the classifier because nothing checked for browser headers or fill time. Content guesses must stay non-destructive, but request signals are strong evidence: modern browsers send `Origin` on form `POST`s, and no person fills five required fields in under 3 seconds.
+Learning: The filter only read message content. Every low-confidence message arrived with the same `[Likely advertising]` prefix and no reason. Scripted `POST`s reached the classifier because nothing checked for browser headers, fill time, or known form-stuffing templates sent without JS. Content guesses on real browser submissions must stay non-destructive, but a known bot template combined with `fill_ms === null` (no JS execution) is a high-confidence automated signature.
 
-Evidence: `gateway/test/server.test.js` covers the scripted, too-fast, and no-JavaScript cases. A Playwright run through the gateway sent `fill_ms=108` (dropped, `too_fast` logged) and `fill_ms=3567` (passed).
+Evidence: `gateway/test/contactSpam.test.js` and `gateway/test/server.test.js` cover the scripted, too-fast, no-JS bot-template, and no-JavaScript human cases.
 
-Use next time: Drop silently only on hard bot signals. Tag everything else with a specific prefix and put the evidence in the email body. Stub `contactDns.resolveMx` in tests so they stay offline.
+Use next time: Drop silently only on hard bot signals (honeypot, missing browser headers, `<3s` fill time, or no-JS + known bot template). Tag everything else with a specific prefix and put the evidence in the email body. Stub `contactDns.resolveMx` in tests so they stay offline.
 
 ## 2026-10-17 - An Origin-vs-Host CSRF check breaks Vite dev proxies
 

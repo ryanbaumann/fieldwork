@@ -79,14 +79,24 @@ test('writerSave policy is more generous than the other writer actions but still
   assert.equal(RATE_LIMIT_POLICIES.writerSave.windowMs, 60_000);
 });
 
-test('clientIp ignores spoofed X-Forwarded-For prefixes on Cloud Run', () => {
+test('clientIp ignores spoofed X-Forwarded-For prefixes and handles Cloud Run GFE single-hop', () => {
   const request = {
     headers: { 'x-forwarded-for': 'spoofed, 203.0.113.8, 169.254.1.1' },
     socket: { remoteAddress: '127.0.0.1' },
   };
   assert.equal(clientIp(request), '203.0.113.8');
+  // Direct socket (non-GFE): a lone X-Forwarded-For value is ignored as spoofable.
   request.headers['x-forwarded-for'] = 'spoofed-only';
   assert.equal(clientIp(request), '127.0.0.1');
+  // Cloud Run direct ingress: Google Front End connects from 169.254.169.126 and appends 1 hop.
+  const gfeRequest = {
+    headers: { 'x-forwarded-for': '170.203.225.73' },
+    socket: { remoteAddress: '::ffff:169.254.169.126' },
+  };
+  assert.equal(clientIp(gfeRequest), '170.203.225.73');
+  // If a client behind GFE sends a spoofed header, GFE appends the real client IP last.
+  gfeRequest.headers['x-forwarded-for'] = '1.2.3.4, 170.203.225.73';
+  assert.equal(clientIp(gfeRequest), '170.203.225.73');
 });
 
 test('createRateLimiter tracks separate keys independently', () => {

@@ -559,7 +559,18 @@ test('contact delivery validates intent and marks only provider-confirmed succes
     assert.equal(tooFast.res.headers.location, '/contact-success/');
     assert.equal(delivered.length, 4);
 
-    // No timing (JavaScript off) and a domain without mail still deliver, tagged for a second look.
+    // No timing (JavaScript off) + known form-stuffing bot template is silently dropped.
+    const botTemplateNoJs = await postForm(port, '/api/contact', {
+      ...valid,
+      intent: 'Other',
+      message: 'I would like more information. Please contact me by email — start a conversation.',
+      fill_ms: '',
+    }, { ...browser, 'x-forwarded-for': '2.2.2.8, proxy' });
+    assert.equal(botTemplateNoJs.res.statusCode, 303);
+    assert.equal(botTemplateNoJs.res.headers.location, '/contact-success/');
+    assert.equal(delivered.length, 4);
+
+    // No timing (JavaScript off) with a real message and a domain without mail still delivers, tagged for a second look.
     const noScript = await postForm(port, '/api/contact', {
       ...valid,
       intent: 'Other',
