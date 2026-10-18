@@ -809,16 +809,21 @@ export const geminiOmniRateLimiter = createCircularBucketRateLimiter({
 });
 
 export function clientIp(request) {
+  const remote = request.socket?.remoteAddress || 'unknown';
   const forwarded = request.headers['x-forwarded-for'];
   if (forwarded) {
     const chain = String(forwarded).split(',').map((part) => part.trim()).filter(Boolean);
-    // Cloud Run's trusted frontend appends the connecting client and proxy
-    // addresses to any caller-supplied prefix. Use the address immediately
-    // before the trusted proxy, never the spoofable first entry. A lone XFF
-    // value is untrusted, so fall back to the socket address.
+    // On Cloud Run direct ingress, Google Front End connects from 169.254.0.0/16
+    // and appends only the true client IP to the end of X-Forwarded-For. Any
+    // client-supplied X-Forwarded-For values appear before that final GFE hop.
+    if (/^(:{2}ffff:)?169\.254\./i.test(remote) && chain.length >= 1) {
+      return chain.at(-1);
+    }
+    // Behind a two-hop load balancer or in local proxy tests where the proxy hop
+    // is recorded in X-Forwarded-For, use the address before the final proxy hop.
     if (chain.length >= 2) return chain.at(-2);
   }
-  return request.socket?.remoteAddress || 'unknown';
+  return remote;
 }
 
 export const RATE_LIMIT_POLICIES = Object.freeze({

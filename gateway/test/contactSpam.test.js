@@ -86,13 +86,18 @@ test('ambiguous, malformed, and failed model responses fail open', async () => {
   assert.equal(decisions[2].decision, 'allow');
 });
 
-test('expanded rules flag common pitches and report the matched phrase', () => {
+test('expanded rules flag common pitches, form-stuffing templates, and AEO/GEO cold outreach', () => {
   const pitches = [
     'Our team can build a new website for your brand at half the price.',
     'We provide dedicated developers for any stack you need.',
     'I would like to publish a sponsored post on your blog next month.',
     'Our digital marketing agency helps founders like you grow.',
     'Get a free quote today, reply STOP to unsubscribe.',
+    'I would like more information. Please contact me by email — start a conversation.',
+    'Hi there! I\'d like to hear more about special offers. Please confirm my subscription.',
+    'Hi! I\'m interested in product news. Gladly send me news and updates by email.',
+    'Are you currently looking to improve your website rankings or become more discoverable on AI-powered search platforms through Answer Engine Optimization (AEO)?',
+    'Please let me know what you need and I will gladly send you a quote and price list.',
   ];
   for (const pitch of pitches) {
     const result = deterministicContactDecision(pitch);
@@ -119,14 +124,32 @@ test('a rule match stays flagged when the model allows the message', async () =>
   assert.equal(result.reason, 'Looks fine.');
 });
 
-test('bot reasons cover honeypot, scripted posts, and impossibly fast fills only', () => {
+test('bot reasons cover honeypot, scripted posts, impossibly fast fills, and no-JS bot templates', () => {
   const browser = collectContactSignals({ headers: { origin: 'https://ryanbaumann.dev', 'sec-fetch-site': 'same-origin' }, fillMs: 40_000 });
   assert.equal(contactBotReason({ honeypot: '', signals: browser }), null);
   assert.equal(contactBotReason({ honeypot: 'x', signals: browser }), 'honeypot');
   assert.equal(contactBotReason({ honeypot: '', signals: collectContactSignals({ headers: {}, fillMs: 40_000 }) }), 'no_browser_headers');
   assert.equal(contactBotReason({ honeypot: '', signals: { ...browser, fillMs: 1_200 } }), 'too_fast');
-  // Missing timing (JavaScript off) is a soft flag, never a silent drop.
-  assert.equal(contactBotReason({ honeypot: '', signals: { ...browser, fillMs: null } }), null);
+  // Missing timing (JavaScript off) is a soft flag for normal messages, never a silent drop.
+  assert.equal(contactBotReason({ honeypot: '', signals: { ...browser, fillMs: null }, message: 'Hello Ryan, I enjoyed your talk on Maps 3D!' }), null);
+  // Missing timing + known form-stuffing bot template drops as bot_template.
+  assert.equal(
+    contactBotReason({
+      honeypot: '',
+      signals: { ...browser, fillMs: null },
+      message: 'I would like more information. Please contact me by email — start a conversation.',
+    }),
+    'bot_template',
+  );
+  // If filled slowly in a real browser with JS, the template is not dropped at the bot gate (rules flag it for review).
+  assert.equal(
+    contactBotReason({
+      honeypot: '',
+      signals: browser,
+      message: 'I would like more information. Please contact me by email — start a conversation.',
+    }),
+    null,
+  );
   assert.equal(parseFillMs(''), null);
   assert.equal(parseFillMs('-5'), null);
   assert.equal(parseFillMs('abc'), null);
