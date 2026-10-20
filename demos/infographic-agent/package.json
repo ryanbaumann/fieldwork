@@ -15,9 +15,9 @@
     "check": "tsc --noEmit && vitest run && vite build"
   },
   "dependencies": {
-    "lucide-react": "^1.55.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "lucide-react": "^1.59.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
