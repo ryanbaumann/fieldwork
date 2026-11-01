@@ -281,9 +281,9 @@ const CARDS = [
   },
   {
     file: 'why-we-make-decisions.png',
-    eyebrow: 'FIELD NOTES · JUDGMENT & VALUES',
-    title: 'Why We Make Decisions Matters More Than What We Decide',
-    summary: 'AI makes options cheap. Values keep judgment fatigue from choosing for you.',
+    eyebrow: 'PERSONAL · FIELD NOTES',
+    title: 'Why We Decide Beats What We Decide',
+    summary: 'AI makes options cheap. Explicit values keep judgment fatigue from choosing for you.',
     source: 'portfolio/static/img/writing/why-we-make-decisions-header.svg',
     layout: 'artifact',
   },

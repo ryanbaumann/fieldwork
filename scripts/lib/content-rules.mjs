@@ -16,8 +16,8 @@ export const CORE_TAGS = new Set([
 // keeps the door open without letting a synonym in by accident.
 export const DOMAIN_TAGS = new Set([
   'field notes', '0→1', 'bigquery', 'code assist', 'data science', 'enterprise',
-  'geospatial', 'industry solutions', 'mcp', 'partnerships', 'reference apps',
-  'technical writing',
+  'geospatial', 'industry solutions', 'mcp', 'partnerships', 'personal',
+  'reference apps', 'technical writing',
 ]);
 
 // The same lexicon grades the fine-tuned model's output (scripts/voiceeval). One

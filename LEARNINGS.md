@@ -2,6 +2,16 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-01 - Draft essays in `portfolio/content/writing/` cannot link to other unpublished drafts unless both publish together
+
+Context: Adding `portfolio/content/writing/why-we-make-decisions.md` (`draft: true`) with an internal link to `/writing/ai-saves-the-hour/` passed `PORTFOLIO_WRITER_MODE=true node portfolio/build.mjs` and `npm run check:content`, but failed `node portfolio/build.mjs` (`npm --prefix portfolio test`) with `broken internal link /writing/ai-saves-the-hour/`. Additionally, previewing the draft in `scripts/writer_app.mjs` (`http://localhost:8090/`) omitted the frontmatter hero thumbnail (`meta.image`) and returned `404` on `/img/writing/...` assets.
+
+Learning: `validateContent()` in `portfolio/build.mjs` validates internal links across all markdown entries (including `draft: true` entries) against `validPaths`, which in non-writer builds only includes published entries (`draft: false`). Linking from any markdown entry to an unpublished draft breaks the production portfolio build. Second, `scripts/writer_app.mjs` compiles markdown independently of `portfolio/dist/` and needed both `<img class="article-hero" ...>` in `renderFullArticleHtml` / `renderRichDiffArticleHtml` and static file serving from `portfolio/static/` to display header and inline images in Preview and Rich Diff modes. Third, `scripts/social-cards.mjs` can fail after a Playwright version bump if the new `chromium_headless_shell` revision is not yet downloaded; falling back to `{ headless: true, channel: 'chrome' }` keeps local social-card generation working without requiring a browser download.
+
+Evidence: `npm --prefix portfolio test` failed at `node build.mjs` with `writing/why-we-make-decisions: broken internal link /writing/ai-saves-the-hour/` until the link was pointed to a published essay (`/writing/can-i-build-an-ai-agent-that-doesnt-write-slop/`), and `scripts/writer_app.mjs` returned `404 Not Found` on `/img/writing/why-we-make-decisions-header.svg` until `portfolio/static/` resolution was added.
+
+Use next time: Only link to published routes (`draft: false`) inside `portfolio/content/**`, even when authoring a draft post, and run `npm --prefix portfolio test` (which runs both unit tests and `node build.mjs`) in addition to `build:writer`.
+
 ## 2026-10-31 - `jsdom@30` and `undici@8` require Node 22+ (`zlib.createZstdDecompress`) and `build-and-smoke` must gate on `package-checks`
 
 Context: Upgrading `vitest` to `5.0.5` and `jsdom` to `30.1.3` in `demos/real-world-reasoning-agent` passed locally on Node 25 but failed in GitHub Actions CI when `.github/workflows/ci.yml` was pinned to `node-version: 20`. Because `build-and-smoke` (`Build all apps + gateway smoke test`) only depended on `docker-build` and `demos/real-world-reasoning-agent checks` was not listed in branch protection's `required_status_checks`, GitHub auto-merge completed before the failing matrix check blocked it.

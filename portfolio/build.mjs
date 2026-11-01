@@ -1157,10 +1157,11 @@ function detailPage(collection, entry, activeKey) {
   // primary type with a BreadcrumbList the same way.
   const jsonLdBlocks = jsonLd ? [jsonLd, jsonLdBreadcrumbList(collection, entry, pageUrl)] : jsonLd;
 
+  const eyebrowLabel = meta.type && isWriting ? `${collection.label} · ${meta.type}` : collection.label;
   const content = `<article class="prose">
-  <p class="eyebrow">${escapeHtml(collection.label)}</p>
+  <p class="eyebrow">${escapeHtml(eyebrowLabel)}</p>
   <h1>${escapeHtml(meta.title)}</h1>
-  <p class="article-meta">${metaLine([meta.org || meta.venue, meta.role, meta.period || meta.date])}</p>
+  <p class="article-meta">${metaLine([meta.org || meta.venue, meta.role, meta.type, meta.period || meta.date])}</p>
   ${isWriting && meta.summary ? `<p class="lede">${escapeHtml(meta.summary)}</p>` : ''}
   ${linkChips(meta.links)}
   ${heroImage(meta, collection.name)}
