@@ -170,8 +170,6 @@ const CUSTOM = [
   { file: 'writing/model-tiers-devx.svg', render: 'tierdrop' },
   { file: 'writing/agent-session-header.svg', render: 'retrievalRanking' },
   { file: 'writing/fine-tuning-distribution-pyramid.svg', render: 'distributionPyramid' },
-  { file: 'writing/why-we-make-decisions-header.svg', render: 'valuesHeader' },
-  { file: 'writing/why-we-make-decisions-filter.svg', render: 'valuesFilter' },
 ];
 
 const requestedFiles = new Set(process.argv.slice(2));
@@ -482,96 +480,11 @@ function distributionPyramidDiagram() {
   return frame(inner, 'A four-level developer-platform distribution pyramid moves from context and tools through an owned adapter and open traces to a held-out benchmark, trading direct control for potential reach and dependence on adoption.');
 }
 
-function valuesHeaderDiagram() {
-  const inner = `
-  <rect x="70" y="46" width="384" height="44" rx="22" fill="var(--accent)" opacity="0.14"/>
-  <circle cx="98" cy="68" r="7" fill="var(--accent)"/>
-  <text x="118" y="76" font-family="${MONO}" font-size="22" font-weight="700" letter-spacing="2" fill="var(--accent-ink)">PERSONAL · FIELD NOTES</text>
-  <text x="70" y="144" font-family="${SANS}" font-size="48" font-weight="800" letter-spacing="-1.4" fill="var(--ink)">Cheap options vs. explicit values</text>
-
-  <!-- Left: Noise & Decision Fatigue -->
-  <rect x="70" y="188" width="364" height="374" rx="20" fill="var(--surface)" stroke="#f43f5e" stroke-width="2.5" stroke-dasharray="8 6"/>
-  <text x="98" y="232" font-family="${MONO}" font-size="20" font-weight="700" letter-spacing="1.6" fill="#e11d48">LOUD DEFAULTS · BLOCKED</text>
-
-  <rect x="94" y="254" width="316" height="78" rx="14" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/>
-  <circle cx="128" cy="293" r="15" fill="#ffe4e6"/>
-  <text x="128" y="301" text-anchor="middle" font-family="${MONO}" font-size="23" font-weight="700" fill="#e11d48">×</text>
-  <text x="156" y="301" font-family="${SANS}" font-size="24" font-weight="650" fill="var(--faint)" text-decoration="line-through">5 AI plans before 8am</text>
-  <line x1="434" y1="293" x2="482" y2="293" stroke="#f43f5e" stroke-width="3" stroke-dasharray="5 5"/>
-
-  <rect x="94" y="352" width="316" height="78" rx="14" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/>
-  <circle cx="128" cy="391" r="15" fill="#ffe4e6"/>
-  <text x="128" y="399" text-anchor="middle" font-family="${MONO}" font-size="23" font-weight="700" fill="#e11d48">×</text>
-  <text x="156" y="399" font-family="${SANS}" font-size="24" font-weight="650" fill="var(--faint)" text-decoration="line-through">Urgency &amp; prestige</text>
-  <line x1="434" y1="391" x2="482" y2="391" stroke="#f43f5e" stroke-width="3" stroke-dasharray="5 5"/>
-
-  <rect x="94" y="450" width="316" height="78" rx="14" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/>
-  <circle cx="128" cy="489" r="15" fill="#ffe4e6"/>
-  <text x="128" y="497" text-anchor="middle" font-family="${MONO}" font-size="23" font-weight="700" fill="#e11d48">×</text>
-  <text x="156" y="497" font-family="${SANS}" font-size="24" font-weight="650" fill="var(--faint)" text-decoration="line-through">Completionism</text>
-  <line x1="434" y1="489" x2="482" y2="489" stroke="#f43f5e" stroke-width="3" stroke-dasharray="5 5"/>
-
-  <!-- Center: Values Filter Gate -->
-  <rect x="486" y="180" width="164" height="390" rx="24" fill="var(--ink)" stroke="var(--accent)" stroke-width="4"/>
-  <circle cx="568" cy="264" r="38" fill="var(--accent)" opacity="0.22"/>
-  <path d="M 546 248 H 590 L 575 268 V 284 L 561 278 V 268 Z" fill="var(--accent)"/>
-  <text x="568" y="346" text-anchor="middle" font-family="${MONO}" font-size="22" font-weight="700" letter-spacing="2.2" fill="var(--accent)">VALUES</text>
-  <text x="568" y="378" text-anchor="middle" font-family="${MONO}" font-size="22" font-weight="700" letter-spacing="2.2" fill="var(--accent)">FILTER</text>
-  <line x1="516" y1="406" x2="620" y2="406" stroke="var(--line)" stroke-width="1.5" opacity="0.35"/>
-  <text x="568" y="446" text-anchor="middle" font-family="${SANS}" font-size="25" font-weight="750" fill="var(--bg)">Why &gt; What</text>
-  <text x="568" y="484" text-anchor="middle" font-family="${MONO}" font-size="19" fill="var(--faint)">48h pause</text>
-
-  <!-- Right: 3 Core Pillars that Pass -->
-  <path d="M 650 293 H 690" fill="none" stroke="var(--accent)" stroke-width="3.5" marker-end="url(#tip)"/>
-  <rect x="700" y="188" width="430" height="108" rx="18" fill="var(--surface)" stroke="#10b981" stroke-width="3"/>
-  <rect x="700" y="188" width="14" height="108" rx="7" fill="#10b981"/>
-  <text x="734" y="230" font-family="${MONO}" font-size="20" font-weight="700" letter-spacing="1.6" fill="#059669">01 · FAMILY WINDOW</text>
-  <text x="734" y="269" font-family="${SANS}" font-size="26" font-weight="750" fill="var(--ink)">Protect irreplaceable years</text>
-
-  <path d="M 650 391 H 690" fill="none" stroke="var(--accent)" stroke-width="3.5" marker-end="url(#tip)"/>
-  <rect x="700" y="321" width="430" height="108" rx="18" fill="var(--surface)" stroke="var(--accent)" stroke-width="3"/>
-  <rect x="700" y="321" width="14" height="108" rx="7" fill="var(--accent)"/>
-  <text x="734" y="363" font-family="${MONO}" font-size="20" font-weight="700" letter-spacing="1.6" fill="var(--accent-ink)">02 · FREEDOM TODAY</text>
-  <text x="734" y="402" font-family="${SANS}" font-size="26" font-weight="750" fill="var(--ink)">Low burn over distant exits</text>
-
-  <path d="M 650 489 H 690" fill="none" stroke="var(--accent)" stroke-width="3.5" marker-end="url(#tip)"/>
-  <rect x="700" y="454" width="430" height="108" rx="18" fill="var(--surface)" stroke="#f59e0b" stroke-width="3"/>
-  <rect x="700" y="454" width="14" height="108" rx="7" fill="#f59e0b"/>
-  <text x="734" y="496" font-family="${MONO}" font-size="20" font-weight="700" letter-spacing="1.6" fill="#d97706">03 · HEALTH &amp; CRAFT</text>
-  <text x="734" y="535" font-family="${SANS}" font-size="26" font-weight="750" fill="var(--ink)">Outdoor miles &amp; hands-on work</text>
-
-  <text x="600" y="626" text-anchor="middle" font-family="${MONO}" font-size="25" fill="var(--faint)">in systems we call them principles · in life we call them values</text>`;
-  return frame(inner, 'A values filter diagram showing noisy defaults on the left (five AI plans before 8am, urgency and prestige, and completionism) blocked by a central Values Filter gate, while three personal pillars pass through on the right: Family Window, Freedom Today, and Health and Craft.');
-}
-
-function valuesFilterDiagram() {
-  const inner = `
-  <text x="70" y="82" font-family="${MONO}" font-size="26" font-weight="700" letter-spacing="2.2" fill="var(--accent-ink)">THE DECISION FILTER</text>
-  <text x="70" y="146" font-family="${SANS}" font-size="48" font-weight="750" letter-spacing="-1.4" fill="var(--ink)">Strip false motives before you score</text>
-
-  <rect x="70" y="210" width="500" height="336" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="2.5"/>
-  <text x="115" y="272" font-family="${MONO}" font-size="25" font-weight="700" letter-spacing="1.8" fill="var(--faint)">ZERO WEIGHT · CUT</text>
-  <text x="115" y="346" font-family="${SANS}" font-size="36" font-weight="700" fill="var(--faint)">Completionism</text>
-  <text x="115" y="414" font-family="${SANS}" font-size="36" font-weight="700" fill="var(--faint)">Status &amp; title scarcity</text>
-  <text x="115" y="482" font-family="${SANS}" font-size="36" font-weight="700" fill="var(--faint)">Human shock absorber</text>
-
-  <rect x="630" y="210" width="500" height="336" rx="22" fill="var(--ink)" stroke="var(--accent)" stroke-width="3"/>
-  <text x="675" y="272" font-family="${MONO}" font-size="25" font-weight="700" letter-spacing="1.8" fill="var(--accent)">KEEP &amp; PROTECT</text>
-  <text x="675" y="346" font-family="${SANS}" font-size="36" font-weight="750" fill="var(--bg)">Irreplaceable family time</text>
-  <text x="675" y="414" font-family="${SANS}" font-size="36" font-weight="750" fill="var(--bg)">Low-burn optionality</text>
-  <text x="675" y="482" font-family="${SANS}" font-size="36" font-weight="750" fill="var(--bg)">High-agency craft &amp; vitality</text>
-
-  <text x="600" y="618" text-anchor="middle" font-family="${MONO}" font-size="26" fill="var(--faint)">decide why the call matters before weighing the options</text>`;
-  return frame(inner, 'Two side-by-side panels show zero-weight motives to cut on the left (completionism, status and title scarcity, and acting as a human shock absorber) and core pillars to protect on the right: irreplaceable family time, low-burn optionality, and high-agency craft and vitality.');
-}
-
 const CUSTOM_RENDER = {
   asymmetry: asymmetryDiagram,
   tierdrop: tierdropDiagram,
   retrievalRanking: retrievalRankingDiagram,
   distributionPyramid: distributionPyramidDiagram,
-  valuesHeader: valuesHeaderDiagram,
-  valuesFilter: valuesFilterDiagram,
 };
 
 for (const spec of CARDS.filter(selected)) {

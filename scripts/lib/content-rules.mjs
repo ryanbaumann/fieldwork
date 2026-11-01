@@ -158,13 +158,17 @@ export function checkDocument({ path, collection, raw }) {
   }
 
   if (isHostedEssay(collection, meta, body)) {
-    for (const key of ['image', 'imageAlt', 'socialImage', 'shareTitle', 'shareSummary', 'shareImageAlt']) {
+    const isPersonal = String(meta.type || '').toLowerCase() === 'personal';
+    const requiredKeys = isPersonal
+      ? ['socialImage', 'shareTitle', 'shareSummary', 'shareImageAlt']
+      : ['image', 'imageAlt', 'socialImage', 'shareTitle', 'shareSummary', 'shareImageAlt'];
+    for (const key of requiredKeys) {
       if (!meta[key]) {
         add(1, 'C-ASSETS', 'error', `Hosted essay is missing "${key}". Every essay needs a thesis header, a social card, and their copy (portfolio-content).`);
       }
     }
     const inline = passages.flatMap(({ text }) => [...text.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map((m) => m[1]));
-    if (!inline.some((src) => src !== meta.image)) {
+    if (!isPersonal && !inline.some((src) => src !== meta.image)) {
       add(1, 'C-ASSETS', 'error', 'Hosted essay has no inline evidence image distinct from its header (portfolio-content).');
     }
   }

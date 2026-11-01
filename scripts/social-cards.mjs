@@ -284,8 +284,8 @@ const CARDS = [
     eyebrow: 'PERSONAL · FIELD NOTES',
     title: 'Why We Decide Beats What We Decide',
     summary: 'AI makes options cheap. Explicit values keep judgment fatigue from choosing for you.',
-    source: 'portfolio/static/img/writing/why-we-make-decisions-header.svg',
-    layout: 'artifact',
+    source: 'portfolio/static/img/ryan-baumann-profile.jpg',
+    layout: 'screenshot',
   },
 ];
 

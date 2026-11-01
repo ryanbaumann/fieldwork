@@ -856,10 +856,11 @@ function listRow(collection, entry) {
   const external = Boolean(meta.external);
   const clickable = external || hasDetailPage(entry);
   const title = `${escapeHtml(meta.title)}${external ? ' ↗' : ''}`;
-  const imagePath = meta.image ? join(STATIC_DIR, meta.image.replace(/^\//, '')) : '';
-  const imageSize = meta.image ? getImageDimensions(imagePath) : null;
-  const thumb = meta.image
-    ? `<img class="row-thumb" src="${rebase(meta.image)}" alt="${escapeHtml(meta.imageAlt || meta.title)}" loading="lazy" width="${imageSize.width}" height="${imageSize.height}" />`
+  const rowImage = meta.image || meta.socialImage;
+  const imagePath = rowImage ? join(STATIC_DIR, rowImage.replace(/^\//, '')) : '';
+  const imageSize = rowImage ? getImageDimensions(imagePath) : null;
+  const thumb = rowImage
+    ? `<img class="row-thumb" src="${rebase(rowImage)}" alt="${escapeHtml(meta.imageAlt || meta.shareImageAlt || meta.title)}" loading="lazy" width="${imageSize.width}" height="${imageSize.height}" />`
     : '';
   const rowContent = `${thumb}
   <div>
@@ -1081,7 +1082,7 @@ function jsonLdBlogPosting(entry, pageUrl) {
   };
   if (entry.meta.date) ld.datePublished = `${entry.meta.date}T00:00:00Z`;
   if (entry.meta.updated) ld.dateModified = `${entry.meta.updated}T00:00:00Z`;
-  if (entry.meta.image) ld.image = absoluteUrl(entry.meta.image);
+  if (entry.meta.image || entry.meta.socialImage) ld.image = absoluteUrl(entry.meta.image || entry.meta.socialImage);
   if (entry.meta.tags?.length) ld.keywords = entry.meta.tags.join(', ');
   return ld;
 }
@@ -1111,7 +1112,7 @@ function jsonLdCreativeWork(entry, pageUrl) {
   if (entry.meta.date) ld.datePublished = `${entry.meta.date}T00:00:00Z`;
   if (entry.meta.updated) ld.dateModified = `${entry.meta.updated}T00:00:00Z`;
   if (entry.meta.org) ld.sourceOrganization = { '@type': 'Organization', name: entry.meta.org };
-  if (entry.meta.image) ld.image = absoluteUrl(entry.meta.image);
+  if (entry.meta.image || entry.meta.socialImage) ld.image = absoluteUrl(entry.meta.image || entry.meta.socialImage);
   return ld;
 }
 
@@ -1126,7 +1127,7 @@ function jsonLdArticle(entry, pageUrl) {
   };
   if (entry.meta.date) ld.datePublished = `${entry.meta.date}T00:00:00Z`;
   if (entry.meta.venue) ld.publisher = { '@type': 'Organization', name: entry.meta.venue };
-  if (entry.meta.image) ld.image = absoluteUrl(entry.meta.image);
+  if (entry.meta.image || entry.meta.socialImage) ld.image = absoluteUrl(entry.meta.image || entry.meta.socialImage);
   return ld;
 }
 
