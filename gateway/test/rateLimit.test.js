@@ -108,6 +108,27 @@ test('createRateLimiter tracks separate keys independently', () => {
   limiter.stop();
 });
 
+test('createRateLimiter bounds memory growth to maxKeys by evicting expired or oldest entries', () => {
+  let currentTime = 1_000;
+  const limiter = createRateLimiter({ windowMs: 60_000, max: 2, maxKeys: 3, now: () => currentTime });
+  assert.equal(limiter.check('ip-1'), true);
+  assert.equal(limiter.check('ip-2'), true);
+  assert.equal(limiter.check('ip-3'), true);
+  assert.equal(limiter.size(), 3);
+
+  // Adding a 4th key within the same window evicts the oldest key (ip-1).
+  assert.equal(limiter.check('ip-4'), true);
+  assert.equal(limiter.size(), 3);
+  assert.equal(limiter.check('ip-2'), true);
+  assert.equal(limiter.check('ip-2'), false);
+
+  // Advancing past windowMs sweeps expired records before inserting.
+  currentTime += 61_000;
+  assert.equal(limiter.check('ip-5'), true);
+  assert.equal(limiter.size(), 1);
+  limiter.stop();
+});
+
 test('CircularBucketRateLimiter enforces user call limit of 100 per day', () => {
   let currentTime = Date.parse('2026-08-17T12:00:00Z');
   const limiter = createCircularBucketRateLimiter({

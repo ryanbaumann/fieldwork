@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Dependency, security, email, and DNS hardening (`gateway/lib/rateLimit.js`, `gateway/lib/contactSpam.js`, `gateway/server.js`, `docs/DOMAIN_MIGRATION.md`, `.github/dependabot.yml`, `demos/*/package.json`)**:
+  - Upgraded all workspace demo dependencies and lockfiles to current releases across `demos/aqi-map`, `demos/isochrones`, `demos/voice-studio`, `demos/hairstyle-ai-studio`, `demos/infographic-agent`, `demos/strava-explorer`, and `demos/real-world-reasoning-agent` (including `vitest` 5.0.5, `jsdom` 30.1.3, `@deck.gl/*` 9.4.1, `@google/genai` 2.32.0, `lucide-react` 1.66.0, `eslint` 10.14.0, and `@types/google.maps` 3.66.9).
+  - Resolved all 10 high-severity `npm audit` advisories in `demos/real-world-reasoning-agent` (`image-size` `GHSA-w3rx-r6r6-pgpr` / Dependabot alert #349 and `zod` `GHSA-mrhx-c7xc-m3w5`) and all 4 moderate-severity `minimatch` advisories (`GHSA-g3hv-75wg-m249`) in `demos/strava-explorer`.
+  - Added the `minor-and-patch` Dependabot group to `/demos/voice-studio` in `.github/dependabot.yml`.
+  - Bounded `createRateLimiter` in `gateway/lib/rateLimit.js` with `maxKeys = 10_000` (sweeping expired entries and evicting oldest keys when full) to prevent unbounded memory growth under spoofed-IP floods.
+  - Hardened `gateway/lib/contactSpam.js` to pass the Gemini API key via the `x-goog-api-key` request header instead of the URL query string, refund `costMicros` alongside `calls` and `tokens` when the classifier request throws or times out, and cache MX lookup results in a bounded 10-minute TTL map.
+  - Hardened `/api/subscribe` and `/api/contact` in `gateway/server.js` to strip control characters (`\r`, `\n`, `\t`), reject whitespace or multiple `@` symbols in email addresses, and retry transient Resend `429`/`5xx`/network failures once before returning `502`.
+  - Updated `docs/DOMAIN_MIGRATION.md` with explicit `ryanbaumann.dev` email authentication and DNS records (`_dmarc.ryanbaumann.dev`, apex SPF `v=spf1 -all`, `CAA`, `www` CNAME TTL alignment) and the January 5, 2027 Cloud DNS cross-zone CNAME chasing verification runbook for `geojson-bq-blog`.
 - **Contact form spam filter and triage (`gateway/lib/contactSpam.js`, `gateway/lib/rateLimit.js`, `gateway/server.js`, `portfolio/build.mjs`, `privacy.md`)**:
   - Dropped certain bots silently: a filled honeypot, a `POST` with no `Origin` and no `Sec-Fetch-Site`, a form filled in under 3 seconds, or a known form-stuffing bot template (`"I would like more information. Please contact me by email..."`, `"hear more about special offers..."`, `"interested in product news..."`) submitted without JavaScript timing. Each drop writes one log line with the reason, email domain, and intent only.
   - Ran bot checks before the Gemini and DNS calls, so scripted spam uses no classifier quota.

@@ -974,7 +974,7 @@ test('contact route strips CR and LF control characters from name and intent in 
   try {
     const res = await postForm(port, '/api/contact', {
       name: 'Alice\r\nBcc: evil@example.com\tDeveloper',
-      email: 'alice@example.com',
+      email: 'alice@example.com\r\nBcc:evil@example.com',
       message: 'Hello, this is a valid message that has at least twenty characters!',
       intent: 'Speaking\r\nopportunity',
       human: '1',
@@ -982,8 +982,30 @@ test('contact route strips CR and LF control characters from name and intent in 
       'x-forwarded-for': '12.12.12.1, proxy',
       Origin: `http://localhost:${port}`,
     });
-    assert.equal(res.res.statusCode, 303);
+    // Injected second @ or whitespace in email is rejected outright with 400
+    assert.equal(res.res.statusCode, 400);
+
+    let attempts = 0;
+    globalThis.fetch = async (_url, options) => {
+      attempts += 1;
+      if (attempts === 1) return { ok: false, status: 503 };
+      sentMail = JSON.parse(options.body);
+      return { ok: true, status: 200 };
+    };
+    const retryRes = await postForm(port, '/api/contact', {
+      name: 'Alice\r\nBcc: evil@example.com\tDeveloper',
+      email: 'alice\r\n@example.com',
+      message: 'Hello, this is a valid message that has at least twenty characters!',
+      intent: 'Speaking\r\nopportunity',
+      human: '1',
+    }, {
+      'x-forwarded-for': '12.12.12.2, proxy',
+      Origin: `http://localhost:${port}`,
+    });
+    assert.equal(retryRes.res.statusCode, 303);
+    assert.equal(attempts, 2);
     assert.ok(sentMail);
+    assert.equal(sentMail.reply_to, 'alice@example.com');
     assert.ok(!sentMail.subject.includes('\r'));
     assert.ok(!sentMail.subject.includes('\n'));
     assert.match(sentMail.subject, /Alice Bcc: evil@example\.com Developer/);
