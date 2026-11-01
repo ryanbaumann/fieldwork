@@ -34,8 +34,12 @@ test('classifier output requires exact structured values', () => {
 });
 
 test('model advertising decisions are delivered for review and send no identity fields', async () => {
+  let requestUrl;
+  let requestHeaders;
   let requestBody;
-  const fetchImpl = async (_url, options) => {
+  const fetchImpl = async (url, options) => {
+    requestUrl = String(url);
+    requestHeaders = options.headers;
     requestBody = JSON.parse(options.body);
     return {
       ok: true,
@@ -49,8 +53,34 @@ test('model advertising decisions are delivered for review and send no identity 
     fetchImpl,
   });
   assert.equal(result.decision, 'review');
+  assert.doesNotMatch(requestUrl, /key=/);
+  assert.equal(requestHeaders['x-goog-api-key'], 'test-key');
   const modelText = requestBody.contents[0].parts[0].text;
   assert.doesNotMatch(modelText, /name:|email:/i);
+});
+
+test('classifier network error refunds calls, tokens, and costMicros on the rate limiter', async () => {
+  const refunds = [];
+  const fakeLimiter = {
+    check: () => true,
+    record: () => {},
+    refund: (key, delta) => refunds.push({ key, delta }),
+  };
+  const result = await classifyContactSubmission({
+    intent: 'Other',
+    message: 'I have a potentially useful professional question for Ryan.',
+    geminiApiKey: 'test-key',
+    geminiLimiter: fakeLimiter,
+    clientKey: 'contact-test',
+    fetchImpl: async () => {
+      throw Object.assign(new Error('timeout'), { name: 'TimeoutError' });
+    },
+  });
+  assert.equal(result.decision, 'allow');
+  assert.deepEqual(refunds, [{
+    key: 'contact-test',
+    delta: { calls: 1, tokens: 150, costMicros: 15 },
+  }]);
 });
 
 test('model-only rejection is delivered for review', async () => {

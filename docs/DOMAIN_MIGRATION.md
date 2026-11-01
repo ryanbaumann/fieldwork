@@ -199,13 +199,23 @@ retaining the old registration for at least a year. See
 5. **Search Console:** verify Domain properties for the old and new domains,
    submit `https://ryanbaumann.dev/sitemap.xml`, then run Change of Address
    from each old-domain property after redirects are live.
-6. **Resend:** if `CONTACT_FROM_EMAIL` uses either portfolio domain, verify
-   `ryanbaumann.dev` in Resend and update the sender before eventually removing
-   any old-domain email-verification records. Keep the old domain's web mappings
-   for the full redirect year, and preserve required SPF, DKIM, and verification
-   records while the old sender remains in use.
+6. **Resend and email DNS:** verify `ryanbaumann.dev` in Resend and add all email security records at Squarespace DNS:
+   - `resend._domainkey.ryanbaumann.dev` (`TXT`): copy the Resend DKIM public key value.
+   - `send.ryanbaumann.dev` (`MX` priority `10` and `TXT` `v=spf1 include:amazonses.com ~all`): authorize Resend return-path bounces.
+   - `@` (`TXT` `v=spf1 -all`): block direct spoofing on the apex domain.
+   - `_dmarc.ryanbaumann.dev` (`TXT` `v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r`): enforce strict DKIM and relaxed subdomain SPF alignment.
+   - `@` (`CAA` `0 issue "pki.goog"` and `0 issue "letsencrypt.org"`): restrict certificate issuance to Google Trust Services and Let's Encrypt.
+   - `www.ryanbaumann.dev` (`CNAME` `ghs.googlehosted.com.`, TTL `3600`): match the target TTL across the CNAME chain.
 7. **Profiles and publishing tools:** update LinkedIn, X, Substack, GitHub,
    speaker bios, and saved syndication templates to use `ryanbaumann.dev`.
+8. **Cloud DNS cross-zone CNAME chasing check (before January 5, 2027):**
+   - Public DNS for `ryanbaumann.dev` and `ryanbaumann-portfolio.com` runs on Squarespace Domains, not inside a VPC.
+   - Audit project `geojson-bq-blog` for stale Cloud DNS private zones or response policies that overlap public CNAME targets:
+     ```bash
+     gcloud dns managed-zones list --project geojson-bq-blog
+     gcloud dns response-policies list --project geojson-bq-blog
+     ```
+   - Delete unused private zones or ensure internal records do not shadow `ghs.googlehosted.com.` or `ryanbaumann.dev`.
 
 ## 10. Final production check
 

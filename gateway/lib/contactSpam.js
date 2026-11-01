@@ -96,9 +96,12 @@ export async function classifyContactSubmission({
   }
 
   try {
-    const upstream = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`, {
+    const upstream = await fetchImpl('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': geminiApiKey,
+      },
       body: JSON.stringify({
         contents: [{
           parts: [{
@@ -134,7 +137,7 @@ export async function classifyContactSubmission({
     if (!parsed) return modelError();
     return withRules(safeModelDecision(parsed));
   } catch (error) {
-    if (geminiLimiter) geminiLimiter.refund(clientKey, { calls: 1, tokens: estimatedTokens });
+    if (geminiLimiter) geminiLimiter.refund(clientKey, { calls: 1, tokens: estimatedTokens, costMicros: estimatedCostMicros });
     console.error(`Contact classifier unavailable: ${error?.name || 'Error'}`);
     return modelError();
   }
@@ -162,6 +165,15 @@ const DOMAIN_PATTERN = /^(?=.{3,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)
 // Tests replace `contactDns.resolveMx` so they never touch the network.
 export const contactDns = { resolveMx: (domain) => resolveMx(domain) };
 
+const MX_CACHE_TTL_MS = 10 * 60_000;
+const MX_CACHE_MAX_KEYS = 500;
+const mxCache = new Map();
+let lastResolveMxRef = contactDns.resolveMx;
+
+export function clearMxCacheForTesting() {
+  mxCache.clear();
+}
+
 export function emailDomain(email) {
   const domain = String(email || '').split('@').pop().trim().toLowerCase();
   return DOMAIN_PATTERN.test(domain) ? domain : '';
@@ -170,6 +182,15 @@ export function emailDomain(email) {
 export async function lookupMailServer(domain, timeoutMs = 1_500) {
   if (!domain) return 'invalid';
   if (WEBMAIL_DOMAINS.has(domain)) return 'found';
+  if (contactDns.resolveMx !== lastResolveMxRef) {
+    mxCache.clear();
+    lastResolveMxRef = contactDns.resolveMx;
+  }
+  const now = Date.now();
+  const cached = mxCache.get(domain);
+  if (cached && now - cached.timestamp < MX_CACHE_TTL_MS) {
+    return cached.status;
+  }
   let timer;
   try {
     const records = await Promise.race([
@@ -178,9 +199,21 @@ export async function lookupMailServer(domain, timeoutMs = 1_500) {
     ]);
     // RFC 7505 null MX ("0 .") means the domain accepts no mail.
     const usable = (records || []).filter((record) => record?.exchange && record.exchange !== '.');
-    return usable.length ? 'found' : 'none';
+    const status = usable.length ? 'found' : 'none';
+    if (mxCache.size >= MX_CACHE_MAX_KEYS) {
+      mxCache.delete(mxCache.keys().next().value);
+    }
+    mxCache.set(domain, { status, timestamp: now });
+    return status;
   } catch (error) {
-    return error?.code === 'ENOTFOUND' || error?.code === 'ENODATA' ? 'none' : 'unknown';
+    const status = error?.code === 'ENOTFOUND' || error?.code === 'ENODATA' ? 'none' : 'unknown';
+    if (status === 'none') {
+      if (mxCache.size >= MX_CACHE_MAX_KEYS) {
+        mxCache.delete(mxCache.keys().next().value);
+      }
+      mxCache.set(domain, { status, timestamp: now });
+    }
+    return status;
   } finally {
     clearTimeout(timer);
   }

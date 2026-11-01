@@ -5,33 +5,43 @@
 // enough for a single-instance Cloud Run service; not shared across
 // replicas, which is an accepted tradeoff for a portfolio demo.
 
-export function createRateLimiter({ windowMs = 60_000, max = 30 } = {}) {
+export function createRateLimiter({ windowMs = 60_000, max = 30, maxKeys = 10_000, now = () => Date.now() } = {}) {
   const hits = new Map();
 
   const interval = setInterval(() => {
-    const now = Date.now();
+    const currentTime = now();
     for (const [key, record] of hits.entries()) {
-      if (now - record.windowStart > windowMs) hits.delete(key);
+      if (currentTime - record.windowStart > windowMs) hits.delete(key);
     }
   }, windowMs);
   interval.unref?.();
 
   function check(key) {
-    const now = Date.now();
+    const currentTime = now();
     const record = hits.get(key);
-    if (!record || now - record.windowStart > windowMs) {
-      hits.set(key, { windowStart: now, count: 1 });
+    if (!record || currentTime - record.windowStart > windowMs) {
+      if (!hits.has(key) && hits.size >= maxKeys) {
+        for (const [storedKey, stored] of hits) {
+          if (currentTime - stored.windowStart > windowMs) hits.delete(storedKey);
+        }
+        while (hits.size >= maxKeys) hits.delete(hits.keys().next().value);
+      }
+      hits.set(key, { windowStart: currentTime, count: 1 });
       return true;
     }
     record.count += 1;
     return record.count <= max;
   }
 
+  function size() {
+    return hits.size;
+  }
+
   function stop() {
     clearInterval(interval);
   }
 
-  return { check, stop };
+  return { check, size, stop };
 }
 
 export function createDailyRateLimiter({ max = 5, maxKeys = 10_000, now = () => Date.now() } = {}) {
