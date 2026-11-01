@@ -170,6 +170,8 @@ const CUSTOM = [
   { file: 'writing/model-tiers-devx.svg', render: 'tierdrop' },
   { file: 'writing/agent-session-header.svg', render: 'retrievalRanking' },
   { file: 'writing/fine-tuning-distribution-pyramid.svg', render: 'distributionPyramid' },
+  { file: 'writing/why-we-make-decisions-header.svg', render: 'valuesHeader' },
+  { file: 'writing/why-we-make-decisions-filter.svg', render: 'valuesFilter' },
 ];
 
 const requestedFiles = new Set(process.argv.slice(2));
@@ -480,11 +482,51 @@ function distributionPyramidDiagram() {
   return frame(inner, 'A four-level developer-platform distribution pyramid moves from context and tools through an owned adapter and open traces to a held-out benchmark, trading direct control for potential reach and dependence on adoption.');
 }
 
+function valuesHeaderDiagram() {
+  const inner = `
+  <text x="70" y="82" font-family="${MONO}" font-size="26" font-weight="700" letter-spacing="2.2" fill="var(--accent-ink)">JUDGMENT IN THE AI ERA</text>
+  <text x="70" y="146" font-family="${SANS}" font-size="48" font-weight="750" letter-spacing="-1.4" fill="var(--ink)">Why we decide outlasts what we decide</text>
+
+  <text x="70" y="216" font-family="${MONO}" font-size="24" font-weight="700" letter-spacing="1.8" fill="var(--faint)">UNANCHORED JUDGMENT</text>
+  <rect x="70" y="236" width="1060" height="106" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="600" y="301" text-anchor="middle" font-family="${SANS}" font-size="34" font-weight="700" fill="var(--faint)">Cheap options  ▸  decision fatigue  ▸  loud defaults</text>
+
+  <text x="70" y="402" font-family="${MONO}" font-size="24" font-weight="700" letter-spacing="1.8" fill="var(--accent-ink)">VALUES-BASED FILTER</text>
+  <rect x="70" y="422" width="1060" height="106" rx="18" fill="var(--ink)" stroke="var(--accent)" stroke-width="3"/>
+  <text x="600" y="487" text-anchor="middle" font-family="${SANS}" font-size="34" font-weight="750" fill="var(--bg)">Explicit pillars  ▸  clear guardrails  ▸  durable call</text>
+
+  <text x="600" y="618" text-anchor="middle" font-family="${MONO}" font-size="26" fill="var(--faint)">in systems we call them principles · in life we call them values</text>`;
+  return frame(inner, 'Two horizontal tracks contrast unanchored judgment, where cheap options lead to decision fatigue and loud defaults, with a values-based filter where explicit pillars and guardrails produce a durable call.');
+}
+
+function valuesFilterDiagram() {
+  const inner = `
+  <text x="70" y="82" font-family="${MONO}" font-size="26" font-weight="700" letter-spacing="2.2" fill="var(--accent-ink)">THE DECISION FILTER</text>
+  <text x="70" y="146" font-family="${SANS}" font-size="48" font-weight="750" letter-spacing="-1.4" fill="var(--ink)">Strip false motives before you score</text>
+
+  <rect x="70" y="210" width="500" height="336" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="2.5"/>
+  <text x="115" y="272" font-family="${MONO}" font-size="25" font-weight="700" letter-spacing="1.8" fill="var(--faint)">ZERO WEIGHT · CUT</text>
+  <text x="115" y="346" font-family="${SANS}" font-size="36" font-weight="700" fill="var(--faint)">Completionism</text>
+  <text x="115" y="414" font-family="${SANS}" font-size="36" font-weight="700" fill="var(--faint)">Status &amp; title scarcity</text>
+  <text x="115" y="482" font-family="${SANS}" font-size="36" font-weight="700" fill="var(--faint)">Human shock absorber</text>
+
+  <rect x="630" y="210" width="500" height="336" rx="22" fill="var(--ink)" stroke="var(--accent)" stroke-width="3"/>
+  <text x="675" y="272" font-family="${MONO}" font-size="25" font-weight="700" letter-spacing="1.8" fill="var(--accent)">KEEP &amp; PROTECT</text>
+  <text x="675" y="346" font-family="${SANS}" font-size="36" font-weight="750" fill="var(--bg)">Irreplaceable family time</text>
+  <text x="675" y="414" font-family="${SANS}" font-size="36" font-weight="750" fill="var(--bg)">Low-burn optionality</text>
+  <text x="675" y="482" font-family="${SANS}" font-size="36" font-weight="750" fill="var(--bg)">High-agency craft &amp; vitality</text>
+
+  <text x="600" y="618" text-anchor="middle" font-family="${MONO}" font-size="26" fill="var(--faint)">decide why the call matters before weighing the options</text>`;
+  return frame(inner, 'Two side-by-side panels show zero-weight motives to cut on the left (completionism, status and title scarcity, and acting as a human shock absorber) and core pillars to protect on the right: irreplaceable family time, low-burn optionality, and high-agency craft and vitality.');
+}
+
 const CUSTOM_RENDER = {
   asymmetry: asymmetryDiagram,
   tierdrop: tierdropDiagram,
   retrievalRanking: retrievalRankingDiagram,
   distributionPyramid: distributionPyramidDiagram,
+  valuesHeader: valuesHeaderDiagram,
+  valuesFilter: valuesFilterDiagram,
 };
 
 for (const spec of CARDS.filter(selected)) {

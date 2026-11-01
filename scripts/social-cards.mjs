@@ -279,6 +279,14 @@ const CARDS = [
     source: 'portfolio/static/img/writing/can-i-build-an-ai-agent-that-doesnt-write-slop-header.svg',
     layout: 'artifact',
   },
+  {
+    file: 'why-we-make-decisions.png',
+    eyebrow: 'FIELD NOTES · JUDGMENT & VALUES',
+    title: 'Why We Make Decisions Matters More Than What We Decide',
+    summary: 'AI makes options cheap. Values keep judgment fatigue from choosing for you.',
+    source: 'portfolio/static/img/writing/why-we-make-decisions-header.svg',
+    layout: 'artifact',
+  },
 ];
 
 const requestedFiles = new Set(process.argv.slice(2).map(f => f.replace(/\.png$/, '.jpg')));
@@ -380,7 +388,11 @@ const chromium = loadChromium();
 let browser;
 
 try {
-  browser = await chromium.launch({ headless: true });
+  try {
+    browser = await chromium.launch({ headless: true });
+  } catch {
+    browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  }
   const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: 1 });
 
   for (const spec of selectedCards) {

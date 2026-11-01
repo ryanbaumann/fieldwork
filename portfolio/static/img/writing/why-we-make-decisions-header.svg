@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Two horizontal tracks contrast unanchored judgment, where cheap options lead to decision fatigue and loud defaults, with a values-based filter where explicit pillars and guardrails produce a durable call.">
+  <style>
+    :root { --bg: #faf9f6; --surface: #ffffff; --ink: #111827; --faint: #5f6875; --line: #d9dde5; --accent: #3b82f6; --accent-ink: #2563eb; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }</style>
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--line)" stroke-width="1" opacity="0.28"/></pattern>
+    <marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+  </defs>
+  <rect width="1200" height="675" fill="var(--bg)"/>
+  <rect width="1200" height="675" fill="url(#grid)"/>
+  <rect width="1200" height="8" fill="var(--accent)"/>
+  <rect x="1" y="1" width="1198" height="673" fill="none" stroke="var(--line)" stroke-width="2"/>
+  <text x="70" y="82" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="26" font-weight="700" letter-spacing="2.2" fill="var(--accent-ink)">JUDGMENT IN THE AI ERA</text>
+  <text x="70" y="146" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="48" font-weight="750" letter-spacing="-1.4" fill="var(--ink)">Why we decide outlasts what we decide</text>
+
+  <text x="70" y="216" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="24" font-weight="700" letter-spacing="1.8" fill="var(--faint)">UNANCHORED JUDGMENT</text>
+  <rect x="70" y="236" width="1060" height="106" rx="18" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="600" y="301" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="700" fill="var(--faint)">Cheap options  ▸  decision fatigue  ▸  loud defaults</text>
+
+  <text x="70" y="402" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="24" font-weight="700" letter-spacing="1.8" fill="var(--accent-ink)">VALUES-BASED FILTER</text>
+  <rect x="70" y="422" width="1060" height="106" rx="18" fill="var(--ink)" stroke="var(--accent)" stroke-width="3"/>
+  <text x="600" y="487" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="750" fill="var(--bg)">Explicit pillars  ▸  clear guardrails  ▸  durable call</text>
+
+  <text x="600" y="618" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="26" fill="var(--faint)">in systems we call them principles · in life we call them values</text>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Two side-by-side panels show zero-weight motives to cut on the left (completionism, status and title scarcity, and acting as a human shock absorber) and core pillars to protect on the right: irreplaceable family time, low-burn optionality, and high-agency craft and vitality.">
+  <style>
+    :root { --bg: #faf9f6; --surface: #ffffff; --ink: #111827; --faint: #5f6875; --line: #d9dde5; --accent: #3b82f6; --accent-ink: #2563eb; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #030712; --surface: #111827; --ink: #f9fafb; --faint: #aeb7c4; --line: #334155; --accent: #60a5fa; --accent-ink: #93c5fd; } }</style>
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--line)" stroke-width="1" opacity="0.28"/></pattern>
+    <marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+  </defs>
+  <rect width="1200" height="675" fill="var(--bg)"/>
+  <rect width="1200" height="675" fill="url(#grid)"/>
+  <rect width="1200" height="8" fill="var(--accent)"/>
+  <rect x="1" y="1" width="1198" height="673" fill="none" stroke="var(--line)" stroke-width="2"/>
+  <text x="70" y="82" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="26" font-weight="700" letter-spacing="2.2" fill="var(--accent-ink)">THE DECISION FILTER</text>
+  <text x="70" y="146" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="48" font-weight="750" letter-spacing="-1.4" fill="var(--ink)">Strip false motives before you score</text>
+
+  <rect x="70" y="210" width="500" height="336" rx="22" fill="var(--surface)" stroke="var(--line)" stroke-width="2.5"/>
+  <text x="115" y="272" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="25" font-weight="700" letter-spacing="1.8" fill="var(--faint)">ZERO WEIGHT · CUT</text>
+  <text x="115" y="346" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="700" fill="var(--faint)">Completionism</text>
+  <text x="115" y="414" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="700" fill="var(--faint)">Status &amp; title scarcity</text>
+  <text x="115" y="482" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="700" fill="var(--faint)">Human shock absorber</text>
+
+  <rect x="630" y="210" width="500" height="336" rx="22" fill="var(--ink)" stroke="var(--accent)" stroke-width="3"/>
+  <text x="675" y="272" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="25" font-weight="700" letter-spacing="1.8" fill="var(--accent)">KEEP &amp; PROTECT</text>
+  <text x="675" y="346" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="750" fill="var(--bg)">Irreplaceable family time</text>
+  <text x="675" y="414" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="750" fill="var(--bg)">Low-burn optionality</text>
+  <text x="675" y="482" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="750" fill="var(--bg)">High-agency craft &amp; vitality</text>
+
+  <text x="600" y="618" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="26" fill="var(--faint)">decide why the call matters before weighing the options</text>
+</svg>
