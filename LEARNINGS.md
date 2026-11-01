@@ -2,6 +2,26 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-10-31 - `ryanbaumann.dev` email DNS gap and Resend subdomain DMARC alignment
+
+Context: Auditing live DNS records during the Cloud DNS CNAME chasing review and email reliability check after migrating from `ryanbaumann-portfolio.com` to `ryanbaumann.dev`.
+
+Learning: While Resend's sending subdomain records (`resend._domainkey.ryanbaumann.dev` TXT and `send.ryanbaumann.dev` MX/SPF) were added to `ryanbaumann.dev`, the apex SPF (`v=spf1 -all`) and `_dmarc.ryanbaumann.dev` records from `ryanbaumann-portfolio.com` were never copied over (`_dmarc.ryanbaumann.dev` returned `NXDOMAIN`). Furthermore, `ryanbaumann-portfolio.com` used `aspf=s` (strict SPF alignment), which fails SPF alignment for Resend because Resend sets the `Return-Path` envelope sender to the subdomain `send.ryanbaumann.dev` while the header `From` is `@ryanbaumann.dev`.
+
+Evidence: Live DNS queries via `https://dns.google/resolve` showed `Status: 3` (`NXDOMAIN`) for `_dmarc.ryanbaumann.dev` and no `v=spf1` record on `ryanbaumann.dev`, whereas `send.ryanbaumann.dev` has `v=spf1 include:amazonses.com ~all`.
+
+Use next time: When configuring a domain with Resend (which uses a subdomain like `send.<domain>` for `Return-Path`), always publish: (1) `_dmarc.<domain>` with `v=DMARC1; p=reject; sp=reject; adkim=s; aspf=r` (strict DKIM + relaxed SPF so the `send.` subdomain aligns with the root `From:` domain), and (2) an apex `@` TXT record `v=spf1 -all` so the root domain itself cannot be spoofed directly.
+
+## 2026-10-31 - Custom `.npmrc` registry mirrors can block `npm audit` and lag `npmjs.org`
+
+Context: Upgrading stagnant dependencies and running `npm audit` across the 7 demo workspaces on a machine with a custom `~/.npmrc` registry mirror configured.
+
+Learning: Custom registry mirrors may return `404 Not Found - operation is not supported` on `/-/npm/v1/security/advisories/bulk` (`npm audit`) and report stale `Latest` tags on `npm outdated`. Passing `--registry=https://registry.npmjs.org` queries the canonical public registry and advisory database without mutating the user's global `~/.npmrc`.
+
+Evidence: `npm audit` failed with `404 Not Found` against the custom mirror, whereas `npm audit --registry=https://registry.npmjs.org` surfaced 10 high-severity advisories in `demos/real-world-reasoning-agent` (`image-size` and `zod`) and 4 moderate `minimatch` advisories in `demos/strava-explorer`.
+
+Use next time: Always pass `--registry=https://registry.npmjs.org` when running `npm outdated`, `npm audit`, or `npm update` for public GitHub repositories on machines with custom `~/.npmrc` mirrors.
+
 ## 2026-10-17 - Cloud Run direct ingress sends a single-hop `X-Forwarded-For` from `169.254.169.126`
 
 Context: Live contact-form emails on `ryanbaumann.dev` showed `IP: ::ffff:169.254.169.126` instead of the visitor's IP, which also meant every normal visitor shared one rate-limit bucket.

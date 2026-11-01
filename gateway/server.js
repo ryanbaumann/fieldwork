@@ -202,6 +202,43 @@ function formResponsePage(title, message, statusCode = 200, { backHref = '/conta
 const contactResponsePage = (title, message, statusCode = 200) => formResponsePage(title, message, statusCode);
 const subscribeResponsePage = (title, message, statusCode = 200) => formResponsePage(title, message, statusCode, { backHref: '/writing/', backLabel: 'Notes' });
 
+function sanitizeEmailInput(raw) {
+  return String(raw || '').replace(/[\r\n\t]+/g, '').trim().slice(0, 200);
+}
+
+function isValidEmailInput(email) {
+  if (!email || /\s/.test(email)) return false;
+  const parts = email.split('@');
+  if (parts.length !== 2) return false;
+  const [local, domain] = parts;
+  return Boolean(local && domain && !domain.startsWith('.') && !domain.endsWith('.'));
+}
+
+async function fetchResendWithRetry(url, options, { retries = 1 } = {}) {
+  const retryDelayMs = process.env.NODE_ENV === 'test' ? 0 : 150;
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(10_000),
+      });
+      if ((response.status === 429 || response.status >= 500) && attempt < retries) {
+        if (retryDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) {
+        if (retryDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+        continue;
+      }
+    }
+  }
+  throw lastError;
+}
+
 // POST /api/subscribe — add an email address to the Resend global Contacts
 // model, the internal Field Notes segment, and its user-facing Topic. Sends
 // are composed and scheduled from the Resend dashboard.
@@ -236,10 +273,10 @@ async function handleSubscribeRequest(request, response) {
   const params = contentType.includes('application/x-www-form-urlencoded')
     ? new URLSearchParams(rawBody)
     : new URLSearchParams();
-  const email = String(params.get('email') || '').trim().slice(0, 200);
+  const email = sanitizeEmailInput(params.get('email'));
   const honeypot = String(params.get('company_fax_number') || '').trim();
 
-  if (!email || !email.includes('@') || email.startsWith('@') || email.endsWith('@')) {
+  if (!isValidEmailInput(email)) {
     sendHtml(request, response, 400, subscribeResponsePage('Not subscribed', 'Please enter a valid email address.', 400));
     return;
   }
@@ -260,7 +297,7 @@ async function handleSubscribeRequest(request, response) {
 
   let upstream;
   try {
-    upstream = await fetch('https://api.resend.com/contacts', {
+    upstream = await fetchResendWithRetry('https://api.resend.com/contacts', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
@@ -272,7 +309,6 @@ async function handleSubscribeRequest(request, response) {
         segments: [{ id: segmentId }],
         topics: [{ id: topicId, subscription: 'opt_in' }],
       }),
-      signal: AbortSignal.timeout(10_000),
     });
 
     if (upstream.status === 409) {
@@ -286,16 +322,14 @@ async function handleSubscribeRequest(request, response) {
       // enough for a genuine returning subscriber; the contact's own
       // unsubscribed flag is left exactly as Resend already has it.
       const [topicUpdate, segmentUpdate] = await Promise.all([
-        fetch(`https://api.resend.com/contacts/${encodedEmail}/topics`, {
+        fetchResendWithRetry(`https://api.resend.com/contacts/${encodedEmail}/topics`, {
           method: 'PATCH',
           headers: providerHeaders,
           body: JSON.stringify([{ id: topicId, subscription: 'opt_in' }]),
-          signal: AbortSignal.timeout(10_000),
         }),
-        fetch(`https://api.resend.com/contacts/${encodedEmail}/segments/${encodeURIComponent(segmentId)}`, {
+        fetchResendWithRetry(`https://api.resend.com/contacts/${encodedEmail}/segments/${encodeURIComponent(segmentId)}`, {
           method: 'POST',
           headers: providerHeaders,
-          signal: AbortSignal.timeout(10_000),
         }),
       ]);
       const segmentAccepted = segmentUpdate.ok || segmentUpdate.status === 409;
@@ -339,13 +373,13 @@ async function handleContactRequest(request, response) {
     ? new URLSearchParams(rawBody)
     : new URLSearchParams();
   const name = String(params.get('name') || '').trim().replace(/[\r\n\t]+/g, ' ').slice(0, 120);
-  const email = String(params.get('email') || '').trim().slice(0, 200);
+  const email = sanitizeEmailInput(params.get('email'));
   const message = String(params.get('message') || '').trim().slice(0, 5000);
   const intent = String(params.get('intent') || '').trim().replace(/[\r\n\t]+/g, ' ');
   const humanConfirmed = params.get('human') === '1';
   const honeypot = String(params.get('company_fax_number') || '').trim();
 
-  if (!name || !email || !message || !email.includes('@') || message.length < 20) {
+  if (!name || !isValidEmailInput(email) || !message || message.length < 20) {
     sendHtml(request, response, 400, contactResponsePage('Message not sent', 'Please include your name, a valid email, and a message with at least 20 characters.', 400));
     return;
   }
@@ -400,7 +434,7 @@ async function handleContactRequest(request, response) {
   const flags = contactFlags(classification, signals);
   let upstream;
   try {
-    upstream = await fetch('https://api.resend.com/emails', {
+    upstream = await fetchResendWithRetry('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
@@ -413,7 +447,6 @@ async function handleContactRequest(request, response) {
         subject: `${contactSubjectTag(classification, flags)}[${intent}] Portfolio contact from ${name}`,
         text: `Intent: ${intent}\nName: ${name}\nEmail: ${email}\n\n${message}\n\n${formatContactTriage({ name, classification, signals, flags })}\n`,
       }),
-      signal: AbortSignal.timeout(10_000),
     });
   } catch {
     sendHtml(request, response, 502, contactResponsePage('Message not sent', 'The mail provider could not be reached. Please try again later.', 502));
