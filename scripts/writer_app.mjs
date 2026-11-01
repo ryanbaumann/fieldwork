@@ -239,10 +239,20 @@ function renderFullArticleHtml(rawMarkdown, collectionName = 'writing', theme = 
   const period = meta.period || meta.date || '';
   const org = meta.org || meta.venue || '';
   const role = meta.role || '';
+  const type = meta.type || '';
   const bodyHtml = markdownToHtml(body);
   const css = fs.existsSync(STYLE_CSS_PATH) ? fs.readFileSync(STYLE_CSS_PATH, 'utf8') : '';
 
-  const metaParts = [org, role, period].filter(Boolean).join(' · ');
+  const metaParts = [org, role, type, period].filter(Boolean).join(' · ');
+  const eyebrowText = collectionName === 'writing'
+    ? (type ? `Field Notes · ${escapeHtml(type)}` : 'Field Notes')
+    : escapeHtml(collectionName);
+  const tagsHtml = Array.isArray(meta.tags) && meta.tags.length
+    ? `<p class="card-tags" style="margin: 0.5rem 0 1.25rem;">${meta.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join('')}</p>`
+    : '';
+  const heroHtml = meta.image
+    ? `<img class="article-hero" src="${escapeHtml(meta.image)}" alt="${escapeHtml(meta.imageAlt || title)}" />`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="en" data-theme="${escapeHtml(theme)}">
@@ -309,10 +319,12 @@ body {
     </div>
 
     <article>
-      <p class="eyebrow">${collectionName === 'writing' ? 'Field Notes' : escapeHtml(collectionName)}</p>
+      <p class="eyebrow">${eyebrowText}</p>
       <h1>${escapeHtml(title)}</h1>
       ${metaParts ? `<p class="article-meta">${escapeHtml(metaParts)}</p>` : ''}
+      ${tagsHtml}
       ${summary ? `<p class="lede">${escapeHtml(summary)}</p>` : ''}
+      ${heroHtml}
       
       <div class="article-body">
         ${bodyHtml}
@@ -589,7 +601,17 @@ function renderRichDiffArticleHtml(headMarkdown, rawMarkdown, collectionName = '
   const period = cur.meta.period || cur.meta.date || '';
   const org = cur.meta.org || cur.meta.venue || '';
   const role = cur.meta.role || '';
-  const metaParts = [org, role, period].filter(Boolean).join(' · ');
+  const type = cur.meta.type || '';
+  const metaParts = [org, role, type, period].filter(Boolean).join(' · ');
+  const eyebrowText = collectionName === 'writing'
+    ? (type ? `Field Notes · ${escapeHtml(type)}` : 'Field Notes')
+    : escapeHtml(collectionName);
+  const tagsHtml = Array.isArray(cur.meta.tags) && cur.meta.tags.length
+    ? `<p class="card-tags" style="margin: 0.5rem 0 1.25rem;">${cur.meta.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join('')}</p>`
+    : '';
+  const heroHtml = cur.meta.image
+    ? `<img class="article-hero" src="${escapeHtml(cur.meta.image)}" alt="${escapeHtml(cur.meta.imageAlt || curTitle)}" />`
+    : '';
 
   const bodyHtml = renderRichDiffBody(head.body || '', cur.body || '');
   const css = fs.existsSync(STYLE_CSS_PATH) ? fs.readFileSync(STYLE_CSS_PATH, 'utf8') : '';
@@ -827,10 +849,12 @@ del.rich-diff-del {
     </div>
 
     <article>
-      <p class="eyebrow">${collectionName === 'writing' ? 'Field Notes' : escapeHtml(collectionName)}</p>
+      <p class="eyebrow">${eyebrowText}</p>
       <h1>${titleHtml}</h1>
       ${metaParts ? `<p class="article-meta">${escapeHtml(metaParts)}</p>` : ''}
+      ${tagsHtml}
       ${summaryHtml ? `<p class="lede">${summaryHtml}</p>` : ''}
+      ${heroHtml}
       
       <div class="article-body">
         ${bodyHtml}
@@ -1284,6 +1308,28 @@ function extractModelOutput(stdout) {
     // Default: Serve the Writer Studio SPA
     if (pathname === '/' || pathname === '/index.html') {
       return sendHtml(res, 200, getWriterAppHtml());
+    }
+
+    // Serve static assets from portfolio/static (e.g. /img/..., /social/...)
+    const staticDir = path.join(ROOT_DIR, 'portfolio', 'static');
+    const safeRel = path.normalize(pathname).replace(/^(\.\.(\/|\\|$))+/, '').replace(/^[/\\]+/, '');
+    const staticCandidate = path.join(staticDir, safeRel);
+    if (staticCandidate.startsWith(staticDir) && fs.existsSync(staticCandidate) && fs.statSync(staticCandidate).isFile()) {
+      const ext = path.extname(staticCandidate).toLowerCase();
+      const mimeTypes = {
+        '.svg': 'image/svg+xml',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.gif': 'image/gif',
+        '.css': 'text/css; charset=utf-8',
+      };
+      res.writeHead(200, {
+        'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+        'Cache-Control': 'no-cache',
+      });
+      return res.end(fs.readFileSync(staticCandidate));
     }
 
     res.writeHead(404, { 'Content-Type': 'text/plain' });

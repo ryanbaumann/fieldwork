@@ -16,8 +16,8 @@ export const CORE_TAGS = new Set([
 // keeps the door open without letting a synonym in by accident.
 export const DOMAIN_TAGS = new Set([
   'field notes', '0→1', 'bigquery', 'code assist', 'data science', 'enterprise',
-  'geospatial', 'industry solutions', 'mcp', 'partnerships', 'reference apps',
-  'technical writing',
+  'geospatial', 'industry solutions', 'mcp', 'partnerships', 'personal',
+  'reference apps', 'technical writing',
 ]);
 
 // The same lexicon grades the fine-tuned model's output (scripts/voiceeval). One
@@ -158,13 +158,17 @@ export function checkDocument({ path, collection, raw }) {
   }
 
   if (isHostedEssay(collection, meta, body)) {
-    for (const key of ['image', 'imageAlt', 'socialImage', 'shareTitle', 'shareSummary', 'shareImageAlt']) {
+    const isPersonal = String(meta.type || '').toLowerCase() === 'personal';
+    const requiredKeys = isPersonal
+      ? ['socialImage', 'shareTitle', 'shareSummary', 'shareImageAlt']
+      : ['image', 'imageAlt', 'socialImage', 'shareTitle', 'shareSummary', 'shareImageAlt'];
+    for (const key of requiredKeys) {
       if (!meta[key]) {
         add(1, 'C-ASSETS', 'error', `Hosted essay is missing "${key}". Every essay needs a thesis header, a social card, and their copy (portfolio-content).`);
       }
     }
     const inline = passages.flatMap(({ text }) => [...text.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map((m) => m[1]));
-    if (!inline.some((src) => src !== meta.image)) {
+    if (!isPersonal && !inline.some((src) => src !== meta.image)) {
       add(1, 'C-ASSETS', 'error', 'Hosted essay has no inline evidence image distinct from its header (portfolio-content).');
     }
   }
