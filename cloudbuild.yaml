@@ -57,7 +57,7 @@ steps:
         done
         docker run --rm --network=cloudbuild -v /workspace:/workspace -w /workspace \
           -e BASE_URL=http://fieldwork-private-smoke:8080 -e LABS_SMOKE_PASSWORD=artifact-smoke-password \
-          node:20-slim node scripts/smoke-private-artifacts.mjs
+          node:22-slim node scripts/smoke-private-artifacts.mjs
 
 images:
   - '${_IMAGE}'

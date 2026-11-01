@@ -2,6 +2,16 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-10-31 - `jsdom@30` and `undici@8` require Node 22+ (`zlib.createZstdDecompress`) and `build-and-smoke` must gate on `package-checks`
+
+Context: Upgrading `vitest` to `5.0.5` and `jsdom` to `30.1.3` in `demos/real-world-reasoning-agent` passed locally on Node 25 but failed in GitHub Actions CI when `.github/workflows/ci.yml` was pinned to `node-version: 20`. Because `build-and-smoke` (`Build all apps + gateway smoke test`) only depended on `docker-build` and `demos/real-world-reasoning-agent checks` was not listed in branch protection's `required_status_checks`, GitHub auto-merge completed before the failing matrix check blocked it.
+
+Learning: `jsdom@30.1.3` pulls in `undici@8.12.3`, which calls `zlib.createZstdDecompress.bind(zlib)` at module load time (`undici/lib/interceptor/decompress.js:78`). Because `zlib.createZstdDecompress` does not exist in Node 20 (which reached End-of-Life in April 2026), any Vitest suite using the `jsdom` environment crashes worker initialization on Node 20 with `TypeError: Cannot read properties of undefined (reading 'bind')`. Additionally, making `build-and-smoke` depend on both `docker-build` and `package-checks` ensures every dynamically discovered workspace package check is required by branch protection without manually updating GitHub branch rules when a lab is added.
+
+Evidence: CI job `demos/real-world-reasoning-agent checks` failed on Node 20.20.2 with `EBADENGINE` warnings (`required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' }`) and `undici/lib/interceptor/decompress.js:78:30`. Upgrading `.github/workflows/ci.yml`, `Dockerfile`, and `cloudbuild.yaml` to Node 22 LTS (`node-version: 22` / `node:22-slim`) and adding `package-checks` to `build-and-smoke.needs` resolves both the runtime mismatch and the branch-protection gap.
+
+Use next time: Keep `.github/workflows/ci.yml`, `Dockerfile`, and `cloudbuild.yaml` aligned on an active/maintenance Node LTS (`>=22`), and keep `build-and-smoke.needs: [docker-build, package-checks]` so all matrix package checks gate auto-merge.
+
 ## 2026-10-31 - `ryanbaumann.dev` email DNS gap and Resend subdomain DMARC alignment
 
 Context: Auditing live DNS records during the Cloud DNS CNAME chasing review and email reliability check after migrating from `ryanbaumann-portfolio.com` to `ryanbaumann.dev`.

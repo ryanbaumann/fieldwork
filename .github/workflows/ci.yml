@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
       - run: npm run check:labs && npm run check:content && npm run test:labs
       - id: packages
         run: echo "value=$(node scripts/list-ci-packages.mjs)" >> "$GITHUB_OUTPUT"
@@ -49,7 +49,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           # The gateway is zero-dependency and has no lockfile; point the
           # cache at every lockfile that exists instead of the matrix path.
@@ -124,15 +124,18 @@ jobs:
 
   build-and-smoke:
     # Branch protection requires this historical check name. Keep it as a
-    # lightweight compatibility gate over the production-shaped Docker job;
-    # do not rebuild every app a second time here.
+    # lightweight compatibility gate over the production-shaped Docker job and
+    # every dynamically discovered workspace package check so new labs are
+    # automatically required before auto-merge without editing branch rules.
     name: Build all apps + gateway smoke test
     if: github.event_name == 'pull_request'
-    needs: docker-build
+    needs:
+      - docker-build
+      - package-checks
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - run: echo "Docker build and gateway smoke test passed."
+      - run: echo "Docker build, package checks, and gateway smoke test passed."
 
   secret-scan:
     name: Secret Scanner
