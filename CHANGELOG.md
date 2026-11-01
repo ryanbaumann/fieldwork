@@ -4,8 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- **Dependency, security, email, and DNS hardening (`gateway/lib/rateLimit.js`, `gateway/lib/contactSpam.js`, `gateway/server.js`, `docs/DOMAIN_MIGRATION.md`, `.github/dependabot.yml`, `demos/*/package.json`)**:
+- **Dependency, security, email, and DNS hardening (`gateway/lib/rateLimit.js`, `gateway/lib/contactSpam.js`, `gateway/server.js`, `docs/DOMAIN_MIGRATION.md`, `.github/dependabot.yml`, `.github/workflows/ci.yml`, `.github/workflows/dependabot-auto-merge.yml`, `Dockerfile`, `cloudbuild.yaml`, `demos/*/package.json`)**:
   - Upgraded all workspace demo dependencies and lockfiles to current releases across `demos/aqi-map`, `demos/isochrones`, `demos/voice-studio`, `demos/hairstyle-ai-studio`, `demos/infographic-agent`, `demos/strava-explorer`, and `demos/real-world-reasoning-agent` (including `vitest` 5.0.5, `jsdom` 30.1.3, `@deck.gl/*` 9.4.1, `@google/genai` 2.32.0, `lucide-react` 1.66.0, `eslint` 10.14.0, and `@types/google.maps` 3.66.9).
+  - Upgraded `.github/workflows/ci.yml`, `Dockerfile`, and `cloudbuild.yaml` from EOL Node 20 (`node:20-slim`) to Node 22 LTS (`node:22-slim`), gated the branch-protected `Build all apps + gateway smoke test` check on `package-checks` in addition to `docker-build`, and enabled automatic squash merge for all Dependabot PRs in `.github/workflows/dependabot-auto-merge.yml`.
   - Resolved all 10 high-severity `npm audit` advisories in `demos/real-world-reasoning-agent` (`image-size` `GHSA-w3rx-r6r6-pgpr` / Dependabot alert #349 and `zod` `GHSA-mrhx-c7xc-m3w5`) and all 4 moderate-severity `minimatch` advisories (`GHSA-g3hv-75wg-m249`) in `demos/strava-explorer`.
   - Added the `minor-and-patch` Dependabot group to `/demos/voice-studio` in `.github/dependabot.yml`.
   - Bounded `createRateLimiter` in `gateway/lib/rateLimit.js` with `maxKeys = 10_000` (sweeping expired entries and evicting oldest keys when full) to prevent unbounded memory growth under spoofed-IP floods.
