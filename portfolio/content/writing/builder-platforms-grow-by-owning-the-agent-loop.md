@@ -11,7 +11,7 @@ shareTitle: Own the Agent Feedback Loop
 shareSummary: A DevX strategy for making critical developer tasks work across changing models and agent harnesses.
 shareImageAlt: Social card for Own the Agent Feedback Loop with a compact context, eval, outcome, and distribution loop.
 tags: ["developer experience", "ai", "evals"]
-order: 2
+order: 3
 draft: false
 noindex: false
 ---
