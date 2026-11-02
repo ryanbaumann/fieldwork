@@ -12,7 +12,7 @@ shareTitle: DevX Is a Growth Function
 shareSummary: Docs, code samples, advocacy, tutorials, and even talking to customers all have a limit. Own the friction, ship the fix, distribute the path, and measure the outcome.
 shareImageAlt: Social preview reading DevX Is a Growth Discipline beside a product, distribution, and measurement loop.
 tags: ["developer experience", "growth", "ai"]
-order: 3
+order: 4
 ---
 
 Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users, and API engagement for our open-source client libraries grew strongly. We moved those metrics by treating DevX as a growth discipline, not a documentation queue. Our product, engineering, UX, and technical writing teams treated product, distribution, and measurement as one system, because presence in a workflow is not proof of adoption.

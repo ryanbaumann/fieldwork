@@ -250,7 +250,7 @@ function renderFullArticleHtml(rawMarkdown, collectionName = 'writing', theme = 
   const tagsHtml = Array.isArray(meta.tags) && meta.tags.length
     ? `<p class="card-tags" style="margin: 0.5rem 0 1.25rem;">${meta.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join('')}</p>`
     : '';
-  const heroHtml = meta.image
+  const heroHtml = meta.image && meta.type !== 'Personal'
     ? `<img class="article-hero" src="${escapeHtml(meta.image)}" alt="${escapeHtml(meta.imageAlt || title)}" />`
     : '';
 

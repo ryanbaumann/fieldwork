@@ -6,6 +6,9 @@ summary: AI makes generating options nearly free, which shifts the bottleneck to
 date: 2026-11-01
 updated: 2026-11-01
 canonical: https://ryanbaumann.dev/writing/why-we-make-decisions/
+order: 1
+image: /img/writing/why-we-make-decisions.svg
+imageAlt: Artifact card reading Personal Field Notes, Why We Decide, and values, principles, and human judgment.
 socialImage: /social/why-we-make-decisions.jpg
 shareTitle: Why We Decide Matters More
 shareSummary: AI makes options cheap, which maxes out judgment fatigue across work and life. Writing down explicit values is how you keep loud defaults from choosing for you.

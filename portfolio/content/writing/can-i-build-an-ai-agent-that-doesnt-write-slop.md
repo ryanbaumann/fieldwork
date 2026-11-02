@@ -6,7 +6,7 @@ updated: 2026-08-18
 canonical: https://ryanbaumann.dev/writing/can-i-build-an-ai-agent-that-doesnt-write-slop/
 aliases: ["/writing/why-i-fine-tuned-a-26b-model-on-my-laptop-instead-of-prompting-frontier-apis/"]
 tags: ["ai", "evals", "field notes"]
-order: 1
+order: 2
 draft: false
 noindex: false
 image: /img/writing/can-i-build-an-ai-agent-that-doesnt-write-slop-header.svg
