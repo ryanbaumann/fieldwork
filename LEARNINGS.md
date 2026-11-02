@@ -10,7 +10,7 @@ Learning: `validateContent()` in `portfolio/build.mjs` validates internal links 
 
 Evidence: `npm --prefix portfolio test` failed at `node build.mjs` with `writing/why-we-make-decisions: broken internal link /writing/ai-saves-the-hour/` until the link was pointed to a published essay (`/writing/can-i-build-an-ai-agent-that-doesnt-write-slop/`), and `scripts/writer_app.mjs` returned `404 Not Found` on `/img/writing/why-we-make-decisions-header.svg` until `portfolio/static/` resolution was added.
 
-Use next time: Only link to published routes (`draft: false`) inside `portfolio/content/**`, even when authoring a draft post, and run `npm --prefix portfolio test` (which runs both unit tests and `node build.mjs`) in addition to `build:writer`.
+Use next time: Only link to published routes (`draft: false`) inside `portfolio/content/**`, even when authoring a draft post, and run `npm --prefix portfolio test` (which runs both unit tests and `node build.mjs`) in addition to `build:writer`. When promoting a new Field Note to the Featured slot on `/`, set `order: 1` (and increment existing `order` values in `portfolio/content/writing/*.md`), because `buildHome()` sorts `pinnedWriting` by `a.meta.order ?? Infinity` before date.
 
 ## 2026-10-31 - `jsdom@30` and `undici@8` require Node 22+ (`zlib.createZstdDecompress`) and `build-and-smoke` must gate on `package-checks`
 

@@ -915,12 +915,12 @@ function featuredNote(entry) {
   const { meta } = entry;
   const url = entryUrl('writing', entry);
   const external = Boolean(meta.external);
-  const image = meta.socialImage || meta.image;
+  const image = meta.image || meta.socialImage;
   const imagePath = image ? join(STATIC_DIR, image.replace(/^\//, '')) : '';
   const { width, height } = image && existsSync(imagePath) ? getImageDimensions(imagePath) : { width: 1200, height: 627 };
   const longDate = formatLongDate(meta.date);
   const thumb = image
-    ? `<img class="featured-note-thumb" src="${rebase(image)}" alt="${escapeHtml(meta.shareImageAlt || meta.imageAlt || meta.title)}" loading="lazy" width="${width}" height="${height}" />`
+    ? `<img class="featured-note-thumb" src="${rebase(image)}" alt="${escapeHtml(meta.imageAlt || meta.shareImageAlt || meta.title)}" loading="lazy" width="${width}" height="${height}" />`
     : '';
   return `<a class="featured-note" href="${url}" data-analytics-type="writing" data-analytics-id="${escapeHtml(entry.slug)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>
   ${thumb}
@@ -1165,7 +1165,7 @@ function detailPage(collection, entry, activeKey) {
   <p class="article-meta">${metaLine([meta.org || meta.venue, meta.role, meta.type, meta.period || meta.date])}</p>
   ${isWriting && meta.summary ? `<p class="lede">${escapeHtml(meta.summary)}</p>` : ''}
   ${linkChips(meta.links)}
-  ${heroImage(meta, collection.name)}
+  ${meta.type === 'Personal' ? '' : heroImage(meta, collection.name)}
   ${markdownToHtml(entry.body)}
   ${articleDisclosure(isWriting)}
   ${shareLinks(pageUrl, meta.title)}

@@ -121,6 +121,13 @@ const CARDS = [
     lines: ['official platform context for compatible coding agents'],
     footer: 'mapsplatform.google.com',
   },
+  {
+    file: 'writing/why-we-make-decisions.svg',
+    eyebrow: 'PERSONAL · FIELD NOTES',
+    title: 'Why We Decide',
+    lines: ['values · principles · human judgment'],
+    footer: 'ryanbaumann.dev/writing/why-we-make-decisions',
+  },
 ];
 
 const FLOWS = [
