@@ -2,7 +2,7 @@
 # The manifest-driven builder makes every workspace lab part of the image
 # without adding another hand-written Docker stage. Trusted deploys stage
 # checksum-verified private artifacts in .labs-artifacts before this build.
-FROM node:22-slim AS apps-builder
+FROM node:25-slim AS apps-builder
 ARG VITE_GMP_API_KEY
 ARG VITE_ISOCHRONES_GMP_API_KEY
 ARG VITE_STRAVA_CLIENT_ID
@@ -21,7 +21,7 @@ RUN if [ "$ALLOW_MISSING_ARTIFACTS" = "1" ]; then \
       node scripts/build-local.mjs --force-install; \
     fi
 
-FROM node:22-slim AS runtime
+FROM node:25-slim AS runtime
 WORKDIR /app
 COPY --chown=node:node gateway/ ./gateway/
 COPY --chown=node:node apps.json ./apps.json
