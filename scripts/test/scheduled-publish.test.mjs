@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { checkScheduledPublish } from '../check-scheduled-publish.mjs';
+import { checkScheduledPublish, parseCloudRunDeployState } from '../check-scheduled-publish.mjs';
 import { findDueEntries, isValidIsoTimestamp, parseFrontMatter, scanContentEntries } from '../lib/scheduled-publish.mjs';
 
 function entry(publishAt, extra = '') {
@@ -112,6 +112,85 @@ test('checkScheduledPublish end to end: reports due against a fixture with a new
     assert.equal(result.due, true);
     assert.equal(result.entries.length, 1);
     assert.equal(result.entries[0].publishAt, '2026-07-20T00:00:00Z');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('parseCloudRunDeployState extracts SHA and Ready timestamp only when latest revision is healthy', () => {
+  const sha = '91d327843cfb8e0b0a906dc869c32d7bb83e3085';
+  const healthy = {
+    spec: {
+      template: {
+        spec: {
+          containers: [
+            { image: `us-west1-docker.pkg.dev/geojson-bq-blog/fieldwork/app:${sha}@sha256:abcdef` },
+          ],
+        },
+      },
+    },
+    status: {
+      latestCreatedRevisionName: 'fieldwork-00042-abc',
+      latestReadyRevisionName: 'fieldwork-00042-abc',
+      conditions: [
+        { type: 'Ready', status: 'True', lastTransitionTime: '2026-11-10T12:00:00Z' },
+      ],
+    },
+  };
+  assert.deepEqual(parseCloudRunDeployState(healthy), {
+    lastDeployedSha: sha,
+    lastDeployedAt: '2026-11-10T12:00:00Z',
+  });
+
+  const degraded = {
+    ...healthy,
+    status: {
+      ...healthy.status,
+      latestCreatedRevisionName: 'fieldwork-00043-bad',
+    },
+  };
+  assert.deepEqual(parseCloudRunDeployState(degraded), {
+    lastDeployedSha: null,
+    lastDeployedAt: null,
+  });
+});
+
+test('checkScheduledPublish triggers undeployed-commit deploy for GITHUB_TOKEN auto-merges', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'scheduled-publish-cr-'));
+  try {
+    const serviceJson = join(dir, 'service.json');
+    const oldSha = '1111111111111111111111111111111111111111';
+    const newSha = '2222222222222222222222222222222222222222';
+    writeFileSync(serviceJson, JSON.stringify({
+      spec: { template: { spec: { containers: [{ image: `us-west1-docker.pkg.dev/geojson-bq-blog/fieldwork/app:${oldSha}` }] } } },
+      status: {
+        latestCreatedRevisionName: 'fieldwork-00010-ok',
+        latestReadyRevisionName: 'fieldwork-00010-ok',
+        conditions: [{ type: 'Ready', status: 'True', lastTransitionTime: new Date().toISOString() }],
+      },
+    }));
+
+    const mismatch = checkScheduledPublish({
+      CLOUD_RUN_SERVICE_JSON: serviceJson,
+      CURRENT_HEAD_SHA: newSha,
+    });
+    assert.equal(mismatch.due, true);
+    assert.equal(mismatch.reason, 'undeployed-commit');
+    assert.equal(mismatch.headSha, newSha);
+    assert.equal(mismatch.lastDeployedSha, oldSha);
+
+    const match = checkScheduledPublish({
+      CLOUD_RUN_SERVICE_JSON: serviceJson,
+      CURRENT_HEAD_SHA: oldSha,
+    });
+    assert.equal(match.due, false);
+    assert.equal(match.reason, 'nothing-due');
+
+    const missing = checkScheduledPublish({
+      CURRENT_HEAD_SHA: newSha,
+    });
+    assert.equal(missing.due, true);
+    assert.equal(missing.reason, 'missing-last-deployed-sha');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
