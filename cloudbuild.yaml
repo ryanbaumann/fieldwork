@@ -51,7 +51,7 @@ steps:
         docker run --rm -d --network=cloudbuild --name=fieldwork-private-smoke $$PRIVATE_ENVS '${_IMAGE}'
         trap 'docker rm -f fieldwork-private-smoke >/dev/null 2>&1 || true' EXIT
         for attempt in $$(seq 1 30); do
-          if docker run --rm --network=cloudbuild curlimages/curl:8.12.1 --fail --silent http://fieldwork-private-smoke:8080/healthz >/dev/null; then break; fi
+          if docker run --rm --network=cloudbuild curlimages/curl:8.23.0 --fail --silent http://fieldwork-private-smoke:8080/healthz >/dev/null; then break; fi
           if [ "$$attempt" -eq 30 ]; then docker logs fieldwork-private-smoke; exit 1; fi
           sleep 1
         done

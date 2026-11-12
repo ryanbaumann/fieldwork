@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { safeResolve, cacheControlFor, mimeTypeFor, applySecurityHeaders, CSP_POLICIES, CSP_MANIFEST_POLICIES, cspForApp, pickEncoding } from '../lib/staticFiles.js';
+import { safeResolve, cacheControlFor, mimeTypeFor, applySecurityHeaders, serveFromDir, CSP_POLICIES, CSP_MANIFEST_POLICIES, cspForApp, pickEncoding } from '../lib/staticFiles.js';
 
 const DEMO_SRC = join(dirname(fileURLToPath(import.meta.url)), '../../demos/strava-explorer/src');
 
@@ -227,4 +227,27 @@ test('applySecurityHeaders sets Content-Security-Policy via setHeader (not write
   const response = fakeResponse();
   applySecurityHeaders(response);
   assert.equal(response.getHeader('content-security-policy'), CSP_POLICIES.default);
+  assert.ok(cspAllows(CSP_POLICIES.default, 'style-src', 'https://giscus.app/default.css'));
+  assert.match(response.getHeader('content-security-policy'), /form-action 'self'/);
+  assert.match(CSP_POLICIES.mapsDemo, /form-action 'self'/);
+  assert.match(CSP_POLICIES.stravaDemo, /form-action 'self'/);
+  assert.match(response.getHeader('permissions-policy'), /camera=\(self\).*payment=\(\)/);
+});
+
+test('serveFromDir applies security headers on 400 traversal rejection', () => {
+  const headers = new Map();
+  let statusCode = 0;
+  const response = {
+    setHeader(name, value) { headers.set(name.toLowerCase(), value); },
+    writeHead(code, extra = {}) {
+      statusCode = code;
+      for (const [k, v] of Object.entries(extra)) headers.set(k.toLowerCase(), v);
+    },
+    end() {},
+  };
+  const handled = serveFromDir('/srv/app', '../../etc/passwd', {}, response);
+  assert.equal(handled, true);
+  assert.equal(statusCode, 400);
+  assert.equal(headers.get('x-content-type-options'), 'nosniff');
+  assert.ok(headers.get('content-security-policy')?.includes("default-src 'self'"));
 });

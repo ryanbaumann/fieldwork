@@ -13,6 +13,8 @@
     "build": "node scripts/build-local.mjs",
     "start": "node --env-file=.env gateway/server.js",
     "smoke": "node scripts/smoke.mjs",
+    "security:audit": "node scripts/auto-update-security-deps.mjs --check",
+    "security:fix": "node scripts/auto-update-security-deps.mjs --fix",
     "skills:improve": "node scripts/skill-improvement.mjs",
     "check:labs": "node scripts/validate-apps.mjs",
     "check:content": "node scripts/check-content.mjs",
@@ -42,6 +44,6 @@
     "previews": "node scripts/previews.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }

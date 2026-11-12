@@ -8,6 +8,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch: {}
 
 # A new push to the same branch/PR supersedes the running check. Cancel the
 # old run instead of queueing behind it.
@@ -66,6 +67,13 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
+      - name: Security Audit (npm audit)
+        working-directory: ${{ matrix.package }}
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm audit --audit-level=moderate --registry=https://registry.npmjs.org
+          fi
+
       - name: Run Linter
         working-directory: ${{ matrix.package }}
         run: npm run lint --if-present
@@ -76,10 +84,11 @@ jobs:
 
   docker-build:
     name: Docker Build Verification
-    # Pull requests verify the exact deployable container. A push to main is
-    # immediately built and smoke-tested by deploy.yml, so repeating this
-    # expensive build on the same commit only adds runner time and queueing.
-    if: github.event_name == 'pull_request'
+    # Pull requests (and explicit workflow_dispatch runs) verify the exact
+    # deployable container. A push to main is immediately built and
+    # smoke-tested by deploy.yml, so repeating this expensive build on the
+    # same commit only adds runner time and queueing.
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -127,15 +136,26 @@ jobs:
     # lightweight compatibility gate over the production-shaped Docker job and
     # every dynamically discovered workspace package check so new labs are
     # automatically required before auto-merge without editing branch rules.
+    # `always()` is mandatory: without it, a failed matrix job skips this job,
+    # and GitHub branch protection treats skipped required checks as neutral.
     name: Build all apps + gateway smoke test
-    if: github.event_name == 'pull_request'
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
     needs:
       - docker-build
       - package-checks
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    env:
+      DOCKER_RESULT: ${{ needs.docker-build.result }}
+      PACKAGES_RESULT: ${{ needs.package-checks.result }}
     steps:
-      - run: echo "Docker build, package checks, and gateway smoke test passed."
+      - name: Enforce upstream job success
+        run: |
+          if [ "$DOCKER_RESULT" != "success" ] || [ "$PACKAGES_RESULT" != "success" ]; then
+            echo "::error::Upstream CI gate failed (docker-build=${DOCKER_RESULT}, package-checks=${PACKAGES_RESULT})."
+            exit 1
+          fi
+          echo "Docker build, package checks, and gateway smoke test passed."
 
   secret-scan:
     name: Secret Scanner
@@ -148,5 +168,7 @@ jobs:
           fetch-depth: 0
 
       - name: Secret Scanner (Gitleaks)
+        env:
+          REPO_WORKSPACE: ${{ github.workspace }}
         run: |
-          docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest detect --source=/repo --verbose --redact
+          docker run --rm -v "${REPO_WORKSPACE}:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 detect --source=/repo --verbose --redact

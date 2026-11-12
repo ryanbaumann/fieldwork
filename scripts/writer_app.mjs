@@ -82,6 +82,17 @@ function serializeFrontMatter(meta, body) {
   return lines.join('\n');
 }
 
+function isSafeMarkdownUrl(rawUrl) {
+  if (typeof rawUrl !== 'string' || !rawUrl) return false;
+  if (rawUrl.startsWith('#') || (rawUrl.startsWith('/') && !rawUrl.startsWith('//'))) return true;
+  try {
+    const parsed = new URL(rawUrl);
+    return parsed.protocol === 'https:' || parsed.protocol === 'mailto:';
+  } catch {
+    return false;
+  }
+}
+
 function inlineMd(text) {
   let html = escapeHtml(text);
   html = html
@@ -94,10 +105,14 @@ function inlineMd(text) {
     codeSpans.push(`<code>${code}</code>`);
     return `\x00CODE_${codeSpans.length - 1}\x00`;
   });
-  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => {
+  html = html.replace(/!\[([^\]]*)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g, (_, alt, src) => {
+    const rawSrc = src.replaceAll('&amp;', '&').replaceAll('&quot;', '"');
+    if (!isSafeMarkdownUrl(rawSrc)) return alt;
     return `<img src="${src}" alt="${alt}" loading="lazy" />`;
   });
-  html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => {
+  html = html.replace(/\[([^\]]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g, (_, label, href) => {
+    const rawHref = href.replaceAll('&amp;', '&').replaceAll('&quot;', '"');
+    if (!isSafeMarkdownUrl(rawHref)) return label;
     const external = /^https?:\/\//.test(href);
     return `<a href="${href}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${label}</a>`;
   });
@@ -156,7 +171,7 @@ function markdownToHtml(markdown) {
     if (heading) {
       const level = Math.min(Math.max(heading[1].length, 2), 5);
       const { id, label } = headingId(heading[2]);
-      out.push(`<h${level} id="${id}" data-src-line="${lineNum}"><a class="heading-anchor" href="#${id}" aria-label="Link to this section">${inlineMd(label)}</a></h${level}>`);
+      out.push(`<h${level} id="${id}" data-src-line="${lineNum}"><a class="heading-anchor" href="#${id}">${inlineMd(label)}</a></h${level}>`);
       index += 1;
       continue;
     }

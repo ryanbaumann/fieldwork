@@ -51,3 +51,13 @@ test('hosted demo analytics sends only sanitized page-view context', () => {
     assert.doesNotMatch(JSON.stringify(calls), /activity_id|private|not allowed/);
   });
 });
+
+test('hosted demo analytics ignores malformed measurement IDs', () => {
+  for (const invalidId of ["G-123';alert(1)//", 'https://evil.example/tag.js', 'UA-12345-1', '']) {
+    withBrowser({ hostname: 'ryanbaumann.dev' }, ({ appended }) => {
+      installAnalytics(invalidId);
+      assert.deepEqual(appended, []);
+      assert.equal(window.dataLayer, undefined);
+    });
+  }
+});

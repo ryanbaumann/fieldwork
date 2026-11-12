@@ -116,6 +116,9 @@ export async function saveWritingDraft({ collection, sourceSlug, markdown, env =
   const repository = env.GITHUB_CONTENT_REPOSITORY || 'ryanbaumann/fieldwork';
   const branch = env.GITHUB_CONTENT_BRANCH || 'main';
   if (!token) throw Object.assign(new Error('Writer publishing is not configured.'), { statusCode: 503 });
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) {
+    throw Object.assign(new Error('Writer repository configuration is invalid.'), { statusCode: 503 });
+  }
   const path = `portfolio/content/${collection}/${sourceSlug}.md`;
   const url = `https://api.github.com/repos/${repository}/contents/${path}`;
   const headers = { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'X-GitHub-Api-Version': '2022-11-28' };

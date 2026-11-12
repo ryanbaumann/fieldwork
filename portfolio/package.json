@@ -12,6 +12,6 @@
     "test": "node --test test/*.test.mjs && npm run build"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }

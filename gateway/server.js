@@ -1169,6 +1169,11 @@ const server = createServer(async (request, response) => {
       const appPath = pathname.slice(0, -'__auth'.length);
       const app = findAppForPath(appPath);
       if (app && appVisibility(app) === 'private') {
+        if (isCrossSitePost(request)) {
+          request.resume?.();
+          sendHtml(request, response, 403, loginPageHtml(app, 'Cross-site sign-in requests are not allowed.'));
+          return;
+        }
         const ip = clientIp(request);
         await handleAuthRequest(request, response, app, process.env, applySecurityHeaders, authRateLimiter, ip);
         return;

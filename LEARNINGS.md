@@ -2,6 +2,32 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-11 - Fan-in CI gates need `if: always()` and `deploy.yml` must inspect live Cloud Run state for `GITHUB_TOKEN` auto-merges
+
+Context: Dependabot PR #363 (`@a2ui/web_core@0.15.0`) failed `demos/real-world-reasoning-agent checks` in `.github/workflows/ci.yml`, yet `gh pr merge --auto` still merged the broken PR to `main` (`91d3278`), and subsequent hourly runs of `.github/workflows/deploy.yml` never deployed `91d3278`.
+
+Learning: Three separate platform behaviors interacted:
+1. In GitHub Actions, `if: github.event_name == 'pull_request'` without `always()` evaluates as `success() && github.event_name == 'pull_request'`. When a non-listed matrix job in `needs: [docker-build, package-checks]` fails, the fan-in gate `build-and-smoke` (`Build all apps + gateway smoke test`) is marked `skipped` rather than `failure`. GitHub Branch Protection treats a `skipped` required check as neutral/satisfied, allowing auto-merge to proceed.
+2. Merges completed via `GITHUB_TOKEN` auto-merge do not fire `on: push` workflows due to GitHub's anti-recursion rule, and querying `.workflow_runs[0].run_started_at` on `deploy.yml?status=success` returns skipped hourly cron ticks rather than the last real Cloud Run deployment.
+3. Under `overrides.zod: "^4.6.7"`, `@a2ui/web_core` calls Zod v3 internals (`z.ZodType.prototype.describe.call`). In Vite 8 + Vitest 5 (`projects` mode), `TestConfigPlugin` reads `resolve.noExternal` (not `ssr.noExternal`) to inline `@a2ui/web_core` so a `/^zod$/` alias to `node_modules/zod/v3/index.js` resolves cleanly with zero `npm audit` advisories.
+
+Evidence: `gh pr checks 363` showed `demos/real-world-reasoning-agent checks` = `fail` and `Build all apps + gateway smoke test` = `skipping` on a merged PR; `gh api repos/ryanbaumann/fieldwork/actions/workflows/deploy.yml/runs?head_sha=91d3278...` showed 6 consecutive `schedule` runs with `Deploy to Cloud Run: conclusion=skipped` and zero `push` runs. Setting `if: always() && ...` with explicit `needs.*.result == 'success'` checks in `ci.yml`, inspecting live Cloud Run `containers[0].image` SHA and `Ready` `lastTransitionTime` in `scripts/check-scheduled-publish.mjs`, and configuring `resolve.noExternal` in `demos/real-world-reasoning-agent/vitest.config.ts` resolved all three issues (`70/70` suites / `579/579` unit tests pass).
+
+Use next time: Put `if: always() && (...)` on any branch-protected fan-in CI job and `exit 1` when any `needs.<job>.result != 'success'`. Compare `GITHUB_SHA` against the live Cloud Run image tag in scheduled deploy gates so `GITHUB_TOKEN` merges deploy automatically.
+
+## 2026-11-11 - Accessible name traps in `<a class="heading-anchor">`, `<label>` with `<output>`, and Giscus `style-src` CSP
+
+Context: Live Chromium accessibility and CSP auditing across all 18 portfolio and demo routes on `http://localhost:8088/`.
+
+Learning:
+1. Wrapping heading text in `<a class="heading-anchor" aria-label="Link to this section">Title</a>` replaces the accessible name of every `<h2>`/`<h3>` in the ARIA tree with `"Link to this section"`. Leave `aria-label` off anchor links that wrap visible heading text, and use `content: " #" / ""` on decorative `::after` hashes.
+2. In HTML §4.10.4, `<output>` is a labelable element. An implicit `<label>` wrapping both `<output>` and `<input type="range">` binds to `<output>` first and leaves `<input>` with an empty accessible name (`""`); add an explicit `for="<input-id>"` on `<label>`.
+3. `https://giscus.app/client.js` injects `<link rel="stylesheet" href="https://giscus.app/default.css">` into the host page; omitting `https://giscus.app` from `style-src` causes a CSP error and leaves a `1px` white user-agent iframe border in dark mode.
+
+Evidence: Live browser verification confirmed `GET https://giscus.app/default.css` changed from `net::ERR_FAILED (csp)` to `200 OK` (`0` CSP errors), all 12 essay headings exposed their real section titles in the ARIA snapshot, and `#duration-input` on `/isochrones/` changed from `slider ""` to `slider "Each person can travel 30 minutes"`.
+
+Use next time: Never put a generic `aria-label` on an element wrapping unique visible heading text, always set `for` on `<label>` elements that also contain `<output>`, and verify third-party embed scripts in a live browser for injected `<link rel="stylesheet">` origins.
+
 ## 2026-11-01 - Draft essays in `portfolio/content/writing/` cannot link to other unpublished drafts unless both publish together
 
 Context: Adding `portfolio/content/writing/why-we-make-decisions.md` (`draft: true`) with an internal link to `/writing/ai-saves-the-hour/` passed `PORTFOLIO_WRITER_MODE=true node portfolio/build.mjs` and `npm run check:content`, but failed `node portfolio/build.mjs` (`npm --prefix portfolio test`) with `broken internal link /writing/ai-saves-the-hour/`. Additionally, previewing the draft in `scripts/writer_app.mjs` (`http://localhost:8090/`) omitted the frontmatter hero thumbnail (`meta.image`) and returned `404` on `/img/writing/...` assets.

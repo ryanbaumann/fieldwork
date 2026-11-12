@@ -162,8 +162,9 @@ test('markdown headings get stable deep-link ids and explicit ids are preserved'
   const result = build(paths);
   assert.equal(result.status, 0, result.stderr);
   const html = readFileSync(join(paths.dist, 'writing', 'anchors', 'index.html'), 'utf8');
-  assert.match(html, /<h2 id="hello-world"><a class="heading-anchor" href="#hello-world"/);
-  assert.match(html, /<h2 id="chosen-id"><a class="heading-anchor" href="#chosen-id"/);
+  assert.match(html, /<h2 id="hello-world"><a class="heading-anchor" href="#hello-world">Hello, World!<\/a><\/h2>/);
+  assert.match(html, /<h2 id="chosen-id"><a class="heading-anchor" href="#chosen-id">Custom heading<\/a><\/h2>/);
+  assert.doesNotMatch(html, /aria-label="Link to this section"/);
   assert.match(html, /<table><thead><tr><th>Option<\/th><th>Result<\/th>/);
   assert.doesNotMatch(html, /lint-ignore/);
 });
@@ -532,3 +533,57 @@ for (const [label, make, width, height] of [
     assert.match(html, new RegExp(`src="/photo\\.webp" alt="A photo\\." loading="eager" width="${width}" height="${height}"`));
   });
 }
+
+// --- Security hardening regressions ---------------------------------------
+
+test('JSON-LD escapes closing script tags and HTML angle brackets', () => {
+  const paths = fixture();
+  write(
+    join(paths.content, 'writing', 'script-breakout.md'),
+    `---\ntitle: Safe </script><script>alert(1)</script> title\nsummary: Safe <!-- comment --> summary\ndate: 2026-07-13\n---\nBody.`,
+  );
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+  const html = readFileSync(join(paths.dist, 'writing', 'script-breakout', 'index.html'), 'utf8');
+  const rawJsonLd = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)?.[1];
+  assert.ok(rawJsonLd);
+  assert.doesNotMatch(rawJsonLd, /<\/script>|<!--/i);
+  const parsed = JSON.parse(rawJsonLd);
+  assert.equal(parsed[0].headline, 'Safe </script><script>alert(1)</script> title');
+});
+
+test('build rejects unsafe markdown link schemes while allowing examples inside code fences', () => {
+  const unsafePaths = fixture();
+  write(
+    join(unsafePaths.content, 'writing', 'bad-link.md'),
+    `---\ntitle: Bad link\nsummary: Unsafe markdown link\ndate: 2026-07-13\n---\nClick [me](javascript:alert(1)).`,
+  );
+  const unsafeResult = build(unsafePaths);
+  assert.notEqual(unsafeResult.status, 0);
+  assert.match(unsafeResult.stderr, /unsafe markdown URL javascript:alert\(1\)/);
+
+  const safePaths = fixture();
+  write(
+    join(safePaths.content, 'writing', 'fenced-example.md'),
+    `---\ntitle: Fenced example\nsummary: Safe fenced snippet\ndate: 2026-07-13\n---\n\`\`\`markdown\n[example](javascript:alert(1))\n\`\`\`\n\nJump to [top](#top).`,
+  );
+  const safeResult = build(safePaths);
+  assert.equal(safeResult.status, 0, safeResult.stderr);
+});
+
+test('build rejects malformed ANALYTICS_MEASUREMENT_ID values', () => {
+  const paths = fixture();
+  const result = build(paths, { ANALYTICS_MEASUREMENT_ID: "G-BAD';alert(1)//" });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /analyticsMeasurementId must match/);
+});
+
+test('writer dashboard inline status helper restricts external links to https GitHub and Buffer hosts', () => {
+  const paths = fixture();
+  const result = build(paths, { BASE_PATH: '/writer/', PORTFOLIO_WRITER_MODE: 'true' });
+  assert.equal(result.status, 0, result.stderr);
+  const html = readFileSync(join(paths.dist, 'index.html'), 'utf8');
+  assert.match(html, /parsed\.protocol!=='https:'/);
+  assert.match(html, /parsed\.hostname!=='github\.com'&&parsed\.hostname!=='publish\.buffer\.com'/);
+  assert.match(html, /link\.rel='noopener noreferrer'/);
+});

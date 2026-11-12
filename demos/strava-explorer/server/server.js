@@ -64,9 +64,24 @@ function sendJson(response, statusCode, payload, origin, isTokenEndpoint = false
   response.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
     ...corsHeaders(origin, isTokenEndpoint),
   });
   response.end(JSON.stringify(payload));
+}
+
+export function resolveClientIp(request, env = process.env) {
+  const remote = (request.socket?.remoteAddress || '').replace(/^::ffff:/, '');
+  const behindCloudRun = env.TRUST_PROXY === 'true' || remote.startsWith('169.254.');
+  if (behindCloudRun) {
+    const chain = String(request.headers?.['x-forwarded-for'] || '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const client = chain.at(-2) || chain.at(-1);
+    if (client) return client;
+  }
+  return remote || 'unknown';
 }
 
 const rateLimits = new Map();
@@ -102,7 +117,10 @@ export function readJsonBody(request) {
     request.on('data', (chunk) => {
       bytesRead += chunk.length;
       if (bytesRead > limitBytes) {
-        reject(new Error('Payload too large'));
+        const error = new Error('Payload too large');
+        error.statusCode = 413;
+        reject(error);
+        request.destroy?.();
         return;
       }
       body += chunk;
@@ -131,7 +149,7 @@ function requireConfig() {
 
 const server = http.createServer(async (request, response) => {
   const origin = request.headers.origin;
-  const ip = request.headers['x-forwarded-for']?.split(',')[0].trim() || request.socket.remoteAddress || 'unknown';
+  const ip = resolveClientIp(request);
 
   let requestUrl;
   try {

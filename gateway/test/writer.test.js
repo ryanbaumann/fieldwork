@@ -93,6 +93,17 @@ test('writer direct edits update only the selected Markdown file', async () => {
   assert.match(calls[0].url, /contents\/portfolio\/content\/writing\/draft\.md/);
   assert.equal(JSON.parse(calls[1].options.body).sha, 'abc123');
   assert.equal(result.mergeUrl, 'https://github.com/owner/repo/compare/main...writer?expand=1');
+
+  await assert.rejects(
+    saveWritingDraft({
+      collection: 'writing',
+      sourceSlug: 'draft',
+      markdown: ESSAY,
+      env: { GITHUB_CONTENT_TOKEN: 'token', GITHUB_CONTENT_REPOSITORY: 'evil.example/../../owner/repo' },
+      fetchImpl: async () => assert.fail('invalid repository must not reach fetch'),
+    }),
+    (error) => error.statusCode === 503 && /repository configuration is invalid/.test(error.message),
+  );
 });
 
 test('agent review request carries the saved file, author note, and required review lanes', async () => {

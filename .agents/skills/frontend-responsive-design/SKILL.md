@@ -30,13 +30,15 @@ Prefer current platform documentation for behavior questions:
    - Container queries for component-level changes when the component can appear in multiple page contexts.
    - Viewport media queries for major page-shell changes.
 5. Maintain accessibility while changing visuals:
-   - Explicit labels for inputs and controls.
+   - Explicit labels for inputs and controls. When a `<label>` contains both `<output>` and `<input>`, add an explicit `for="<input-id>"` attribute on `<label>` so `<output>` does not claim the implicit label binding.
+   - Do not set a generic `aria-label` (such as `"Link to this section"`) on an anchor that wraps unique visible heading text.
    - Meaningful `alt` text for images.
    - Semantic buttons/links instead of clickable divs.
    - Visible focus states and keyboard operability.
    - Distinct hover, focus, active, selected, disabled, loading, and error
      states. Render related states together: a hover treatment that copies the
      focus ring makes keyboard focus stop carrying information.
+   - Reserve bottom scroll padding equal to any fixed mobile bottom CTA bar plus `env(safe-area-inset-bottom)` so footer links and lower controls remain reachable.
    - Announced loading/error states when practical.
 6. Account for map UX: use `100svh` or `100dvh` instead of a desktop `100vh`
    assumption, include safe-area padding, and keep interactive targets at least

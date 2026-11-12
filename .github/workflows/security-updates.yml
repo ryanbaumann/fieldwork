@@ -1,0 +1,127 @@
+name: Automated Security Dependency Updates
+
+# Daily security remediation sweep across all npm lockfiles in the repository.
+# Complements GitHub Dependabot security updates by running `npm audit fix`
+# directly against registry.npmjs.org, applying verified transitive `overrides`
+# when parent ranges pin a vulnerable sub-dependency, verifying every build and
+# gateway smoke test, and opening an auto-merging PR on `chore/auto-security-updates`.
+# Once merged onto `main`, `.github/workflows/deploy.yml` automatically builds
+# and deploys the updated revision to Cloud Run.
+
+on:
+  schedule:
+    - cron: '23 9 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: security-updates
+  cancel-in-progress: false
+
+jobs:
+  remediate:
+    name: Audit, fix, verify, and open auto-merging security PR
+    if: github.repository == 'ryanbaumann/fieldwork'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.SECURITY_UPDATES_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Audit and remediate security vulnerabilities
+        id: audit_fix
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          SUMMARY_FILE="$(mktemp)"
+          echo "SUMMARY_FILE=$SUMMARY_FILE" >> "$GITHUB_ENV"
+          node scripts/auto-update-security-deps.mjs --fix --summary-file "$SUMMARY_FILE"
+          cat "$SUMMARY_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify workspace checks, package tests, full build, and gateway smoke test
+        if: steps.audit_fix.outputs.changed == 'true'
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+        run: |
+          set -euo pipefail
+          npm run check:labs
+          npm run check:content
+          npm run test:labs
+          for pkg in $(node -e 'const pkgs = JSON.parse(require("node:child_process").execFileSync("node", ["scripts/list-ci-packages.mjs"], "utf8")); console.log(pkgs.join(" "));'); do
+            echo "--- Verifying $pkg ---"
+            (
+              cd "$pkg"
+              if [ -f "package-lock.json" ]; then
+                npm ci --no-audit --no-fund
+              fi
+              npm run lint --if-present
+              npm test --if-present
+            )
+          done
+          node scripts/build-local.mjs --allow-missing-artifacts
+          node gateway/server.js &
+          GATEWAY_PID=$!
+          trap 'kill "$GATEWAY_PID" >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "::error::Gateway failed to start during security update verification."
+              exit 1
+            fi
+            sleep 1
+          done
+          BASE_URL=http://127.0.0.1:8080 node scripts/smoke.mjs
+
+      - name: Open or update pull request and enable auto-merge
+        if: steps.audit_fix.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SECURITY_UPDATES_TOKEN || secrets.GITHUB_TOKEN }}
+          FIXED_COUNT: ${{ steps.audit_fix.outputs.fixed_count }}
+          REMAINING_COUNT: ${{ steps.audit_fix.outputs.remaining_count }}
+          BRANCH_NAME: chore/auto-security-updates
+        run: |
+          set -euo pipefail
+          # Remove staged build artifacts before committing only source/lockfile edits.
+          rm -rf apps
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No lockfile or package.json changes remain after cleanup."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH_NAME"
+          git add -A
+          git commit -m "chore(security): remediate ${FIXED_COUNT} npm security advisory item(s)"
+          git push --force-with-lease origin "HEAD:refs/heads/${BRANCH_NAME}"
+
+          PR_TITLE="chore(security): automated dependency vulnerability remediation"
+          EXISTING_PR="$(gh pr list --head "$BRANCH_NAME" --base main --state open --json url --jq '.[0].url // empty')"
+          if [ -n "$EXISTING_PR" ]; then
+            gh pr edit "$EXISTING_PR" --title "$PR_TITLE" --body-file "$SUMMARY_FILE"
+            PR_URL="$EXISTING_PR"
+          else
+            PR_URL="$(gh pr create --base main --head "$BRANCH_NAME" --title "$PR_TITLE" --body-file "$SUMMARY_FILE")"
+          fi
+
+          gh pr merge --auto --squash "$PR_URL"
+
+          if [ "$REMAINING_COUNT" != "0" ]; then
+            echo "::warning::Opened ${PR_URL}, but ${REMAINING_COUNT} advisory item(s) still require manual review."
+          fi

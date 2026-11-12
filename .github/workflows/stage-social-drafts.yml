@@ -41,7 +41,10 @@ jobs:
 
       - name: Stage editable social drafts
         if: steps.config.outputs.configured == 'true' && github.run_attempt == 1
-        run: node scripts/stage-social-drafts.mjs --before "${{ github.event.before }}" --after "${{ github.sha }}"
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: node scripts/stage-social-drafts.mjs --before "$BEFORE_SHA" --after "$AFTER_SHA"
 
       - name: Keep workflow reruns side-effect free
         if: steps.config.outputs.configured == 'true' && github.run_attempt != 1

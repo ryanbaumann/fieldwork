@@ -59,7 +59,24 @@ export function addDependabot(repoRoot, packagePath) {
   if (contents.includes(`directory: "/${packagePath}"`)) return;
   const anchor = '  - package-ecosystem: "github-actions"';
   if (!contents.includes(anchor)) throw new Error('Dependabot github-actions anchor is missing');
-  const entry = `  - package-ecosystem: "npm"\n    directory: "/${packagePath}"\n    schedule:\n      interval: "weekly"\n\n`;
+  const entry = [
+    '  - package-ecosystem: "npm"',
+    `    directory: "/${packagePath}"`,
+    '    schedule:',
+    '      interval: "weekly"',
+    '    groups:',
+    '      minor-and-patch:',
+    '        applies-to: version-updates',
+    '        update-types:',
+    '          - "minor"',
+    '          - "patch"',
+    '      security-updates:',
+    '        applies-to: security-updates',
+    '        patterns:',
+    '          - "*"',
+    '',
+    '',
+  ].join('\n');
   contents = contents.replace(anchor, entry + anchor);
   writeFileSync(path, contents);
 }

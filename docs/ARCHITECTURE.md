@@ -13,7 +13,7 @@ secrets belong in browser bundles.
 │ Cloud Run service: fieldwork                                      │
 │                                                                    │
 │ https://ryanbaumann.dev/                                          │
-│   └── gateway/server.js (node:20-slim, no deps)                    │
+│   └── gateway/server.js (node:22-slim, no deps)                    │
 │       ├── /                → Fieldwork site                        │
 │       │    /work/ /writing/ /talks/ /demos/ …                      │
 │       │    built static by portfolio/build.mjs                     │
@@ -95,7 +95,7 @@ plain-HTTP gateway development URL.
    grep over every built asset. No Playwright required; must pass keyless.
 5. **CI never hands secrets to forks.** PR jobs build + smoke with dummy env
    only. Deploy runs on `main` pushes via Workload Identity Federation.
-6. **Scheduled publishing rebuilds, gated.** Public content is immutable static output. A future `publishAt` stays out of detail pages, lists, RSS, and sitemap until a deploy rebuilds at or after that timestamp. The hourly cron trigger in `deploy.yml` first runs `scripts/check-scheduled-publish.mjs`, which compares every `publishAt` against the last successful deploy time; the Cloud Build + Cloud Run steps run only when something has newly come due, so the hourly tick is nearly always a no-op instead of a full image build. Pushes to `main` and `workflow_dispatch` always build. `/writer/` is a separate private static build; its publishing endpoint can only update known content files after Google OAuth, allowlisted-email, session, and same-origin checks pass.
+6. **Scheduled publishing and auto-merged commits rebuild, gated.** Public content is immutable static output. A future `publishAt` stays out of detail pages, lists, RSS, and sitemap until a deploy rebuilds at or after that timestamp. The hourly cron trigger in `deploy.yml` inspects the live Cloud Run revision and runs `scripts/check-scheduled-publish.mjs`, which triggers a deploy only when `main` has an undeployed commit (such as a `GITHUB_TOKEN` Dependabot or security auto-merge) or a `publishAt` entry has newly come due since the live revision went Ready. Pushes to `main` and `workflow_dispatch` always build. `/writer/` is a separate private static build; its publishing endpoint can only update known content files after Google OAuth, allowlisted-email, session, and same-origin checks pass.
 7. **The Fieldwork site stays extractable.** `portfolio/` is a self-contained,
    zero-dependency static site (flat-file markdown CMS with small inline
    theme, analytics, and configured comments helpers).
@@ -113,7 +113,7 @@ plain-HTTP gateway development URL.
 ## Build
 
 The root `Dockerfile` runs the manifest-driven `scripts/build-local.mjs`, then
-copies only staged outputs and `gateway/` into `node:20-slim` and runs as the
+copies only staged outputs and `gateway/` into `node:22-slim` and runs as the
 non-root `node` user. Workspace additions therefore require no Docker edit.
 Trusted deployment fetches and verifies declared private artifacts before the
 image build; untrusted PR CI has no artifact credentials.

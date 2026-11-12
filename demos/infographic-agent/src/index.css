@@ -510,8 +510,10 @@ a:hover {
 /* Stage Stepper */
 .stepper-container {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem 1rem;
   margin-bottom: 1.5rem;
   padding: 0.75rem 1rem;
   background: var(--bg-surface);
@@ -540,6 +542,7 @@ a:hover {
 .step-number {
   width: 22px;
   height: 22px;
+  flex-shrink: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;

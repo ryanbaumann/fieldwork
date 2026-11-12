@@ -15,6 +15,7 @@ import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ensureNpmInEnv } from './lib/npm-bin.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const APPS_JSON_PATH = join(REPO_ROOT, 'apps.json');
@@ -192,10 +193,10 @@ function buildApp(app, childEnv) {
 function main() {
   const manifestApps = loadApps();
   const apps = onlyArtifacts ? manifestApps.filter((app) => app.source?.type === 'artifact') : manifestApps;
-  const childEnv = {
+  const childEnv = ensureNpmInEnv({
     ...sanitizedBuildEnv(manifestApps, loadRootPublicEnv()),
     PORTFOLIO_BUILD_TIME: new Date().toISOString(),
-  };
+  });
   log(`Building ${apps.length} app(s) from ${APPS_JSON_PATH}`);
   mkdirSync(APPS_OUT_DIR, { recursive: true });
 
