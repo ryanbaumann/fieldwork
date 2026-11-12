@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:25-slim
 WORKDIR /app
 COPY --chown=node:node package.json server.js broker.js ./
 USER node
