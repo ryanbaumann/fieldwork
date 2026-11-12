@@ -64,7 +64,8 @@ export const App = () => {
         <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-1 gap-1.5">
            <button
              onClick={() => navigateTo('upload')}
-             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'upload' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}
+             aria-current={state.step === 'upload' ? 'step' : undefined}
+             className={`flex min-h-9 items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'upload' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}
            >
                 <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${state.step === 'upload' ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>1</span>
                 Upload
@@ -73,7 +74,8 @@ export const App = () => {
            <button
              onClick={() => navigateTo('style')}
              disabled={!canGoToStyle}
-             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'style' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400'} ${canGoToStyle && state.step !== 'style' ? 'hover:text-primary dark:hover:text-primary' : ''} ${!canGoToStyle ? 'opacity-40 cursor-not-allowed' : ''}`}
+             aria-current={state.step === 'style' ? 'step' : undefined}
+             className={`flex min-h-9 items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'style' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400'} ${canGoToStyle && state.step !== 'style' ? 'hover:text-primary dark:hover:text-primary' : ''} ${!canGoToStyle ? 'opacity-40 cursor-not-allowed' : ''}`}
            >
                 <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${state.step === 'style' ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>2</span>
                 Style
@@ -82,7 +84,8 @@ export const App = () => {
            <button
              onClick={() => navigateTo('result')}
              disabled={!canGoToResult}
-             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'result' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400'} ${canGoToResult && state.step !== 'result' ? 'hover:text-primary dark:hover:text-primary' : ''} ${!canGoToResult ? 'opacity-40 cursor-not-allowed' : ''}`}
+             aria-current={state.step === 'result' ? 'step' : undefined}
+             className={`flex min-h-9 items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'result' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400'} ${canGoToResult && state.step !== 'result' ? 'hover:text-primary dark:hover:text-primary' : ''} ${!canGoToResult ? 'opacity-40 cursor-not-allowed' : ''}`}
            >
                 <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${state.step === 'result' ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>3</span>
                 Reveal
@@ -93,7 +96,7 @@ export const App = () => {
             <button
               type="button"
               onClick={() => setIsKeyDialogRequested(true)}
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-bold text-slate-500 hover:text-primary dark:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-3"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold text-slate-500 hover:text-primary dark:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-3"
               aria-label={hasKey ? 'Manage Gemini API key' : 'Use your Gemini API key'}
             >
               <KeyRound size={15} aria-hidden="true" />
@@ -218,7 +221,7 @@ export const App = () => {
           )}
         </main>
 
-        <div className="container mx-auto px-4 sm:px-6 pb-6 mt-auto">
+        <div className="container mx-auto px-4 sm:px-6 pb-36 sm:pb-6 mt-auto">
           <footer className="flex flex-col items-center justify-center gap-2 py-4 text-center text-[10px] text-slate-400 sm:flex-row sm:gap-4">
               <span>© {new Date().getFullYear()} Hairstyle AI Studio. Photos are sent to Google Gemini only when requested and are not stored on our servers.</span>
               <span className="flex items-center gap-3 text-xs font-bold">

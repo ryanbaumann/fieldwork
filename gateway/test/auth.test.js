@@ -344,14 +344,30 @@ describe('handleAuthRequest', () => {
     assert.ok(res.body.includes('Incorrect password'));
   });
 
-  test('returns 429 when rate limiter blocks', async () => {
+  test('returns 429 when rate limiter blocks without reading body', async () => {
     // Create a limiter that always blocks.
     const alwaysBlocked = { check: () => false };
-    const req = mockPostRequest('password=anything');
+    let bodyRead = false;
+    const req = {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      socket: { remoteAddress: '10.0.0.1' },
+      on() { bodyRead = true; },
+      resume() {},
+    };
     const res = mockResponse();
     await handleAuthRequest(req, res, app, env, noop, alwaysBlocked, '1.2.3.4');
+    assert.equal(bodyRead, false);
     assert.equal(res.statusCode, 429);
     assert.ok(res.body.includes('Too many attempts'));
     assert.equal(res.headers['Retry-After'], '60');
+  });
+
+  test('returns 413 login form when password payload exceeds limit', async () => {
+    const req = mockPostRequest(`password=${'x'.repeat(5000)}`);
+    const res = mockResponse();
+    await handleAuthRequest(req, res, app, env, noop);
+    assert.equal(res.statusCode, 413);
+    assert.ok(res.body.includes('payload is too large'));
   });
 });

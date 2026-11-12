@@ -21,9 +21,10 @@ on:
     branches:
       - main
   schedule:
-    # Checks hourly whether any publishAt timestamp has newly come due since
-    # the last successful deploy; rebuilds and redeploys only when it has
-    # (see the "Determine whether any scheduled post is newly due" step).
+    # Checks hourly whether main has an undeployed commit (for example from a
+    # GITHUB_TOKEN Dependabot or security auto-merge) or a publishAt timestamp
+    # newly due since the live Cloud Run revision went Ready; rebuilds and
+    # redeploys only when needed.
     - cron: '17 * * * *'
   workflow_dispatch: {}
 
@@ -39,7 +40,7 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write' # Required for Workload Identity Federation
-      actions: 'read' # Required to look up the last successful deploy run (scheduled gate)
+      actions: 'read' # Fallback lookup for last successful deploy run (scheduled gate)
 
     env:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
@@ -49,66 +50,45 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
 
-      # Scheduled-only preflight gate (see docs/ARCHITECTURE.md rule 6 and
-      # scripts/check-scheduled-publish.mjs). The cron trigger exists only so
-      # `publishAt`-scheduled posts go live; nearly every hourly tick has
-      # nothing due. Push and workflow_dispatch always build - this step is a
-      # no-op for them because the `if:` on every gated step below already
-      # passes for those event types regardless of `outputs.due`.
-      #
-      # "Since" is the last successful run of *this* workflow (any trigger),
-      # queried fresh every time via the GitHub API rather than cached
-      # anywhere: there is no persistent state between runs, so a missed or
-      # failed tick just widens the window until a deploy actually succeeds -
-      # it can never cause a post to be silently skipped. If that API lookup
-      # fails for any reason, `PUBLISH_CHECK_SINCE` ends up empty and
-      # check-scheduled-publish.mjs fails safe (`due=true`, builds anyway).
-      - name: Determine whether any scheduled post is newly due
-        if: github.event_name == 'schedule'
-        id: scheduled_gate
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          SINCE="$(gh api "repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?status=success&per_page=1" \
-            --jq '.workflow_runs[0].run_started_at // empty' || true)"
-          if [ -z "$SINCE" ]; then
-            echo "::warning::Could not determine the last successful deploy time; treating as due and building."
-          fi
-          PUBLISH_CHECK_SINCE="$SINCE" node scripts/check-scheduled-publish.mjs
-
       - name: Preflight config check
-        if: github.event_name != 'schedule' || steps.scheduled_gate.outputs.due == 'true'
+        env:
+          RAW_GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          RAW_GCP_REGION: ${{ vars.GCP_REGION }}
+          GCP_WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER }}
+          GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL }}
+          VITE_GMP_API_KEY: ${{ secrets.VITE_GMP_API_KEY }}
+          VITE_ISOCHRONES_GMP_API_KEY: ${{ secrets.VITE_ISOCHRONES_GMP_API_KEY }}
+          VITE_STRAVA_CLIENT_ID: ${{ secrets.VITE_STRAVA_CLIENT_ID }}
         run: |
           MISSING=0
-          if [ -z "${{ vars.GCP_PROJECT_ID }}" ]; then
+          if [ -z "$RAW_GCP_PROJECT_ID" ]; then
             echo "::error::Missing required repository variable: GCP_PROJECT_ID"
             MISSING=1
-          elif [ "${{ vars.GCP_PROJECT_ID }}" != "geojson-bq-blog" ]; then
+          elif [ "$RAW_GCP_PROJECT_ID" != "geojson-bq-blog" ]; then
             echo "::error::GCP_PROJECT_ID must be geojson-bq-blog for this repository"
             MISSING=1
           fi
-          if [ -n "${{ vars.GCP_REGION }}" ] && [ "${{ vars.GCP_REGION }}" != "us-west1" ]; then
+          if [ -n "$RAW_GCP_REGION" ] && [ "$RAW_GCP_REGION" != "us-west1" ]; then
             echo "::error::GCP_REGION must be us-west1 for this repository"
             MISSING=1
           fi
-          if [ -z "${{ secrets.GCP_WIF_PROVIDER }}" ]; then
+          if [ -z "$GCP_WIF_PROVIDER" ]; then
             echo "::error::Missing required repository secret: GCP_WIF_PROVIDER"
             MISSING=1
           fi
-          if [ -z "${{ secrets.GCP_SA_EMAIL }}" ]; then
+          if [ -z "$GCP_SA_EMAIL" ]; then
             echo "::error::Missing required repository secret: GCP_SA_EMAIL"
             MISSING=1
           fi
-          if [ -z "${{ secrets.VITE_GMP_API_KEY }}" ]; then
+          if [ -z "$VITE_GMP_API_KEY" ]; then
             echo "::error::Missing required repository secret: VITE_GMP_API_KEY"
             MISSING=1
           fi
-          if [ -z "${{ secrets.VITE_ISOCHRONES_GMP_API_KEY }}" ]; then
+          if [ -z "$VITE_ISOCHRONES_GMP_API_KEY" ]; then
             echo "::error::Missing required repository secret: VITE_ISOCHRONES_GMP_API_KEY"
             MISSING=1
           fi
-          if [ -z "${{ secrets.VITE_STRAVA_CLIENT_ID }}" ]; then
+          if [ -z "$VITE_STRAVA_CLIENT_ID" ]; then
             echo "::error::Missing required repository secret: VITE_STRAVA_CLIENT_ID"
             MISSING=1
           fi
@@ -132,7 +112,6 @@ jobs:
           fi
 
       - name: Authenticate to Google Cloud
-        if: github.event_name != 'schedule' || steps.scheduled_gate.outputs.due == 'true'
         id: auth
         uses: google-github-actions/auth@v3
         with:
@@ -140,8 +119,38 @@ jobs:
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
       - name: Set up Cloud SDK
-        if: github.event_name != 'schedule' || steps.scheduled_gate.outputs.due == 'true'
         uses: google-github-actions/setup-gcloud@v3
+
+      # Scheduled-only preflight gate (see docs/ARCHITECTURE.md rule 6 and
+      # scripts/check-scheduled-publish.mjs). Inspects the live Cloud Run
+      # revision so skipped hourly ticks never advance the `since` window AND
+      # any commit merged onto `main` via GITHUB_TOKEN auto-merge (Dependabot
+      # or automated security updates, which do not trigger `on: push`) is
+      # automatically built and deployed on the next hourly tick.
+      - name: Determine whether a scheduled deploy is due
+        if: github.event_name == 'schedule'
+        id: scheduled_gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CURRENT_HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          SERVICE_JSON="$(mktemp)"
+          trap 'rm -f "$SERVICE_JSON"' EXIT
+          if ! gcloud run services describe fieldwork \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --format=json > "$SERVICE_JSON" 2>/dev/null; then
+            echo "::warning::Could not inspect live Cloud Run service; treating as due and building."
+            rm -f "$SERVICE_JSON"
+            SERVICE_JSON=""
+          fi
+          FALLBACK_SINCE="$(gh api "repos/${GH_REPO}/actions/workflows/deploy.yml/runs?status=success&per_page=1" \
+            --jq '.workflow_runs[0].run_started_at // empty' || true)"
+          CLOUD_RUN_SERVICE_JSON="$SERVICE_JSON" \
+            PUBLISH_CHECK_SINCE="$FALLBACK_SINCE" \
+            node scripts/check-scheduled-publish.mjs
 
       - name: Fetch checksum-pinned private lab artifacts
         if: github.event_name != 'schedule' || steps.scheduled_gate.outputs.due == 'true'
@@ -149,6 +158,11 @@ jobs:
 
       - name: Build image with Cloud Build
         if: github.event_name != 'schedule' || steps.scheduled_gate.outputs.due == 'true'
+        env:
+          VITE_GMP_API_KEY: ${{ secrets.VITE_GMP_API_KEY }}
+          VITE_ISOCHRONES_GMP_API_KEY: ${{ secrets.VITE_ISOCHRONES_GMP_API_KEY }}
+          VITE_STRAVA_CLIENT_ID: ${{ secrets.VITE_STRAVA_CLIENT_ID }}
+          ANALYTICS_MEASUREMENT_ID: ${{ vars.ANALYTICS_MEASUREMENT_ID }}
         run: |
           set -euo pipefail
           IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/fieldwork/app:${GITHUB_SHA}"
@@ -158,7 +172,7 @@ jobs:
           # so the VITE_* build args are threaded through cloudbuild.yaml via
           # substitutions instead (see that file's header comment).
           gcloud builds submit --project "$GCP_PROJECT_ID" --config cloudbuild.yaml \
-            --substitutions=_IMAGE="$IMAGE",_CACHE_IMAGE="$CACHE_IMAGE",_VITE_GMP_API_KEY="${{ secrets.VITE_GMP_API_KEY }}",_VITE_ISOCHRONES_GMP_API_KEY="${{ secrets.VITE_ISOCHRONES_GMP_API_KEY }}",_VITE_STRAVA_CLIENT_ID="${{ secrets.VITE_STRAVA_CLIENT_ID }}",_ANALYTICS_MEASUREMENT_ID="${{ vars.ANALYTICS_MEASUREMENT_ID }}" .
+            --substitutions=_IMAGE="$IMAGE",_CACHE_IMAGE="$CACHE_IMAGE",_VITE_GMP_API_KEY="$VITE_GMP_API_KEY",_VITE_ISOCHRONES_GMP_API_KEY="$VITE_ISOCHRONES_GMP_API_KEY",_VITE_STRAVA_CLIENT_ID="$VITE_STRAVA_CLIENT_ID",_ANALYTICS_MEASUREMENT_ID="$ANALYTICS_MEASUREMENT_ID" .
 
       - name: Deploy to Cloud Run
         if: github.event_name != 'schedule' || steps.scheduled_gate.outputs.due == 'true'
@@ -233,6 +247,7 @@ jobs:
         run: |
           set -euo pipefail
           SERVICE_JSON="$(mktemp)"
+          trap 'rm -f "$SERVICE_JSON"' EXIT
           gcloud run services describe fieldwork \
             --project "$GCP_PROJECT_ID" \
             --region "$GCP_REGION" \

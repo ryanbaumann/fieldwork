@@ -234,27 +234,39 @@ function readFormBody(request, maxBytes = 4096) {
  * @param {object} [authLimiter] - Rate limiter for auth attempts.
  * @param {string} [ip] - Client IP for rate limiting.
  */
-export function handleAuthRequest(request, response, app, env, applyHeaders, authLimiter, ip) {
-  return readFormBody(request).then((fields) => {
-    // Rate-limit auth attempts per IP.
-    if (authLimiter && ip && !authLimiter.check(ip)) {
+export async function handleAuthRequest(request, response, app, env, applyHeaders, authLimiter, ip) {
+  // Rate-limit auth attempts per IP before buffering the request body.
+  if (authLimiter && ip && !authLimiter.check(ip)) {
+    request.resume?.();
+    applyHeaders(response);
+    response.writeHead(429, { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '60' });
+    response.end(loginPageHtml(app, 'Too many attempts. Please wait and try again.'));
+    return;
+  }
+
+  let fields;
+  try {
+    fields = await readFormBody(request);
+  } catch (error) {
+    if (error?.statusCode === 413) {
       applyHeaders(response);
-      response.writeHead(429, { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '60' });
-      response.end(loginPageHtml(app, 'Too many attempts. Please wait and try again.'));
+      response.writeHead(413, { 'Content-Type': 'text/html; charset=utf-8' });
+      response.end(loginPageHtml(app, 'Sign-in request payload is too large.'));
       return;
     }
+    throw error;
+  }
 
-    const password = fields.password || '';
-    if (checkPassword(app, env, password)) {
-      const secret = env[app.auth.envVar];
-      setAuthCookie(response, app.name, secret);
-      applyHeaders(response);
-      response.writeHead(303, { Location: app.path });
-      response.end();
-    } else {
-      applyHeaders(response);
-      response.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
-      response.end(loginPageHtml(app, 'Incorrect password.'));
-    }
-  });
+  const password = fields.password || '';
+  if (checkPassword(app, env, password)) {
+    const secret = env[app.auth.envVar];
+    setAuthCookie(response, app.name, secret);
+    applyHeaders(response);
+    response.writeHead(303, { Location: app.path });
+    response.end();
+  } else {
+    applyHeaders(response);
+    response.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+    response.end(loginPageHtml(app, 'Incorrect password.'));
+  }
 }

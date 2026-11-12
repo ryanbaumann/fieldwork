@@ -104,6 +104,25 @@ function isValidUrl(value) {
   }
 }
 
+function isSafeMarkdownUrl(value) {
+  if (typeof value !== 'string' || !value) return false;
+  if (value.startsWith('#')) return true;
+  return isValidUrl(value);
+}
+
+function isValidMeasurementId(value) {
+  return typeof value === 'string' && /^(?:G|AW|DC|GT)-[A-Z0-9]+$/i.test(value);
+}
+
+function serializeJsonForScript(value) {
+  return JSON.stringify(value)
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026')
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
+}
+
 function pagePathForInternalHref(href) {
   const clean = href.split('#')[0].split('?')[0];
   if (demos.some((demo) => demo.path === clean || demo.path === `${clean}/`)) return null;
@@ -113,10 +132,12 @@ function pagePathForInternalHref(href) {
 }
 
 function collectMarkdownLinks(markdown) {
+  const withoutFences = String(markdown || '').replace(/```[\s\S]*?```/g, '');
+  const withoutInlineCode = withoutFences.replace(/`[^`]+`/g, '');
   const links = [];
-  const pattern = /!?\[[^\]]*\]\(([^)\s]+)\)/g;
+  const pattern = /!?\[[^\]]*\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g;
   let match;
-  while ((match = pattern.exec(markdown))) links.push(match[1]);
+  while ((match = pattern.exec(withoutInlineCode))) links.push(match[1]);
   return links;
 }
 
@@ -194,7 +215,10 @@ function validateEntry(collection, entry, seenSlugs) {
     if (!link.label || !isValidUrl(link.url)) failValidation(`${id}: links entries require label and valid url`);
     else validateInternalHref(id, link.url);
   }
-  for (const href of collectMarkdownLinks(entry.body)) validateInternalHref(id, href);
+  for (const href of collectMarkdownLinks(entry.body)) {
+    if (!isSafeMarkdownUrl(href)) failValidation(`${id}: unsafe markdown URL ${href}`);
+    else validateInternalHref(id, href);
+  }
 }
 
 function validatePage(slug, meta, body) {
@@ -208,7 +232,10 @@ function validatePage(slug, meta, body) {
     if (!existsSync(imagePath)) failValidation(`${id}: image asset not found: ${meta.image}`);
   }
   validateSocialImage(id, meta);
-  for (const href of collectMarkdownLinks(body)) validateInternalHref(id, href);
+  for (const href of collectMarkdownLinks(body)) {
+    if (!isSafeMarkdownUrl(href)) failValidation(`${id}: unsafe markdown URL ${href}`);
+    else validateInternalHref(id, href);
+  }
 }
 
 function validateSite() {
@@ -216,6 +243,13 @@ function validateSite() {
     if (!site[field] || typeof site[field] !== 'string') failValidation(`site.json: missing required ${field}`);
   }
   if (!isValidUrl(site.siteUrl)) failValidation('site.json: siteUrl must be an https URL');
+  const configuredMeasurementId = String(process.env.ANALYTICS_MEASUREMENT_ID || site.analyticsMeasurementId || '');
+  if (configuredMeasurementId && !isValidMeasurementId(configuredMeasurementId)) {
+    failValidation(`site.json: analyticsMeasurementId must match G-/AW-/DC-/GT- format: ${configuredMeasurementId}`);
+  }
+  for (const [label, url] of Object.entries(site.links || {})) {
+    if (url && !isValidUrl(url)) failValidation(`site.json: links.${label} must be an https, mailto, or root-relative URL`);
+  }
   if (site.siteUrl) {
     try {
       if (new URL(site.siteUrl).host !== site.canonicalHost) failValidation('site.json: canonicalHost must match siteUrl');
@@ -320,13 +354,17 @@ function inlineMd(text) {
     codeSpans.push(`<code>${code}</code>`);
     return `\x00CODE_${codeSpans.length - 1}\x00`;
   });
-  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => {
-    const localPath = src.startsWith('/') ? join(STATIC_DIR, src.slice(1)) : null;
+  html = html.replace(/!\[([^\]]*)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g, (_, alt, src) => {
+    const rawSrc = src.replaceAll('&amp;', '&').replaceAll('&quot;', '"');
+    if (!isSafeMarkdownUrl(rawSrc)) return alt;
+    const localPath = rawSrc.startsWith('/') ? join(STATIC_DIR, rawSrc.slice(1)) : null;
     const { width, height } = localPath && existsSync(localPath) ? getImageDimensions(localPath) : { width: 960, height: 600 };
     return `<img src="${rebase(src)}" alt="${alt}" loading="lazy" width="${width}" height="${height}" />`;
   });
-  html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => {
-    const external = /^https?:\/\//.test(href);
+  html = html.replace(/\[([^\]]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g, (_, label, href) => {
+    const rawHref = href.replaceAll('&amp;', '&').replaceAll('&quot;', '"');
+    if (!isSafeMarkdownUrl(rawHref)) return label;
+    const external = /^https?:\/\//.test(rawHref);
     return `<a href="${rebase(href)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${label}</a>`;
   });
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -382,7 +420,7 @@ function markdownToHtml(markdown) {
     if (heading) {
       const level = Math.min(Math.max(heading[1].length, 2), 5); // page h1 is the title
       const { id, label } = headingId(heading[2]);
-      out.push(`<h${level} id="${id}"><a class="heading-anchor" href="#${id}" aria-label="Link to this section">${inlineMd(label)}</a></h${level}>`);
+      out.push(`<h${level} id="${id}"><a class="heading-anchor" href="#${id}">${inlineMd(label)}</a></h${level}>`);
       index += 1;
       continue;
     }
@@ -564,7 +602,7 @@ function layout({ title, description, content, active = '', canonical, ogImage, 
     ? '<meta name="robots" content="noindex, nofollow" />'
     : robots ? `<meta name="robots" content="${escapeHtml(robots)}" />` : '';
 
-  const jsonLdTag = jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : '';
+  const jsonLdTag = jsonLd ? `<script type="application/ld+json">${serializeJsonForScript(jsonLd)}</script>` : '';
   const contactDeliveryTag = contactDelivery ? `<meta name="contact-delivery" content="${escapeHtml(contactDelivery)}" />` : '';
 
   return `<!doctype html>
@@ -617,10 +655,10 @@ ${content}
 <footer class="site-footer">
   <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.brandByline || `${brand} by ${site.name}`)} &middot; I write everything here; AI helps me copyedit.</p>
   <p class="footer-links">
-    <a href="${site.links.github}" target="_blank" rel="noopener noreferrer">GitHub</a>
-    <a href="${site.links.linkedin}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-    ${site.links.x ? `<a href="${site.links.x}" target="_blank" rel="noopener noreferrer">X</a>` : ''}
-    ${site.links.substack ? `<a href="${site.links.substack}" target="_blank" rel="noopener noreferrer">Substack</a>` : ''}
+    <a href="${escapeHtml(site.links.github)}" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href="${escapeHtml(site.links.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+    ${site.links.x ? `<a href="${escapeHtml(site.links.x)}" target="_blank" rel="noopener noreferrer">X</a>` : ''}
+    ${site.links.substack ? `<a href="${escapeHtml(site.links.substack)}" target="_blank" rel="noopener noreferrer">Substack</a>` : ''}
     <a href="${BASE}talks/">Talks</a>
     ${demos.length ? `<a href="${BASE}demos/">Labs</a>` : ''}
     <a href="${BASE}resume/">Resume</a>
@@ -637,26 +675,26 @@ ${content}
 function analyticsMarkup() {
   if (WRITER_MODE) return '';
   const measurementId = String(process.env.ANALYTICS_MEASUREMENT_ID || site.analyticsMeasurementId || '');
-  if (!measurementId) return '';
+  if (!isValidMeasurementId(measurementId)) return '';
   const canonicalHost = String(site.canonicalHost || '');
   return `<!-- Google tag (gtag.js) -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
 
-  const canonicalHost=${JSON.stringify(canonicalHost)};
+  const canonicalHost=${serializeJsonForScript(canonicalHost)};
   const debug=new URLSearchParams(location.search).get('analytics_debug')==='1';
   const hostAllowed=location.hostname===canonicalHost||debug;
 
   if (hostAllowed) {
     const analyticsScript=document.createElement('script');
     analyticsScript.async=true;
-    analyticsScript.src='https://www.googletagmanager.com/gtag/js?id=${measurementId}';
+    analyticsScript.src='https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}';
     document.head.appendChild(analyticsScript);
     gtag('js', new Date());
     gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'granted'});
     gtag('set','ads_data_redaction',true);
-    gtag('config', '${measurementId}', {send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false});
+    gtag('config', ${serializeJsonForScript(measurementId)}, {send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false});
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -1307,7 +1345,7 @@ function writerDashboard(entries) {
   <p class="writer-status" hidden role="status"></p>
   ${rows.length > 0 ? rows.join('\n') : '<p class="empty-state">No content found.</p>'}
 </section>
-<script>(()=>{const params=new URLSearchParams(location.search);const status=document.querySelector('.writer-status');const addLink=(href,label)=>{const link=document.createElement('a');link.href=href;link.textContent=label;link.rel='noopener';link.target='_blank';status.append(link)};const error=params.get('error');if(error&&status){status.textContent=error;status.hidden=false}const changed=params.get('updated')||params.get('saved');if(changed&&status){status.replaceChildren('Saved '+changed+'. GitHub is starting the next deploy. ');const merge=params.get('merge');if(merge)addLink(merge,'Open merge request');status.hidden=false}const review=params.get('review');const issue=params.get('issue');if(review&&status){status.replaceChildren('Review requested for '+review+'. ');if(issue)addLink(issue,'Open review request');status.hidden=false}const social=params.get('social');const channel=params.get('channel');if(social&&channel&&status){status.replaceChildren((params.get('duplicate')==='1'?'Reused the existing ':'Staged an editable ')+channel+' draft for '+social+'. ');addLink('https://publish.buffer.com/all-channels','Open Buffer');status.hidden=false}const writing=document.querySelector('[data-writer-group="writing"]');if(writing){const items=[...writing.querySelectorAll('[data-writer-item]')];const pagination=writing.querySelector('[data-writer-pagination]');const total=Math.max(1,Math.ceil(items.length/5));let page=Math.min(total,Math.max(1,Number.parseInt(params.get('writingPage')||'1',10)||1));const render=()=>{items.forEach((item,index)=>item.hidden=index<(page-1)*5||index>=page*5);pagination.hidden=total<=1;pagination.querySelector('[data-page-status]').textContent='Page '+page+' of '+total;pagination.querySelector('[data-page-previous]').disabled=page===1;pagination.querySelector('[data-page-next]').disabled=page===total;const nextUrl=new URL(location.href);if(page===1)nextUrl.searchParams.delete('writingPage');else nextUrl.searchParams.set('writingPage',String(page));history.replaceState(null,'',nextUrl)};pagination.querySelector('[data-page-previous]').addEventListener('click',()=>{if(page>1){page-=1;render();writing.scrollIntoView({block:'start'})}});pagination.querySelector('[data-page-next]').addEventListener('click',()=>{if(page<total){page+=1;render();writing.scrollIntoView({block:'start'})}});render()}const localValue=(iso)=>{if(!iso)return'';const d=new Date(iso);const part=(value)=>String(value).padStart(2,'0');return d.getFullYear()+'-'+part(d.getMonth()+1)+'-'+part(d.getDate())+'T'+part(d.getHours())+':'+part(d.getMinutes())};document.querySelectorAll('[data-social-form]').forEach((form)=>form.addEventListener('submit',(event)=>{const channel=form.elements.channel.value;if(!window.confirm('Stage this '+channel+' copy as an unpublished Buffer draft?'))event.preventDefault()}));document.querySelectorAll('[data-writer-form]').forEach((form)=>{const field=form.elements.publishAtLocal;field.value=localValue(field.dataset.publishAt);form.addEventListener('submit',(event)=>{const action=event.submitter?.value;if(action==='publish-now'&&!window.confirm('Publish this essay now? This commits directly to the publishing branch.')){event.preventDefault();return}if(action!=='schedule')return;const local=field.value;if(!local){event.preventDefault();field.focus();return}const scheduled=new Date(local);if(Number.isNaN(scheduled.valueOf())||scheduled.valueOf()<=Date.now()){event.preventDefault();field.setCustomValidity('Choose a future publish time.');field.reportValidity();return}field.setCustomValidity('');form.elements.publishAt.value=scheduled.toISOString()})})})();</script>`;
+<script>(()=>{const params=new URLSearchParams(location.search);const status=document.querySelector('.writer-status');const addLink=(href,label)=>{let parsed;try{parsed=new URL(href)}catch{return}if(parsed.protocol!=='https:'||(parsed.hostname!=='github.com'&&parsed.hostname!=='publish.buffer.com'))return;const link=document.createElement('a');link.href=parsed.href;link.textContent=label;link.rel='noopener noreferrer';link.target='_blank';status.append(link)};const error=params.get('error');if(error&&status){status.textContent=error;status.hidden=false}const changed=params.get('updated')||params.get('saved');if(changed&&status){status.replaceChildren('Saved '+changed+'. GitHub is starting the next deploy. ');const merge=params.get('merge');if(merge)addLink(merge,'Open merge request');status.hidden=false}const review=params.get('review');const issue=params.get('issue');if(review&&status){status.replaceChildren('Review requested for '+review+'. ');if(issue)addLink(issue,'Open review request');status.hidden=false}const social=params.get('social');const channel=params.get('channel');if(social&&channel&&status){status.replaceChildren((params.get('duplicate')==='1'?'Reused the existing ':'Staged an editable ')+channel+' draft for '+social+'. ');addLink('https://publish.buffer.com/all-channels','Open Buffer');status.hidden=false}const writing=document.querySelector('[data-writer-group="writing"]');if(writing){const items=[...writing.querySelectorAll('[data-writer-item]')];const pagination=writing.querySelector('[data-writer-pagination]');const total=Math.max(1,Math.ceil(items.length/5));let page=Math.min(total,Math.max(1,Number.parseInt(params.get('writingPage')||'1',10)||1));const render=()=>{items.forEach((item,index)=>item.hidden=index<(page-1)*5||index>=page*5);pagination.hidden=total<=1;pagination.querySelector('[data-page-status]').textContent='Page '+page+' of '+total;pagination.querySelector('[data-page-previous]').disabled=page===1;pagination.querySelector('[data-page-next]').disabled=page===total;const nextUrl=new URL(location.href);if(page===1)nextUrl.searchParams.delete('writingPage');else nextUrl.searchParams.set('writingPage',String(page));history.replaceState(null,'',nextUrl)};pagination.querySelector('[data-page-previous]').addEventListener('click',()=>{if(page>1){page-=1;render();writing.scrollIntoView({block:'start'})}});pagination.querySelector('[data-page-next]').addEventListener('click',()=>{if(page<total){page+=1;render();writing.scrollIntoView({block:'start'})}});render()}const localValue=(iso)=>{if(!iso)return'';const d=new Date(iso);const part=(value)=>String(value).padStart(2,'0');return d.getFullYear()+'-'+part(d.getMonth()+1)+'-'+part(d.getDate())+'T'+part(d.getHours())+':'+part(d.getMinutes())};document.querySelectorAll('[data-social-form]').forEach((form)=>form.addEventListener('submit',(event)=>{const channel=form.elements.channel.value;if(!window.confirm('Stage this '+channel+' copy as an unpublished Buffer draft?'))event.preventDefault()}));document.querySelectorAll('[data-writer-form]').forEach((form)=>{const field=form.elements.publishAtLocal;field.value=localValue(field.dataset.publishAt);form.addEventListener('submit',(event)=>{const action=event.submitter?.value;if(action==='publish-now'&&!window.confirm('Publish this essay now? This commits directly to the publishing branch.')){event.preventDefault();return}if(action!=='schedule')return;const local=field.value;if(!local){event.preventDefault();field.focus();return}const scheduled=new Date(local);if(Number.isNaN(scheduled.valueOf())||scheduled.valueOf()<=Date.now()){event.preventDefault();field.setCustomValidity('Choose a future publish time.');field.reportValidity();return}field.setCustomValidity('');form.elements.publishAt.value=scheduled.toISOString()})})})();</script>`;
 
   writePage('index.html', layout({
     title: `Writer dashboard - ${site.name}`,
@@ -1416,7 +1454,7 @@ function buildDemosPage() {
   <div class="grid demo-grid">
     ${demos.map(demoCard).join('\n')}
   </div>
-  <p class="section-note"><a href="${site.links.github}/fieldwork" target="_blank" rel="noopener noreferrer">Read the source</a>.</p>
+  <p class="section-note"><a href="${escapeHtml(site.links.github)}/fieldwork" target="_blank" rel="noopener noreferrer">Read the source</a>.</p>
 </section>`;
 
   writePage(join('demos', 'index.html'), layout({
@@ -1491,7 +1529,7 @@ function resumePageContent(meta, body) {
       <p class="eyebrow">Resume</p>
       <h1>${escapeHtml(site.name)}</h1>
     </div>
-    <p class="resume-meta">${escapeHtml(site.location)} · <a href="${site.links.linkedin}" target="_blank" rel="noopener noreferrer">LinkedIn</a> · <a href="${site.links.github}" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    <p class="resume-meta">${escapeHtml(site.location)} · <a href="${escapeHtml(site.links.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn</a> · <a href="${escapeHtml(site.links.github)}" target="_blank" rel="noopener noreferrer">GitHub</a></p>
   </div>
   ${pageActions()}
   <div class="resume-body">${markdownToHtml(body)}</div>

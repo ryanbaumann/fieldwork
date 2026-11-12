@@ -384,7 +384,7 @@ button, input, select, a { touch-action: manipulation; }
 @media (max-width: 767px) {
   html, body { height: 100%; min-height: 100svh; overflow: hidden; overscroll-behavior: none; }
   #map3d-host { height: 100svh; height: 100dvh; }
-  aside[aria-label="Strava activity controls"] { max-height: calc(100dvh - 0.75rem); min-height: 9.25rem; }
+  aside[aria-label="Strava activity controls"] { max-height: calc(100dvh - 0.75rem); min-height: 9.25rem; background: rgba(13, 17, 23, 0.95) !important; }
   .sidebar-content { min-height: 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
   #bottom-sheet-drag { touch-action: none; }
   #share-url-button span { display: none; }

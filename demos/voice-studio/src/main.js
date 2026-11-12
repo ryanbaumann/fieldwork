@@ -14,9 +14,13 @@ const tabPanels = document.querySelectorAll('.tab-panel');
 // Tab Navigation
 tabBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    tabBtns.forEach(b => b.classList.remove('active'));
+    tabBtns.forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
     tabPanels.forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
     const panelId = `${btn.dataset.tab}-panel`;
     const targetPanel = document.getElementById(panelId);
     if (targetPanel) targetPanel.classList.add('active');

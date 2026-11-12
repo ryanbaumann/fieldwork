@@ -5,7 +5,16 @@ import { fileURLToPath, URL } from 'node:url';
 // component tests WS1-3 add later. Pure logic tests run in plain `node` (fast,
 // no DOM); anything that needs a DOM (`*.test.tsx`) gets `jsdom` instead.
 export default defineConfig({
-  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  // @a2ui/web_core@0.15.0 targets Zod v3 APIs (`z.ZodType.prototype.describe`),
+  // while `overrides.zod` pins >=4.6.7 to remediate GHSA-mrhx-c7xc-m3w5.
+  // Inline `@a2ui/*` in Vite SSR and alias `zod` to Zod v4's built-in `zod/v3` surface.
+  resolve: {
+    noExternal: ['@a2ui/web_core'],
+    alias: [
+      { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+      { find: /^zod$/, replacement: fileURLToPath(new URL('./node_modules/zod/v3/index.js', import.meta.url)) },
+    ],
+  },
   test: {
     projects: [
       {

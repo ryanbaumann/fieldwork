@@ -58,15 +58,25 @@ export async function finishGoogleLogin(request, response, searchParams, env = p
   if (!emailVerified || payload?.email !== allowedEmail || payload?.aud !== env.GOOGLE_OAUTH_CLIENT_ID || payload?.iss !== 'https://accounts.google.com' || !Number.isSafeInteger(expiry) || expiry <= Date.now() / 1000) throw Object.assign(new Error('This Google account is not allowed to access the dashboard.'), { statusCode: 403 });
   const expires = Math.floor(Date.now() / 1000) + TTL_SECONDS;
   const session = `${payload.email}:${expires}:${randomBytes(16).toString('hex')}`;
-  cookie(response, GOOGLE_AUTH_COOKIE, `${session}:${sign(session, env.GOOGLE_OAUTH_SESSION_SECRET)}`, TTL_SECONDS);
-  response.setHeader('Set-Cookie', [`${GOOGLE_AUTH_COOKIE}=${session}:${sign(session, env.GOOGLE_OAUTH_SESSION_SECRET)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${TTL_SECONDS}`, `${STATE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`]);
+  const signedSession = `${session}:${sign(session, env.GOOGLE_OAUTH_SESSION_SECRET)}`;
+  response.setHeader('Set-Cookie', [
+    `${GOOGLE_AUTH_COOKIE}=${signedSession}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${TTL_SECONDS}`,
+    `${STATE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`,
+  ]);
 }
 
 export function hasGoogleSession(request, env = process.env) {
-  const raw = readCookie(request, GOOGLE_AUTH_COOKIE) || ''; const parts = raw.split(':');
+  const raw = readCookie(request, GOOGLE_AUTH_COOKIE) || '';
+  const parts = raw.split(':');
   if (parts.length !== 4 || !env.GOOGLE_OAUTH_SESSION_SECRET) return false;
-  const [email, expires, nonce, signature] = parts; const payload = `${email}:${expires}:${nonce}`;
-  return email === (env.GOOGLE_OAUTH_ALLOWED_EMAIL || 'rsbaumann@gmail.com') && Number(expires) > Date.now() / 1000 && /^[a-f0-9]{32}$/.test(nonce) && equal(signature, sign(payload, env.GOOGLE_OAUTH_SESSION_SECRET));
+  const [email, expires, nonce, signature] = parts;
+  if (!/^\d+$/.test(expires) || !/^[a-f0-9]{32}$/.test(nonce) || !/^[a-f0-9]{64}$/.test(signature)) return false;
+  const payload = `${email}:${expires}:${nonce}`;
+  if (!equal(signature, sign(payload, env.GOOGLE_OAUTH_SESSION_SECRET))) return false;
+  const expiresAt = Number(expires);
+  return Number.isSafeInteger(expiresAt)
+    && expiresAt > Date.now() / 1000
+    && email === (env.GOOGLE_OAUTH_ALLOWED_EMAIL || 'rsbaumann@gmail.com');
 }
 
 function escapeHtml(str) {
@@ -78,4 +88,34 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-export function googleLoginPage(error = '') { return `<!doctype html><title>Dashboard sign in</title><main><h1>Dashboard</h1><p>Sign in with the approved Google account to review private releases.</p>${error ? `<p role="alert">${escapeHtml(error)}</p>` : ''}<p><a href="/auth/google">Continue with Google</a></p></main>`; }
+export function googleLoginPage(error = '') {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard sign in</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:#faf9f6;color:#111827;line-height:1.5}
+main{max-width:400px;width:100%;padding:2.25rem;border:1px solid #e5e2dc;border-radius:12px;background:#fff}
+h1{font-size:1.35rem;margin-bottom:.5rem}
+p{font-size:.95rem;color:#4b5563;margin-bottom:1.25rem}
+p[role="alert"]{color:#b91c1c;padding:.65rem .75rem;border:1px solid #fecaca;border-radius:8px;background:#fef2f2}
+a{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:.65rem 1rem;border-radius:8px;background:#111827;color:#fff;text-decoration:none;font-weight:500}
+a:hover{opacity:.92}
+a:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+@media (prefers-color-scheme:dark){body{background:#0a0a0a;color:#f3f4f6}main{background:#111;border-color:#262626}p{color:#9ca3af}p[role="alert"]{color:#f87171;border-color:#7f1d1d;background:#1a0505}a{background:#2563eb;color:#fff}}
+</style>
+</head>
+<body>
+<main>
+<h1>Dashboard</h1>
+<p>Sign in with the approved Google account to review private releases.</p>
+${error ? `<p role="alert">${escapeHtml(error)}</p>` : ''}
+<p><a href="/auth/google">Continue with Google</a></p>
+</main>
+</body>
+</html>`;
+}

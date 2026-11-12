@@ -8,7 +8,8 @@ import {
 import {
   isOriginAllowed,
   corsHeaders,
-  checkRateLimit
+  checkRateLimit,
+  resolveClientIp,
 } from '../server/server.js';
 
 describe('server/broker.js (Strava API Handlers)', () => {
@@ -174,9 +175,81 @@ describe('server/broker.js (Photo Proxy Rules)', () => {
       return err.statusCode === 504 && err.message === 'Failed to fetch photo from upstream.';
     });
   });
+
+  test('handlePhotoProxy: blocks cross-host redirect SSRF via redirect: manual', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      status: 302,
+      ok: false,
+      headers: new Headers({
+        location: 'http://169.254.169.254/computeMetadata/v1/',
+      }),
+    });
+
+    await expect(handlePhotoProxy(`https://${allowedHost}/photo.jpg`, {
+      fetch: mockFetch,
+      maxPhotoBytes: 1024 * 1024,
+      hosts: new Set([allowedHost]),
+    })).rejects.toSatisfy((err) => err.statusCode === 502 && /redirect/i.test(err.message));
+    expect(mockFetch.mock.calls[0][1].redirect).toBe('manual');
+  });
+
+  test('handlePhotoProxy: rejects missing content-type header instead of defaulting to image/jpeg', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      status: 200,
+      ok: true,
+      headers: new Headers({}),
+      arrayBuffer: async () => new ArrayBuffer(16),
+    });
+
+    await expect(handlePhotoProxy(`https://${allowedHost}/photo.jpg`, {
+      fetch: mockFetch,
+      maxPhotoBytes: 1024 * 1024,
+      hosts: new Set([allowedHost]),
+    })).rejects.toSatisfy((err) => err.statusCode === 415);
+  });
+
+  test('handlePhotoProxy: cancels streaming response body when chunks exceed maxPhotoBytes', async () => {
+    const cancel = vi.fn();
+    let reads = 0;
+    const mockFetch = vi.fn().mockResolvedValue({
+      status: 200,
+      ok: true,
+      headers: new Headers({ 'content-type': 'image/jpeg' }),
+      body: {
+        getReader: () => ({
+          cancel,
+          read: async () => {
+            reads += 1;
+            return { done: false, value: new Uint8Array(600) };
+          },
+        }),
+      },
+    });
+
+    await expect(handlePhotoProxy(`https://${allowedHost}/photo.jpg`, {
+      fetch: mockFetch,
+      maxPhotoBytes: 1000,
+      hosts: new Set([allowedHost]),
+    })).rejects.toSatisfy((err) => err.statusCode === 413);
+    expect(reads).toBe(2);
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('server/server.js (Security / CORS & Rate Limiting)', () => {
+  test('resolveClientIp ignores spoofed X-Forwarded-For unless behind trusted proxy', () => {
+    const untrusted = {
+      headers: { 'x-forwarded-for': '203.0.113.10, 198.51.100.2' },
+      socket: { remoteAddress: '198.51.100.2' },
+    };
+    expect(resolveClientIp(untrusted, {})).toBe('198.51.100.2');
+
+    const cloudRun = {
+      headers: { 'x-forwarded-for': '1.2.3.4, 203.0.113.99, 34.102.0.1' },
+      socket: { remoteAddress: '169.254.1.1' },
+    };
+    expect(resolveClientIp(cloudRun, {})).toBe('203.0.113.99');
+  });
   test('isOriginAllowed and CORS headers', () => {
     // Since allowedOrigins is imported, let's see how it behaves
     // By default, ALLOWED_ORIGIN isn't set in test environment, so allowedOrigins is empty

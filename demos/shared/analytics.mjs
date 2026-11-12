@@ -1,11 +1,17 @@
 const CANONICAL_HOST = 'ryanbaumann.dev';
+const MEASUREMENT_ID_PATTERN = /^(?:G|AW|DC|GT)-[A-Z0-9]+$/i;
 
 function cleanCampaignValue(value) {
   return /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(value || '') ? value.toLowerCase() : '';
 }
 
 export function installAnalytics(measurementId) {
-  if (!measurementId || typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (
+    !measurementId
+    || !MEASUREMENT_ID_PATTERN.test(String(measurementId))
+    || typeof window === 'undefined'
+    || typeof document === 'undefined'
+  ) return;
 
   const debug = new URLSearchParams(window.location.search).get('analytics_debug') === '1';
   if (window.location.hostname !== CANONICAL_HOST && !debug) return;
