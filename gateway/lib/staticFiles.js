@@ -68,6 +68,10 @@ export const SECURITY_HEADERS = {
   // local dev is plain HTTP on localhost, which browsers exempt from HSTS
   // upgrade-loop issues), so this is safe to send unconditionally.
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  // Allow same-origin camera/microphone/geolocation for interactive demos
+  // (Hairstyle AI Studio, Voice Studio, Atlas, AQI Map, Isochrones) while
+  // blocking cross-origin delegation and unused hardware/payment APIs.
+  'Permissions-Policy': 'camera=(self), microphone=(self), geolocation=(self), payment=(), usb=(), bluetooth=(), serial=(), hid=()',
 };
 
 // ---------------------------------------------------------------------------
@@ -108,10 +112,11 @@ export const SECURITY_HEADERS = {
 const CSP_DEFAULT_DIRECTIVES = {
   'default-src': ["'self'"],
   'base-uri': ["'self'"],
+  'form-action': ["'self'"],
   'object-src': ["'none'"],
   'frame-ancestors': ["'self'"],
   'script-src': ["'self'", 'https://www.googletagmanager.com', 'https://giscus.app'],
-  'style-src': ["'self'", "'unsafe-inline'"],
+  'style-src': ["'self'", "'unsafe-inline'", 'https://giscus.app'],
   'img-src': ["'self'", 'data:', 'https://www.google-analytics.com'],
   'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://*.google-analytics.com', 'https://www.googletagmanager.com'],
   'frame-src': ['https://giscus.app'],
@@ -121,6 +126,7 @@ const CSP_DEFAULT_DIRECTIVES = {
 const CSP_MAPS_DEMO_DIRECTIVES = {
   'default-src': ["'self'"],
   'base-uri': ["'self'"],
+  'form-action': ["'self'"],
   'object-src': ["'none'"],
   'frame-ancestors': ["'self'"],
   'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://*.googleapis.com', 'https://*.gstatic.com', 'https://*.google.com', 'https://*.ggpht.com', 'https://*.googleusercontent.com', 'https://www.googletagmanager.com', 'https://*.googletagmanager.com', 'blob:'],
@@ -458,6 +464,7 @@ export function safeResolve(baseDir, subPath) {
 export function serveFromDir(baseDir, subPath, request, response, options = {}) {
   let filePath = safeResolve(baseDir, subPath || '/');
   if (!filePath) {
+    applySecurityHeaders(response, { csp: typeof options.csp === 'function' ? options.csp(baseDir) : options.csp });
     response.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     response.end('Bad request path.');
     return true;

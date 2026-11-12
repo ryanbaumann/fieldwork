@@ -5,6 +5,7 @@ import {
   beginGoogleLogin,
   finishGoogleLogin,
   GOOGLE_AUTH_COOKIE,
+  googleLoginPage,
   hasGoogleSession,
 } from '../lib/googleAuth.js';
 import { server } from '../server.js';
@@ -144,4 +145,21 @@ test('Google callback HTTP boundary grants only verified claims access to the pr
       else process.env[name] = value;
     }
   }
+});
+
+test('googleLoginPage emits accessible semantic document shell and escapes alerts', () => {
+  const html = googleLoginPage('<script>alert(1)</script>');
+  assert.match(html, /<html lang="en">/);
+  assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1">/);
+  assert.match(html, /<title>Dashboard sign in<\/title>/);
+  assert.match(html, /<p role="alert">&lt;script&gt;alert\(1\)&lt;\/script&gt;<\/p>/);
+  assert.doesNotMatch(html, /<script>/);
+});
+
+test('hasGoogleSession rejects scientific-notation or non-digit expiry timestamps', async () => {
+  const { createHmac } = await import('node:crypto');
+  const nonce = 'a'.repeat(32);
+  const payload = `${env.GOOGLE_OAUTH_ALLOWED_EMAIL}:1e12:${nonce}`;
+  const sig = createHmac('sha256', env.GOOGLE_OAUTH_SESSION_SECRET).update(payload).digest('hex');
+  assert.equal(hasGoogleSession({ headers: { cookie: `${GOOGLE_AUTH_COOKIE}=${payload}:${sig}` } }, env), false);
 });
