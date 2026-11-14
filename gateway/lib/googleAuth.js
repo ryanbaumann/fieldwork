@@ -96,25 +96,32 @@ export function googleLoginPage(error = '') {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard sign in</title>
 <style>
-:root{color-scheme:light dark}
+:root{color-scheme:light dark;--bg:#faf9f6;--surface:#ffffff;--ink:#111827;--muted:#4b5563;--line:#e5e7eb;--accent:#3b82f6;--accent-ink:#2563eb;--btn-bg:#2563eb;--btn-ink:#ffffff}
+@media (prefers-color-scheme:dark){:root{--bg:#030712;--surface:#111827;--ink:#f9fafb;--muted:#9ca3af;--line:#1f2937;--accent:#60a5fa;--accent-ink:#93c5fd;--btn-bg:#60a5fa;--btn-ink:#030712}}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:#faf9f6;color:#111827;line-height:1.5}
-main{max-width:400px;width:100%;padding:2.25rem;border:1px solid #e5e2dc;border-radius:12px;background:#fff}
-h1{font-size:1.35rem;margin-bottom:.5rem}
-p{font-size:.95rem;color:#4b5563;margin-bottom:1.25rem}
+body{font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:var(--bg);color:var(--ink);line-height:1.55}
+main{max-width:400px;width:100%;padding:2.25rem;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.eyebrow{font:700 .72rem/1.2 ui-monospace,"SF Mono",monospace;text-transform:uppercase;letter-spacing:.14em;color:var(--accent-ink);margin-bottom:.6rem}
+h1{font-size:1.4rem;letter-spacing:-.02em;margin-bottom:.5rem}
+p{font-size:.95rem;color:var(--muted);margin-bottom:1.25rem}
 p[role="alert"]{color:#b91c1c;padding:.65rem .75rem;border:1px solid #fecaca;border-radius:8px;background:#fef2f2}
-a{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:.65rem 1rem;border-radius:8px;background:#111827;color:#fff;text-decoration:none;font-weight:500}
-a:hover{opacity:.92}
-a:focus-visible{outline:3px solid currentColor;outline-offset:3px}
-@media (prefers-color-scheme:dark){body{background:#0a0a0a;color:#f3f4f6}main{background:#111;border-color:#262626}p{color:#9ca3af}p[role="alert"]{color:#f87171;border-color:#7f1d1d;background:#1a0505}a{background:#2563eb;color:#fff}}
+@media (prefers-color-scheme:dark){p[role="alert"]{color:#f87171;border-color:#7f1d1d;background:#1a0505}}
+.btn{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:.65rem 1rem;border-radius:8px;background:var(--btn-bg);color:var(--btn-ink);text-decoration:none;font-weight:650}
+.btn:hover{filter:brightness(1.05)}
+.back{margin:1rem 0 0;text-align:center}
+.back-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 .5rem;color:var(--muted);font-size:.9rem;text-decoration:none}
+.back-link:hover{color:var(--accent-ink);text-decoration:underline}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 </style>
 </head>
 <body>
 <main>
-<h1>Dashboard</h1>
-<p>Sign in with the approved Google account to review private releases.</p>
+<p class="eyebrow">Fieldwork · Private preview</p>
+<h1>Sign in</h1>
+<p>Continue with the authorized Google account to review unpublished drafts and scheduled releases.</p>
 ${error ? `<p role="alert">${escapeHtml(error)}</p>` : ''}
-<p><a href="/auth/google">Continue with Google</a></p>
+<p style="margin-bottom:0"><a class="btn" href="/auth/google">Continue with Google</a></p>
+<p class="back"><a class="back-link" href="/">← Back to Fieldwork</a></p>
 </main>
 </body>
 </html>`;

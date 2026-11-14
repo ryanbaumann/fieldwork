@@ -136,8 +136,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ view, image, onUpload,
   return (
     <div className="flex flex-col gap-3 w-full animate-fadeIn">
       <div className="flex justify-between items-center px-1">
-        <label htmlFor={inputId} className="text-sm font-bold text-gray-700 dark:text-gray-200 capitalize flex items-center gap-2">
-          {view} View {required && <span className="text-xs text-red-500">(required)</span>}
+        <label htmlFor={inputId} className="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+          {view === 'front' ? 'Front portrait' : view === 'side' ? 'Side angle' : 'Back angle'}
+          {required && <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">(required)</span>}
         </label>
         {image && (
           <button
@@ -226,7 +227,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ view, image, onUpload,
                {view === 'front' ? <Camera className="text-slate-400" size={22} /> : <ImageIcon className="text-slate-400" size={22} />}
              </div>
 
-             <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 text-center">Add {view} Photo</p>
+             <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 text-center">Add photo</p>
              <p className="text-xs text-slate-400 text-center mb-4">JPG or PNG</p>
 
              {/* Updated button grid: tighter gap, reduced padding - mimicking reference */}

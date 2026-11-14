@@ -538,16 +538,22 @@ function themeColor(css, darkMode) {
 const THEME_COLOR_LIGHT = themeColor(CSS, false);
 const THEME_COLOR_DARK = themeColor(CSS, true);
 
-function layout({ title, description, content, active = '', canonical, ogImage, ogImageAlt, shareTitle, shareSummary, ogType, articleDate, articleUpdated, robots, jsonLd, contactDelivery }) {
+function layout({ title, description, content, active = '', isSubpage = false, canonical, ogImage, ogImageAlt, shareTitle, shareSummary, ogType, articleDate, articleUpdated, robots, jsonLd, contactDelivery }) {
   const navItems = [
     { href: `${BASE}writing/`, label: 'Notes', key: 'writing' },
     { href: `${BASE}work/`, label: 'Work', key: 'work' },
     { href: `${BASE}talks/`, label: 'Talks', key: 'talks' },
     ...(demos.length ? [{ href: `${BASE}demos/`, label: 'Labs', key: 'demos' }] : []),
     { href: `${BASE}about/`, label: 'About', key: 'about' },
+    { href: `${BASE}contact/`, label: 'Contact', key: 'contact' },
   ];
   const nav = navItems
-    .map((item) => `<a href="${item.href}" class="nav-${item.key}"${item.key === active ? ' aria-current="page"' : ''}>${item.label}</a>`)
+    .map((item) => {
+      const isCurrent = item.key === active;
+      const cls = `nav-${item.key}${isCurrent && isSubpage ? ' is-active' : ''}`;
+      const aria = isCurrent && !isSubpage ? ' aria-current="page"' : '';
+      return `<a href="${item.href}" class="${cls}"${aria}>${item.label}</a>`;
+    })
     .join('');
 
   const resolvedCanonical = canonical || absoluteUrl('/');
@@ -645,7 +651,6 @@ ${WRITER_MODE ? '<div class="writer-banner" role="status">Private writer preview
     </nav>
   </div>
   <div class="header-actions">
-    <a class="header-contact${active === 'contact' ? ' is-active' : ''}" href="${BASE}contact/"${active === 'contact' ? ' aria-current="page"' : ''}>Contact</a>
     <button class="theme-toggle" type="button" aria-label="Color theme: system. Activate to use light."><span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg></span></button>
   </div>
 </header>
@@ -653,18 +658,17 @@ ${WRITER_MODE ? '<div class="writer-banner" role="status">Private writer preview
 ${content}
 </main>
 <footer class="site-footer">
-  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.brandByline || `${brand} by ${site.name}`)} &middot; I write everything here; AI helps me copyedit.</p>
-  <p class="footer-links">
+  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.brandByline || `${brand} by ${site.name}`)}</p>
+  <nav class="footer-links" aria-label="Footer">
+    <a href="${BASE}contact/">Contact</a>
+    <a href="${BASE}resume/">Resume</a>
+    <a href="${BASE}privacy/">Privacy</a>
+    <a href="${BASE}feed.xml">RSS</a>
     <a href="${escapeHtml(site.links.github)}" target="_blank" rel="noopener noreferrer">GitHub</a>
     <a href="${escapeHtml(site.links.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
     ${site.links.x ? `<a href="${escapeHtml(site.links.x)}" target="_blank" rel="noopener noreferrer">X</a>` : ''}
     ${site.links.substack ? `<a href="${escapeHtml(site.links.substack)}" target="_blank" rel="noopener noreferrer">Substack</a>` : ''}
-    <a href="${BASE}talks/">Talks</a>
-    ${demos.length ? `<a href="${BASE}demos/">Labs</a>` : ''}
-    <a href="${BASE}resume/">Resume</a>
-    <a href="${BASE}privacy/">Privacy</a>
-    <a href="${BASE}contact/">Contact</a>
-  </p>
+  </nav>
 </footer>
 <script>(()=>{const b=document.querySelector('.theme-toggle');if(!b)return;const states=['system','light','dark'];const icons={system:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>',light:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path></svg>',dark:'<svg viewBox="0 0 24 24"><path d="M20.5 14.1A8.5 8.5 0 0 1 9.9 3.5a8.5 8.5 0 1 0 10.6 10.6Z"></path></svg>'};const sync=()=>{const current=document.documentElement.dataset.theme||'system';const next=states[(states.indexOf(current)+1)%states.length];b.querySelector('span').innerHTML=icons[current];b.setAttribute('aria-label','Color theme: '+current+'. Activate to use '+next+'.')};b.addEventListener('click',()=>{const current=document.documentElement.dataset.theme||'system';const next=states[(states.indexOf(current)+1)%states.length];if(next==='system'){delete document.documentElement.dataset.theme;localStorage.removeItem('theme')}else{document.documentElement.dataset.theme=next;localStorage.setItem('theme',next)}sync()});sync()})();</script>
 </body>
@@ -1003,8 +1007,8 @@ function shareLinks(pageUrl, title) {
 function subscribeSection() {
   return `<section class="subscribe" aria-labelledby="subscribe-title">
   <p class="eyebrow">Email list</p>
-  <h2 id="subscribe-title">Get new field notes by email</h2>
-  <p>Occasional updates about new essays, talks, and Labs. Unsubscribe in any email.</p>
+  <h2 id="subscribe-title">Get new notes by email</h2>
+  <p>Occasional emails when a new note, talk, or Lab goes live.</p>
   <form class="subscribe-form" action="${BASE}api/subscribe" method="post">
     <label for="subscribe-email">Email address</label>
     <div class="subscribe-controls">
@@ -1015,7 +1019,7 @@ function subscribeSection() {
       <label>Company fax number <input name="company_fax_number" tabindex="-1" autocomplete="off" /></label>
     </div>
   </form>
-  <p class="section-note">The address is stored only to deliver these updates. See <a href="${BASE}privacy/">Privacy</a>.</p>
+  <p class="section-note">Used only to send these updates. Unsubscribe in any email &middot; <a href="${BASE}privacy/#email-list">Privacy</a>.</p>
 </section>`;
 }
 
@@ -1196,24 +1200,26 @@ function detailPage(collection, entry, activeKey) {
   // primary type with a BreadcrumbList the same way.
   const jsonLdBlocks = jsonLd ? [jsonLd, jsonLdBreadcrumbList(collection, entry, pageUrl)] : jsonLd;
 
-  const eyebrowLabel = meta.type && isWriting ? `${collection.label} · ${meta.type}` : collection.label;
+  const formattedDate = meta.date ? (formatLongDate(meta.date) || meta.date) : null;
+  const backLink = `<p class="back"><a href="${BASE}${collection.name}/">← All ${collection.label.toLowerCase()}</a></p>`;
   const content = `<article class="prose">
-  <p class="eyebrow">${escapeHtml(eyebrowLabel)}</p>
+  <p class="eyebrow"><a class="eyebrow-link" href="${BASE}${collection.name}/">← ${escapeHtml(collection.label)}</a></p>
   <h1>${escapeHtml(meta.title)}</h1>
-  <p class="article-meta">${metaLine([meta.org || meta.venue, meta.role, meta.type, meta.period || meta.date])}</p>
+  <p class="article-meta">${metaLine([meta.org || meta.venue, meta.role, meta.type, meta.period || formattedDate])}</p>
   ${isWriting && meta.summary ? `<p class="lede">${escapeHtml(meta.summary)}</p>` : ''}
   ${linkChips(meta.links)}
   ${meta.type === 'Personal' ? '' : heroImage(meta, collection.name)}
   ${markdownToHtml(entry.body)}
   ${articleDisclosure(isWriting)}
   ${shareLinks(pageUrl, meta.title)}
-  <p class="back"><a href="${BASE}${collection.name}/">← All ${collection.label.toLowerCase()}</a></p>
-</article>${isWriting ? `\n${subscribeSection()}\n${commentsSection()}` : ''}`;
+  ${isWriting ? '' : backLink}
+</article>${isWriting ? `\n${subscribeSection()}\n${commentsSection()}\n<div class="prose">${backLink}</div>` : ''}`;
   writePage(join(collection.name, entry.slug, 'index.html'), layout({
     title: `${meta.title} - ${brand}`,
     description: meta.summary || site.description,
     content,
     active: activeKey,
+    isSubpage: true,
     canonical: pageUrl,
     ogImage: meta.socialImage || meta.image || null,
     ogImageAlt: meta.shareImageAlt || meta.imageAlt || meta.title,
@@ -1425,12 +1431,12 @@ ${demosSection}
 
 <section class="build-section home-close">
   <div>
-    <p class="eyebrow">Collaborate</p>
+    <p class="eyebrow">Contact</p>
     <h2>Working on a developer platform, map tool, or agent workflow?</h2>
-    <p>Send a note if you want to compare notes or collaborate.</p>
+    <p>Reach out to compare approaches, talk through a problem, or discuss a speaking event.</p>
   </div>
   <div>
-    <a class="button button-primary" href="${BASE}contact/">Get in touch</a>
+    <a class="button button-primary" href="${BASE}contact/">Send a note</a>
   </div>
 </section>
 `;
@@ -1526,45 +1532,36 @@ function resumePageContent(meta, body) {
   return `<section class="resume-shell">
   <div class="resume-header">
     <div>
-      <p class="eyebrow">Resume</p>
+      <p class="eyebrow"><a class="eyebrow-link" href="${BASE}about/">← About</a></p>
       <h1>${escapeHtml(site.name)}</h1>
     </div>
     <p class="resume-meta">${escapeHtml(site.location)} · <a href="${escapeHtml(site.links.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn</a> · <a href="${escapeHtml(site.links.github)}" target="_blank" rel="noopener noreferrer">GitHub</a></p>
   </div>
-  ${pageActions()}
   <div class="resume-body">${markdownToHtml(body)}</div>
 </section>`;
 }
 
-function pageActions() {
-  return `<p class="hero-actions page-actions">
-    <a class="button button-primary" href="${BASE}writing/">Read Field Notes</a>
-    <a class="button button-secondary" href="${BASE}contact/">Contact Ryan</a>
-  </p>`;
-}
-
 function contactPageContent(meta, body) {
   return `<section class="contact-shell">
-  <p class="eyebrow">Contact</p>
   <h1>Start a conversation</h1>
   <div class="prose">${markdownToHtml(body)}</div>
   <form id="contact-form" class="contact-form" action="${BASE}api/contact" method="post">
     <fieldset class="intent-options"><legend>What is this about?</legend>
       ${['Developer platform discussion', 'Content collaboration', 'Speaking opportunity', 'Other'].map((intent) => `<label><input type="radio" name="intent" value="${intent}" required /> <span>${intent}</span></label>`).join('')}
     </fieldset>
-    <label>What would you like to discuss?
-      <textarea name="message" rows="6" required minlength="20" maxlength="5000" placeholder="A few sentences about the idea, audience, timing, and useful next step."></textarea>
+    <label for="contact-message">What would you like to discuss?
+      <textarea id="contact-message" name="message" rows="6" required minlength="20" maxlength="5000" placeholder="A few sentences about the idea, audience, timing, and useful next step."></textarea>
     </label>
-    <label>Name <input name="name" autocomplete="name" maxlength="120" required /></label>
-    <label>Email <input name="email" type="email" autocomplete="email" maxlength="200" required /></label>
+    <label for="contact-name">Name <input id="contact-name" name="name" autocomplete="name" maxlength="120" required /></label>
+    <label for="contact-email">Email <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="200" required /></label>
     <div class="contact-honeypot" aria-hidden="true">
       <label>Company fax number <input name="company_fax_number" tabindex="-1" autocomplete="off" /></label>
     </div>
     <input type="hidden" name="fill_ms" value="" />
-    <label class="human-check"><input name="human" type="checkbox" value="1" required /> <span>I am a person, and this is not an unsolicited sales pitch.</span></label>
+    <label class="human-check" for="contact-human"><input id="contact-human" name="human" type="checkbox" value="1" required /> <span>This is a personal note, not an unsolicited pitch.</span></label>
     <button class="button" type="submit">Send note</button>
   </form>
-  <p class="section-note">Your message may be checked for unsolicited advertising before delivery. See <a href="${BASE}privacy/">Privacy</a>.</p>
+  <p class="section-note">Used only to reply. Messages are screened for spam without your name or email; please don't include secrets or sensitive data. <a href="${BASE}privacy/#contact">Privacy</a>.</p>
   <script>(()=>{const form=document.getElementById('contact-form');const start=performance.now();form.addEventListener('submit',()=>{form.elements.fill_ms.value=String(Math.round(performance.now()-start))});const value=new URLSearchParams(location.search).get('intent');const intents={platform:'Developer platform discussion',content:'Content collaboration',speaking:'Speaking opportunity',other:'Other'};const selected=intents[value];if(!selected)return;const input=[...form.querySelectorAll('input[name="intent"]')].find((item)=>item.value===selected);if(input)input.checked=true})();</script>
 </section>`;
 }
@@ -1588,10 +1585,11 @@ function buildStandalonePages(pages) {
   for (const page of pages) {
     const { slug, meta, body } = page;
     const customContent = slug === 'resume' ? resumePageContent(meta, body) : slug === 'contact' ? contactPageContent(meta, body) : null;
+    const rawEyebrow = meta.eyebrow || '';
+    const showEyebrow = rawEyebrow && rawEyebrow.trim().toLowerCase() !== String(meta.title || '').trim().toLowerCase();
     const content = customContent || `<article class="prose">
-  <p class="eyebrow">${escapeHtml(meta.eyebrow || site.name)}</p>
+  ${showEyebrow ? `<p class="eyebrow">${escapeHtml(rawEyebrow)}</p>` : ''}
   <h1>${escapeHtml(meta.title)}</h1>
-  ${slug === 'about' ? pageActions() : ''}
   ${heroImage(meta, 'pages', slug === 'about' ? ' profile-portrait' : '')}
   ${markdownToHtml(body)}
 </article>`;
@@ -1599,7 +1597,8 @@ function buildStandalonePages(pages) {
       title: `${meta.title} - ${brand}`,
       description: meta.summary || site.description,
       content,
-      active: slug,
+      active: slug === 'resume' ? 'about' : slug,
+      isSubpage: slug === 'resume',
       canonical: absoluteUrl(`/${slug}/`),
       ogImage: meta.socialImage || meta.image || null,
       ogImageAlt: meta.shareImageAlt || meta.imageAlt || meta.title,
@@ -1617,12 +1616,10 @@ function buildNotFoundPage() {
   const content = `<section class="prose">
   <p class="eyebrow">404</p>
   <h1>Page not found</h1>
-  <p>I couldn't find that page.</p>
+  <p>That page moved or no longer exists.</p>
   <p class="hero-actions">
     <a class="button button-primary" href="${BASE}">Home</a>
-    <a class="button button-secondary" href="${BASE}work/">Work</a>
-    <a class="button button-secondary" href="${BASE}writing/">Notes</a>
-    ${demos.length ? `<a class="button button-secondary" href="${BASE}demos/">Labs</a>` : ''}
+    <a class="button button-secondary" href="${BASE}writing/">Read notes</a>
   </p>
 </section>`;
   writePage('404.html', layout({
@@ -1808,7 +1805,15 @@ function robotsTxt() {
 
 function permanentRedirects(collections) {
   if (WRITER_MODE) return {};
-  const redirects = demos.length ? { '/lab/': '/demos/', '/labs/': '/demos/', '/atlas/': '/real-world-reasoning-agent/', '/labs/atlas/': '/real-world-reasoning-agent/', '/demos/atlas/': '/real-world-reasoning-agent/' } : {};
+  const redirects = demos.length ? {
+    '/lab/': '/demos/',
+    '/labs/': '/demos/',
+    '/atlas/': '/real-world-reasoning-agent/',
+    '/labs/atlas/': '/real-world-reasoning-agent/',
+    '/demos/atlas/': '/real-world-reasoning-agent/',
+    '/hairstyle-ai/': '/hairstyle-ai-studio/',
+    '/real-world-reasoning/': '/real-world-reasoning-agent/',
+  } : {};
   const canonicalPaths = new Set(['/', '/demos/', ...COLLECTIONS.filter((item) => item.listPage).map((item) => `/${item.name}/`)]);
   for (const collection of COLLECTIONS) {
     for (const entry of collections[collection.name]) {

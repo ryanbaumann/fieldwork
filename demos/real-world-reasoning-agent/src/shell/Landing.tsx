@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ArrowRight, ArrowUpRight, KeyRound, LocateFixed, MapPin, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, KeyRound, LocateFixed, MapPin, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { GMP_BROWSER_KEY } from '@/lib/config';
 import { getGeminiCredentialSnapshot, subscribeGeminiCredential } from '@/ai/client';
 import type { LatLng } from '@/lib/types';
@@ -123,12 +123,6 @@ export function Landing() {
           <div className="atlas-cold-open__eyebrow"><Sparkles size={14} aria-hidden="true" /> One evidence-first decision</div>
           <h1>Find the right place.<br /><span>Prove it.</span></h1>
           <p>Describe what you need. Atlas checks real candidates, verifies travel time, and recommends one with evidence.</p>
-          <a
-            href="/"
-            className="atlas-cold-open__labs-link"
-          >
-            See more demos & writing at ryanbaumann.dev <ArrowUpRight size={14} aria-hidden="true" style={{ marginLeft: 2, display: 'inline-block', verticalAlign: 'middle' }} />
-          </a>
         </section>
 
         <section className="glass mission-brief" aria-label="Mission brief">

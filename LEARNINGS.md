@@ -2,6 +2,20 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-14 - Fixed-top `.skip-link` / escape-pill collisions, premature `← All notes` placement, and WCAG 2.5.3 logo back-links
+
+Context: Cross-viewport (`1280x800`, `390x844`, `320x568`) light/dark browser and design audit across Fieldwork (`portfolio/`), gateway auth/error pages (`gateway/`), and Labs (`demos/`).
+
+Learning:
+1. Positioning `.skip-link` at `position: fixed; top: 0.5rem; left: 1rem` overlays the left half of `.site-name` (`"Ryan's Fieldwork"`) on first keyboard `Tab`, producing garbled `[Skip to content]an's Fieldwork` text; similarly, a fixed top-right `.fieldwork-home-link` on `/real-world-reasoning-agent/` overlaps the hero eyebrow and `<h1>` at `320x568` unless `.atlas-cold-open` reserves `padding-top` clearance on narrow viewports.
+2. Placing `<p class="back">← All notes</p>` inside `<article>` *above* `subscribeSection()` and `commentsSection()` signals end-of-page early, causing readers to miss newsletter signup and discussion; pairing a quiet top collection eyebrow link (`← Notes`) with a bottom `← All notes` link *below* comments preserves natural top-to-bottom reading flow.
+3. Turning a demo app's visible logo (`<span>HairStyle AI</span>`) into `<a href="/" aria-label="Back to Fieldwork">` fails WCAG 2.5.3 (Label in Name, because the accessible name omits the visible text `"HairStyle AI"`) while hiding the escape route from sighted users. Use a dedicated, visible `← Fieldwork` (`min-height: 44px`) link instead.
+4. Hardcoding `min-height: 400px` on `.comments .giscus-frame` creates a ~420px empty void whenever a thread is compact or unrendered; `giscus` resizes its own iframe height dynamically via `postMessage`, so `min-height: 0` avoids dead vertical whitespace.
+
+Evidence: Live Chromium inspection on `http://localhost:8094` measured `.skip-link` colliding with `.site-name` (`step_50_shot_10.png`), `.fieldwork-home-link` overlapping `.atlas-cold-open__eyebrow` at `320x568` (`step_45_shot_2.png`), `420px` empty space under `.comments` (`step_6_shot_2.png`), and `Infographic Agent` missing from `portfolio/content/pages/privacy.md`.
+
+Use next time: Offset fixed skip/escape pills clear of sticky brand marks and mobile hero headers (verify first `Tab` press and `320x568` layout in Chromium), keep accessible names a superset of visible link text (WCAG 2.5.3), place collection return links after post-article engagement blocks, and update `privacy.md` whenever a new Lab is added to `apps.json`.
+
 ## 2026-11-11 - Fan-in CI gates need `if: always()` and `deploy.yml` must inspect live Cloud Run state for `GITHUB_TOKEN` auto-merges
 
 Context: Dependabot PR #363 (`@a2ui/web_core@0.15.0`) failed `demos/real-world-reasoning-agent checks` in `.github/workflows/ci.yml`, yet `gh pr merge --auto` still merged the broken PR to `main` (`91d3278`), and subsequent hourly runs of `.github/workflows/deploy.yml` never deployed `91d3278`.

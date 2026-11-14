@@ -153,32 +153,43 @@ export function loginPageHtml(app, errorMsg = '') {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign in — ${escapeHtml(title)}</title>
+<title>Sign in · ${escapeHtml(title)}</title>
 <style>
+:root{color-scheme:light dark;--bg:#faf9f6;--surface:#ffffff;--ink:#111827;--muted:#4b5563;--faint:#5f6875;--line:#e5e7eb;--accent:#3b82f6;--accent-ink:#2563eb;--btn-bg:#2563eb;--btn-ink:#ffffff}
+@media (prefers-color-scheme:dark){:root{--bg:#030712;--surface:#111827;--ink:#f9fafb;--muted:#9ca3af;--faint:#7b8493;--line:#1f2937;--accent:#60a5fa;--accent-ink:#93c5fd;--btn-bg:#60a5fa;--btn-ink:#030712}}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0a;color:#e0e0e0}
-.card{max-width:380px;width:100%;padding:2.5rem;border:1px solid #222;border-radius:12px;background:#111}
-h1{font-size:1.2rem;margin-bottom:.5rem;color:#fff}
-p.desc{font-size:.85rem;color:#888;margin-bottom:1.5rem}
-label{display:block;font-size:.85rem;margin-bottom:.4rem;color:#aaa}
-input[type=password]{width:100%;min-height:44px;padding:.6rem .75rem;border:1px solid #333;border-radius:6px;background:#0a0a0a;color:#e0e0e0;font-size:1rem;outline:none}
-input[type=password]:focus{border-color:#4a9eff}
-button{width:100%;min-height:44px;margin-top:1rem;padding:.65rem;border:none;border-radius:6px;background:#2563eb;color:#fff;font-size:.95rem;cursor:pointer}
-button:hover{background:#1d4ed8}
-.error{color:#f87171;font-size:.85rem;margin-bottom:1rem;padding:.5rem;border:1px solid #7f1d1d;border-radius:6px;background:#1a0505}
+body{font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:var(--bg);color:var(--ink);line-height:1.55}
+.card{max-width:400px;width:100%;padding:2.25rem;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.eyebrow{font:700 .72rem/1.2 ui-monospace,"SF Mono",monospace;text-transform:uppercase;letter-spacing:.14em;color:var(--accent-ink);margin-bottom:.6rem}
+h1{font-size:1.35rem;letter-spacing:-.02em;margin-bottom:.45rem;color:var(--ink)}
+p.desc{font-size:.92rem;color:var(--muted);margin-bottom:1.35rem}
+label{display:block;font-size:.88rem;font-weight:650;margin-bottom:.4rem;color:var(--muted)}
+input[type=password]{width:100%;min-height:44px;padding:.6rem .75rem;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:1rem}
+input[type=password]:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{width:100%;min-height:44px;margin-top:1rem;padding:.65rem;border:none;border-radius:8px;background:var(--btn-bg);color:var(--btn-ink);font-size:.95rem;font-weight:650;cursor:pointer}
+button:hover{filter:brightness(1.05)}
+.note{margin-top:.85rem;font-size:.8rem;color:var(--faint)}
+.back{margin-top:.75rem;text-align:center}
+.back a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 .5rem;color:var(--muted);font-size:.9rem;text-decoration:none}
+.back a:hover{color:var(--accent-ink);text-decoration:underline}
+.error{color:#b91c1c;font-size:.88rem;margin-bottom:1rem;padding:.6rem .75rem;border:1px solid #fecaca;border-radius:8px;background:#fef2f2}
+@media (prefers-color-scheme:dark){.error{color:#f87171;border-color:#7f1d1d;background:#1a0505}}
 </style>
 </head>
 <body>
-<div class="card">
+<main class="card">
+<p class="eyebrow">Fieldwork · Private Lab</p>
 <h1>${escapeHtml(title)}</h1>
-<p class="desc">This demo requires a password to access.</p>
+<p class="desc">Enter the access password for this preview.</p>
 ${errorBlock}
 <form method="POST" action="${escapeHtml(app.path)}__auth">
 <label for="pwd">Password</label>
 <input type="password" id="pwd" name="password" autocomplete="current-password" required autofocus>
 <button type="submit">Sign in</button>
 </form>
-</div>
+<p class="note">Session access uses an HTTP-only cookie scoped to this preview.</p>
+<p class="back"><a href="/">← Back to Fieldwork</a></p>
+</main>
 </body>
 </html>`;
 }

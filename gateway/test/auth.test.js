@@ -190,6 +190,8 @@ describe('loginPageHtml', () => {
     assert.ok(html.includes('action="/secret-demo/__auth"'));
     assert.ok(html.includes('type="password"'));
     assert.ok(html.includes('Secret Demo'));
+    assert.ok(html.includes('color-scheme:light dark'));
+    assert.ok(html.includes('href="/">← Back to Fieldwork</a>'));
   });
 
   test('includes error message when provided', () => {
