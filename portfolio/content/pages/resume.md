@@ -14,7 +14,6 @@ I lead Developer Experience Engineering and product for builder platforms. I tur
 
 **Head of Developer Experience, Google Maps Platform** (2022 to present)
 
-- I lead Developer Experience Engineering for Google Maps Platform.
 - I partner across product, engineering, UX, technical writing, and field teams to turn repeated friction into product and distribution improvements.
 - I set the direction for the teams that shipped [Code Assist](https://developers.google.com/maps/ai/code-assist), [agent skills](https://github.com/googlemaps/agent-skills), agentic evals, and the [Geo Architecture Center](https://developers.google.com/maps/architecture).
 
@@ -31,4 +30,4 @@ I lead Developer Experience Engineering and product for builder platforms. I tur
 
 Before software, I raced professionally for Trek-Livestrong and Bahati Foundation.
 
-[Read the background](/about/) · [See selected work](/work/)
+[Read the full background](/about/) · [Send a note](/contact/)

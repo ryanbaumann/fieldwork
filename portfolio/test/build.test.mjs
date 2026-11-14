@@ -129,6 +129,8 @@ test('build emits published aliases and omits redirects from writer previews', (
     '/atlas/': '/real-world-reasoning-agent/',
     '/labs/atlas/': '/real-world-reasoning-agent/',
     '/demos/atlas/': '/real-world-reasoning-agent/',
+    '/hairstyle-ai/': '/hairstyle-ai-studio/',
+    '/real-world-reasoning/': '/real-world-reasoning-agent/',
     '/writing/previous/': '/writing/current/',
   });
 
@@ -320,8 +322,9 @@ test('default social images keep their real alt text and resume stays compact wi
   assert.match(home, /<meta property="og:image:alt" content="Test Person portfolio preview\."/);
   assert.match(privacy, /<meta property="og:image:alt" content="Test Person portfolio preview\."/);
   assert.doesNotMatch(resume, /article-hero profile-portrait/);
-  assert.match(resume, /class="hero-actions page-actions"/);
-  assert.match(resume, /Read Field Notes/);
+  assert.doesNotMatch(resume, /class="hero-actions page-actions"/);
+  assert.match(resume, /class="eyebrow-link" href="\/about\/">← About<\/a>/);
+  assert.match(resume, /class="nav-about is-active"/);
 });
 
 test('build writes a styled 404 page with a link home', () => {
@@ -586,4 +589,36 @@ test('writer dashboard inline status helper restricts external links to https Gi
   assert.match(html, /parsed\.protocol!=='https:'/);
   assert.match(html, /parsed\.hostname!=='github\.com'&&parsed\.hostname!=='publish\.buffer\.com'/);
   assert.match(html, /link\.rel='noopener noreferrer'/);
+});
+
+test('navigation, colophon, and contact privacy disclosures stay unified and non-repetitive', () => {
+  const paths = fixture();
+  write(join(paths.content, 'writing', 'personal-note.md'), `---\ntitle: Personal note\nsummary: Decision fatigue\ndate: 2026-11-01\ntype: Personal\n---\nBody.`);
+  write(join(paths.content, 'pages', 'contact.md'), `---\ntitle: Contact\nsummary: Send a note\neyebrow: Contact\n---\nReach out anytime.`);
+  write(join(paths.content, 'pages', 'privacy.md'), `---\ntitle: Privacy\nsummary: Privacy notice\neyebrow: Privacy\n---\nPrivacy details.`);
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+
+  const note = readFileSync(join(paths.dist, 'writing', 'personal-note', 'index.html'), 'utf8');
+  assert.match(note, /<p class="eyebrow"><a class="eyebrow-link" href="\/writing\/">← Notes<\/a><\/p>/);
+  assert.match(note, /<p class="article-meta">Personal · November 1, 2026<\/p>/);
+  assert.match(note, /Written by Ryan Baumann, with copyediting assistance by AI\./);
+  assert.doesNotMatch(note, /AI helps me copyedit/);
+  assert.ok(note.indexOf('id="subscribe-title"') < note.indexOf('>← All notes</a>'));
+
+  const footerNav = note.match(/<nav class="footer-links" aria-label="Footer">([\s\S]*?)<\/nav>/)?.[1] || '';
+  assert.match(footerNav, /href="\/contact\/"[^>]*>Contact<\/a>/);
+  assert.match(footerNav, /href="\/resume\/"[^>]*>Resume<\/a>/);
+  assert.match(footerNav, /href="\/privacy\/"[^>]*>Privacy<\/a>/);
+  assert.match(footerNav, /href="\/feed\.xml"[^>]*>RSS<\/a>/);
+  assert.doesNotMatch(footerNav, /href="\/talks\/"|href="\/demos\/"/);
+
+  const contact = readFileSync(join(paths.dist, 'contact', 'index.html'), 'utf8');
+  assert.doesNotMatch(contact, /<p class="eyebrow">Contact<\/p>/);
+  assert.match(contact, /for="contact-message"/);
+  assert.match(contact, /for="contact-email"/);
+  assert.match(contact, /href="\/privacy\/#contact"/);
+
+  const privacy = readFileSync(join(paths.dist, 'privacy', 'index.html'), 'utf8');
+  assert.doesNotMatch(privacy, /<p class="eyebrow">Privacy<\/p>/);
 });

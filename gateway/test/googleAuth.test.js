@@ -153,6 +153,8 @@ test('googleLoginPage emits accessible semantic document shell and escapes alert
   assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1">/);
   assert.match(html, /<title>Dashboard sign in<\/title>/);
   assert.match(html, /<p role="alert">&lt;script&gt;alert\(1\)&lt;\/script&gt;<\/p>/);
+  assert.match(html, /href="\/"[^>]*>← Back to Fieldwork<\/a>/);
+  assert.doesNotMatch(html, /Writer dashboard/);
   assert.doesNotMatch(html, /<script>/);
 });
 

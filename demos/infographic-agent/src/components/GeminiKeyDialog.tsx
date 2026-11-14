@@ -211,7 +211,7 @@ export const GeminiKeyDialog: React.FC<GeminiKeyDialogProps> = ({
               Cancel
             </button>
             <button type="submit" className="btn-primary" style={{ width: 'auto' }} disabled={isValidating}>
-              {isValidating ? 'Checking…' : 'Save key'}
+              {isValidating ? 'Checking key…' : 'Validate and connect'}
             </button>
           </div>
         </form>

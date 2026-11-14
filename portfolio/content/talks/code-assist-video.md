@@ -17,5 +17,3 @@ order: 1
 AI agents that answer real-world questions need fresh spatial context, not static training memory alone.
 
 In this Google Maps Platform fireside chat, I talk about what it takes for an agent to reason about the real world, and why grounded geographic context matters more than what the model memorized.
-
-[Watch the fireside chat](https://youtu.be/L2V58kKIHvc).
