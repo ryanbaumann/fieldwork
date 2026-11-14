@@ -259,9 +259,7 @@ function renderFullArticleHtml(rawMarkdown, collectionName = 'writing', theme = 
   const css = fs.existsSync(STYLE_CSS_PATH) ? fs.readFileSync(STYLE_CSS_PATH, 'utf8') : '';
 
   const metaParts = [org, role, type, period].filter(Boolean).join(' · ');
-  const eyebrowText = collectionName === 'writing'
-    ? (type ? `Field Notes · ${escapeHtml(type)}` : 'Field Notes')
-    : escapeHtml(collectionName);
+  const eyebrowText = collectionName === 'writing' ? '← Notes' : `← ${escapeHtml(collectionName)}`;
   const tagsHtml = Array.isArray(meta.tags) && meta.tags.length
     ? `<p class="card-tags" style="margin: 0.5rem 0 1.25rem;">${meta.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join('')}</p>`
     : '';
@@ -618,9 +616,7 @@ function renderRichDiffArticleHtml(headMarkdown, rawMarkdown, collectionName = '
   const role = cur.meta.role || '';
   const type = cur.meta.type || '';
   const metaParts = [org, role, type, period].filter(Boolean).join(' · ');
-  const eyebrowText = collectionName === 'writing'
-    ? (type ? `Field Notes · ${escapeHtml(type)}` : 'Field Notes')
-    : escapeHtml(collectionName);
+  const eyebrowText = collectionName === 'writing' ? '← Notes' : `← ${escapeHtml(collectionName)}`;
   const tagsHtml = Array.isArray(cur.meta.tags) && cur.meta.tags.length
     ? `<p class="card-tags" style="margin: 0.5rem 0 1.25rem;">${cur.meta.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join('')}</p>`
     : '';

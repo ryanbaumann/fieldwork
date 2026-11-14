@@ -20,4 +20,4 @@ Before this role, I led product and engineering for [Intelligent Product Essenti
 
 I studied mechanical engineering at the University of Wisconsin-Madison, but before writing software, I raced professionally for Trek-Livestrong and Bahati Foundation. Racing taught me to pace long efforts, measure the right signal, and keep looking for the next useful improvement. I still love the outdoors and pushing myself gravel riding and trail running.
 
-[View the resume](/resume/) · [See selected work](/work/) · [Explore Labs](/demos/)
+[View the resume](/resume/) · [Send a note](/contact/)

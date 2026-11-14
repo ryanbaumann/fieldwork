@@ -7,7 +7,7 @@ import { SalonBriefModal } from './components/SalonBriefModal';
 import { LoadingView } from './components/LoadingView';
 import { GeminiKeyDialog } from './components/GeminiKeyDialog';
 import { useAppFlow } from './hooks/useAppFlow';
-import { Scissors, ShieldCheck, ChevronRight, KeyRound, Code2, ArrowUpRight } from 'lucide-react';
+import { Scissors, ShieldCheck, ChevronRight, KeyRound, Code2, ArrowLeft } from 'lucide-react';
 
 const FIELDWORK_URL = '/';
 const SOURCE_URL = 'https://github.com/ryanbaumann/fieldwork/tree/main/demos/hairstyle-ai-studio';
@@ -53,12 +53,22 @@ export const App = () => {
 
       {/* Navbar */}
       <nav className="w-full px-4 sm:px-6 py-3.5 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50 border-b border-slate-200/60 dark:border-slate-800">
-        <a href="/" className="flex min-h-11 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="Back to Fieldwork">
-          <div className="w-9 h-9 bg-gradient-to-br from-primary to-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md">
-            <Scissors size={18} />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <a
+            href={FIELDWORK_URL}
+            className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-500 hover:text-primary dark:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          >
+            <ArrowLeft size={14} aria-hidden="true" />
+            <span>Fieldwork</span>
+          </a>
+          <span className="h-4 w-px bg-slate-200 dark:bg-slate-700" aria-hidden="true" />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-primary to-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md">
+              <Scissors size={17} aria-hidden="true" />
+            </div>
+            <span className="text-base sm:text-lg font-black tracking-tight text-slate-800 dark:text-gray-100">HairStyle AI</span>
           </div>
-          <span className="text-lg font-black tracking-tight text-slate-800 dark:text-gray-100">HairStyle AI</span>
-        </a>
+        </div>
 
         {/* Desktop Stepper */}
         <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-1 gap-1.5">
@@ -132,7 +142,7 @@ export const App = () => {
               <button
                 type="button"
                 onClick={() => setIsKeyDialogRequested(true)}
-                className="min-h-11 rounded-lg px-2 font-black text-primary-700 underline decoration-primary-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-300"
+                className="sm:hidden min-h-11 rounded-lg px-2 font-black text-primary-700 underline decoration-primary-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-300"
               >
                 Add a personal key
               </button>
@@ -221,13 +231,11 @@ export const App = () => {
           )}
         </main>
 
-        <div className="container mx-auto px-4 sm:px-6 pb-36 sm:pb-6 mt-auto">
-          <footer className="flex flex-col items-center justify-center gap-2 py-4 text-center text-[10px] text-slate-400 sm:flex-row sm:gap-4">
-              <span>© {new Date().getFullYear()} Hairstyle AI Studio. Photos are sent to Google Gemini only when requested and are not stored on our servers.</span>
-              <span className="flex items-center gap-3 text-xs font-bold">
-                <a className="inline-flex min-h-11 items-center gap-1 hover:text-primary-600" href={FIELDWORK_URL}>More from Ryan <ArrowUpRight size={12} aria-hidden="true" /></a>
-                <a className="inline-flex min-h-11 items-center gap-1 hover:text-primary-600" href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><Code2 size={12} aria-hidden="true" /> Source</a>
-              </span>
+        <div className="container mx-auto px-4 sm:px-6 pb-28 sm:pb-6 mt-auto">
+          <footer className="flex items-center justify-center gap-3 py-3 text-center text-xs text-slate-400">
+              <span>© {new Date().getFullYear()} Hairstyle AI Studio</span>
+              <span aria-hidden="true">·</span>
+              <a className="inline-flex min-h-11 items-center gap-1 font-bold hover:text-primary-600" href={SOURCE_URL} target="_blank" rel="noopener noreferrer"><Code2 size={12} aria-hidden="true" /> Source</a>
           </footer>
         </div>
       </div>

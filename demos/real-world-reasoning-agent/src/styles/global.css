@@ -58,10 +58,10 @@ a {
   top: max(12px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   z-index: 1000;
-  min-height: 36px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
-  padding: 0 12px;
+  padding: 0 14px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   background: rgba(8, 12, 24, 0.82);
@@ -2574,21 +2574,6 @@ gmp-place-contextual {
   color: transparent;
 }
 .atlas-cold-open__hero p { max-width: 520px; margin: 22px 0 14px; color: var(--text-dim); font-size: 16px; line-height: 1.65; }
-.atlas-cold-open__labs-link {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 12px;
-  margin-bottom: 24px;
-  color: var(--brand-b);
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: opacity 150ms var(--ease);
-}
-.atlas-cold-open__labs-link:hover {
-  opacity: 0.8;
-  text-decoration: underline;
-}
 .mission-brief { border-radius: 24px; padding: 20px; display: grid; gap: 13px; }
 .mission-brief__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .mission-brief__header h2 { margin-top: 4px; font-size: 22px; }
@@ -2639,7 +2624,7 @@ gmp-place-contextual {
 .mission-gemini > button { display: inline-flex; align-items: center; gap: 6px; }
 .mission-gemini > span svg { color: var(--brand-b); }
 .mission-gemini > button {
-  min-height: 40px;
+  min-height: 44px;
   flex: 0 0 auto;
   border: 1px solid var(--glass-line);
   border-radius: 999px;
@@ -2805,8 +2790,8 @@ gmp-place-contextual {
 .mission-action--primary { border-color: rgba(34, 211, 238, 0.35); background: rgba(34, 211, 238, 0.13); color: var(--brand-b); }
 
 @media (max-width: 820px) {
-  .atlas-cold-open { padding: 14px; }
-  .atlas-cold-open__content { min-height: calc(100vh - 28px); grid-template-columns: 1fr; align-content: center; gap: 14px; }
+  .atlas-cold-open { padding: max(64px, calc(env(safe-area-inset-top) + 56px)) 14px 14px; }
+  .atlas-cold-open__content { min-height: calc(100vh - 78px); grid-template-columns: 1fr; align-content: center; gap: 14px; }
   .atlas-cold-open__hero h1 { font-size: clamp(34px, 10vw, 52px); }
   .atlas-cold-open__hero p { margin: 10px 0 0; font-size: 13px; line-height: 1.45; }
   .atlas-cold-open__eyebrow { margin-bottom: 8px; }
@@ -3049,7 +3034,7 @@ gmp-place-contextual {
 }
 
 @media (pointer: fine) and (min-width: 761px) {
-  .fieldwork-home-link {
+  body:has(.atlas-statusbar) .fieldwork-home-link {
     top: max(4px, env(safe-area-inset-top));
     min-height: 27px;
   }

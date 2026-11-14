@@ -168,8 +168,8 @@ export const GeminiKeyDialog = ({
             </div>
             <p id="gemini-key-help" className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               The proxy validates your key without generating content. It stays in this tab’s memory and is never stored or sent to analytics.{' '}
-              <a className="font-bold text-primary-600 underline underline-offset-2 dark:text-primary-400" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
-                Create a key
+              <a className="inline-flex min-h-9 items-center py-1 font-bold text-primary-600 underline underline-offset-2 dark:text-primary-400" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+                Create a key ↗
               </a>
             </p>
             <p id="gemini-key-error" role="alert" className="mt-2 min-h-5 text-xs font-semibold text-red-600 dark:text-red-400">

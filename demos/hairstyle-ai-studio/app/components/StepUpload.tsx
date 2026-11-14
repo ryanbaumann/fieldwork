@@ -79,36 +79,28 @@ export const StepUpload: React.FC<StepUploadProps> = ({ images, history, onUploa
             {/* Mobile Header / Quick Context */}
             <div className="lg:hidden mb-4 px-1">
                 <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                    HairStyle AI Studio
+                    Reinvent your look in seconds.
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Upload your photo to try trending cuts, textures, and colors in seconds.
+                    Upload a portrait to try cuts, textures, and colors before you book.
                 </p>
             </div>
 
             <div className="bg-card-light dark:bg-card-dark rounded-2xl p-4 sm:p-6 shadow-soft dark:shadow-none border border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Step 1: Upload Photo</h2>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Start with a clear selfie or portrait.</p>
-                    </div>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800">
-                        Required: Front
-                    </span>
+                <div className="mb-4">
+                    <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Step 1: Upload Photo</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Start with a clear front-facing portrait.</p>
                 </div>
 
                 {/* Main upload view: Front */}
                 <div className="grid grid-cols-1 gap-4 mb-4">
-                    <div className="flex flex-col gap-1.5">
-                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pl-0.5">Front View (Main Portrait)</span>
-                         <ImageUpload
-                            view="front"
-                            image={images.front}
-                            onUpload={onUpload}
-                            onClear={onClear}
-                            required
-                        />
-                    </div>
+                    <ImageUpload
+                        view="front"
+                        image={images.front}
+                        onUpload={onUpload}
+                        onClear={onClear}
+                        required
+                    />
                 </div>
 
                 {/* Collapsible optional views for Side & Back to save vertical space on mobile */}
@@ -118,30 +110,24 @@ export const StepUpload: React.FC<StepUploadProps> = ({ images, history, onUploa
                         onClick={() => setShowOptionalViews(!showOptionalViews)}
                         className="min-h-11 w-full flex items-center justify-between py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-primary transition-colors pl-0.5"
                     >
-                        <span>Add Side & Back angles (Optional)</span>
+                        <span>Add side & back angles (optional)</span>
                         {showOptionalViews ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>
 
                     {showOptionalViews && (
                         <div className="grid grid-cols-2 gap-3 pt-3 pb-2 animate-fadeIn">
-                            <div className="flex flex-col gap-1.5">
-                                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pl-0.5">Side View</span>
-                                 <ImageUpload
-                                    view="side"
-                                    image={images.side}
-                                    onUpload={onUpload}
-                                    onClear={onClear}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pl-0.5">Back View</span>
-                                 <ImageUpload
-                                    view="back"
-                                    image={images.back}
-                                    onUpload={onUpload}
-                                    onClear={onClear}
-                                />
-                            </div>
+                            <ImageUpload
+                                view="side"
+                                image={images.side}
+                                onUpload={onUpload}
+                                onClear={onClear}
+                            />
+                            <ImageUpload
+                                view="back"
+                                image={images.back}
+                                onUpload={onUpload}
+                                onClear={onClear}
+                            />
                         </div>
                     )}
                 </div>
