@@ -31,7 +31,7 @@ const MODES_LIST: Array<{ id: VisualMode; label: string; desc: string }> = [
 const ASPECT_LIST: AspectRatio[] = ['16:9', '1:1', '9:16', '3:4', '4:3', '1:4', '16:10', '21:9'];
 
 const STARTERS = [
-  'Global renewable energy transition trends 2024–2030 with key solar & wind growth metrics',
+  'Global renewable energy transition trends 2024 to 2030 with key solar and wind growth metrics',
   'Multi-agent AI orchestration architecture comparing Centralized vs Choreographed patterns',
   'Core Web Vitals checklist: LCP, INP, and CLS optimization best practices for frontend engineers',
   'PostgreSQL vs BigQuery for analytical query workloads: throughput, cost, and index tradeoffs',
@@ -139,18 +139,18 @@ export const TopicInput: React.FC<TopicInputProps> = ({
             onClick={() => setImageModel('gemini-3.1-flash-lite-image')}
             disabled={isLoading}
           >
-            <span className="mode-name">3.1 Flash Lite Image</span>
+            <span className="mode-name">Fast · Nano Banana 2 Lite</span>
             <span className="mode-desc">Fast default</span>
           </button>
           <button
             type="button"
-            className={`mode-btn ${imageModel === 'gemini-3.1-flash-image' ? 'active' : ''}`}
-            aria-pressed={imageModel === 'gemini-3.1-flash-image'}
-            onClick={() => setImageModel('gemini-3.1-flash-image')}
+            className={`mode-btn ${imageModel === 'gemini-nano-banana-2.1' ? 'active' : ''}`}
+            aria-pressed={imageModel === 'gemini-nano-banana-2.1'}
+            onClick={() => setImageModel('gemini-nano-banana-2.1')}
             disabled={isLoading}
           >
-            <span className="mode-name">3.1 Flash Image</span>
-            <span className="mode-desc">Higher resolution, slower</span>
+            <span className="mode-name">Studio · Nano Banana 2.1</span>
+            <span className="mode-desc">Higher detail, crisp text</span>
           </button>
         </div>
       </div>

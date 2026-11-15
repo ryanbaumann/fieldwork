@@ -4,6 +4,8 @@ import { ExternalLink, MapPin, Phone, Star, X } from 'lucide-react';
 import { useAtlas } from '@/state/store';
 import type { MarkerSpec, PlaceLite } from '@/lib/types';
 import { fmtPrice, fmtRating } from '@/lib/format';
+import { USAGE_ATTRIBUTION_ID } from '@/lib/config';
+import { normalizePlaceId } from '@/lib/mapsUrl';
 import { placeDetails } from '@/services/places';
 import { lib } from '@/services/maps';
 
@@ -85,7 +87,7 @@ export function MarkerPlaceCard({ marker }: { marker: MarkerSpec }) {
           {marker.placeId && <PlaceUiKitMount placeId={marker.placeId} accent={accent} />}
           <div className="place-popover__actions">
             {detail?.googleMapsUri && (
-              <a href={detail.googleMapsUri} target="_blank" rel="noreferrer">
+              <a href={detail.googleMapsUri} target="_blank" rel="noopener noreferrer">
                 <ExternalLink size={13} /> Maps
               </a>
             )}
@@ -107,18 +109,29 @@ function PlaceUiKitMount({ placeId, accent }: { placeId: string; accent: string 
   useEffect(() => {
     let disposed = false;
     let element: HTMLElement | null = null;
-    const cleanPlaceId = placeId?.trim();
+    const cleanPlaceId = normalizePlaceId(placeId);
     if (!cleanPlaceId) {
       hostRef.current?.replaceChildren();
       return;
     }
 
     void (async () => {
-      await lib('places').catch(() => undefined);
+      const placesLib = await lib('places').catch(() => null);
       if (disposed || !hostRef.current) return;
-      const ctor = customElements.get('gmp-place-details-compact') ?? customElements.get('gmp-place-details');
-      if (!ctor) return;
-      element = new (ctor as CustomElementConstructor)();
+      const typedLib = placesLib as unknown as {
+        PlaceDetailsCompactElement?: new (opts?: Record<string, unknown>) => HTMLElement;
+        PlaceDetailsElement?: new (opts?: Record<string, unknown>) => HTMLElement;
+      } | null;
+      const LibCtor = typedLib?.PlaceDetailsCompactElement ?? typedLib?.PlaceDetailsElement;
+      if (LibCtor) {
+        element = new LibCtor({
+          internalUsageAttributionIds: [USAGE_ATTRIBUTION_ID],
+        });
+      } else {
+        const ctor = customElements.get('gmp-place-details-compact') ?? customElements.get('gmp-place-details');
+        if (!ctor) return;
+        element = new (ctor as CustomElementConstructor)();
+      }
       element.className = 'place-popover__ui-kit';
       element.setAttribute('orientation', 'horizontal');
       element.style.setProperty('--gmp-mat-color-primary', accent);

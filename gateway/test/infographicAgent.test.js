@@ -89,9 +89,11 @@ test('handleInfographicAgentApi /prepare formats Interactions API request correc
   assert.equal(upstreamInit.headers['Api-Revision'], '2026-05-20');
   assert.equal(upstreamInit.headers['x-goog-api-key'], 'AIzaSyValidGeminiKey123');
   const payload = JSON.parse(upstreamInit.body);
-  assert.equal(payload.model, 'gemini-3.8-flash');
+  assert.equal(payload.model, 'gemini-4-hydrogen');
   assert.equal(payload.store, false);
-  assert.deepEqual(payload.generation_config, { thinking_level: 'low' });
+  assert.deepEqual(payload.generation_config, { thinking_level: 'medium' });
+  assert.equal('temperature' in payload.generation_config, false);
+  assert.equal(payload.input[0].text.includes('—'), false);
   assert.equal(result.json.analysis.title, 'Solar Boom');
   assert.equal(result.json.prompt, 'Infographic about solar power...');
 });
@@ -175,11 +177,87 @@ test('handleInfographicAgentApi /render respects imageModel and previousImageBas
 
   assert.equal(result.statusCode, 200);
   assert.equal(upstreamBody.model, 'gemini-3.1-flash-lite-image');
+  assert.deepEqual(upstreamBody.response_format, { type: 'image', aspect_ratio: '16:9' });
   assert.equal(upstreamBody.input.length, 2);
   assert.equal(upstreamBody.input[0].type, 'image');
   assert.equal(upstreamBody.input[0].mime_type, 'image/png');
   assert.equal(upstreamBody.input[1].type, 'text');
   assert.equal(result.json.model, 'gemini-3.1-flash-lite-image');
+});
+
+test('handleInfographicAgentApi /render supports gemini-nano-banana-2.1 and passes response_format', async () => {
+  let upstreamBody;
+  const result = await handleInfographicAgentApi({
+    pathname: '/api/infographic-agent/render',
+    method: 'POST',
+    body: {
+      prompt: 'Generate a professional infographic image about wind power',
+      aspect: '9:16',
+      imageModel: 'gemini-nano-banana-2.1',
+    },
+    apiKey: 'AIzaSyValidGeminiKey123',
+    credentialSource: 'hosted',
+    fetchImpl: async (_url, init) => {
+      upstreamBody = JSON.parse(init.body);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          steps: [{
+            type: 'model_output',
+            content: [{
+              type: 'image',
+              data: 'AQID',
+              mime_type: 'image/png',
+            }],
+          }],
+        }),
+      };
+    },
+  });
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(upstreamBody.model, 'gemini-nano-banana-2.1');
+  assert.deepEqual(upstreamBody.response_format, { type: 'image', aspect_ratio: '9:16' });
+  assert.equal(result.json.model, 'gemini-nano-banana-2.1');
+  assert.equal(result.json.aspect, '9:16');
+});
+
+test('handleInfographicAgentApi /render normalizes legacy gemini-3.1-flash-image to gemini-nano-banana-2.1', async () => {
+  let upstreamBody;
+  const result = await handleInfographicAgentApi({
+    pathname: '/api/infographic-agent/render',
+    method: 'POST',
+    body: {
+      prompt: 'Generate a professional infographic image about solar storage',
+      aspect: '4:3',
+      model: 'gemini-3.1-flash-image',
+    },
+    apiKey: 'AIzaSyValidGeminiKey123',
+    credentialSource: 'hosted',
+    fetchImpl: async (_url, init) => {
+      upstreamBody = JSON.parse(init.body);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          steps: [{
+            type: 'model_output',
+            content: [{
+              type: 'image',
+              data: 'AQID',
+              mime_type: 'image/png',
+            }],
+          }],
+        }),
+      };
+    },
+  });
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(upstreamBody.model, 'gemini-nano-banana-2.1');
+  assert.deepEqual(upstreamBody.response_format, { type: 'image', aspect_ratio: '4:3' });
+  assert.equal(result.json.model, 'gemini-nano-banana-2.1');
 });
 
 test('handleInfographicAgentApi upstream 403, 429, and 500 do not leak details or raw body to client', async () => {

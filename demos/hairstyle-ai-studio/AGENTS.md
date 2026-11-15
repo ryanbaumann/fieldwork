@@ -1,39 +1,39 @@
-# AGENTS.md — Hairstyle AI Studio
+# AGENTS.md: Hairstyle AI Studio
 
-## Project overview
-Hairstyle AI Studio is a React + Vite + TypeScript web app for AI hairstyle visualization using Gemini image models.
+## Project Overview
+Hairstyle AI Studio is a React, Vite, and TypeScript web app for Gemini hairstyle visualization.
 
-## Key files
-- `app/services/geminiService.ts`: Gemini calls, prompts, image generation/refinement.
-- `gateway/lib/hairstyleAi.js` (repository root): Gemini model names, prompts, validation, and API calls.
-- `app/services/geminiModels.ts`: Client-visible layout labels only.
-- `app/hooks/useAppFlow.ts`: Flow state, history, generation/refinement actions.
-- `app/components/`: upload, style, loading, result, and refinement UI.
-- `app/types.ts`: shared app state and generated-image metadata.
+## Key Files
+- `app/services/geminiService.ts`: Sends same-origin proxy requests for validation, analysis, generation, and refinement.
+- `gateway/lib/hairstyleAi.js` (repository root): Owns Gemini model IDs, prompts, input validation, and Interactions API calls.
+- `app/services/geminiModels.ts`: Defines client-visible layout and quality labels only.
+- `app/hooks/useAppFlow.ts`: Manages step state, IndexedDB history, cancellation, and API error recovery.
+- `app/components/`: Renders upload, style selection, loading, result, salon brief, and key dialog views.
+- `app/types.ts`: Declares shared TypeScript types for app state and generated images.
 
 ## Commands
-- `npm install`: install dependencies.
-- `npm run dev`: start local Vite server.
-- `npm run typecheck`: TypeScript validation.
-- `npm run build`: production build.
-- `npm run check`: typecheck, tests, and build.
+- `npm install`: Install package dependencies.
+- `npm run dev`: Start the local Vite development server.
+- `npm run typecheck`: Run TypeScript validation.
+- `npm test`: Run Vitest unit tests.
+- `npm run build`: Build production static assets.
+- `npm run check`: Run typecheck, tests, and production build.
 
-## Gemini model policy
-Model IDs are server-owned in the repository root's `gateway/lib/hairstyleAi.js`; do not expose or duplicate them in browser code. Use `gemini-3.8-flash` (with low thinking) for the explicit opt-in style recommendation and `gemini-3.1-flash-lite-image` for image generation and refinement. Verify model changes against current official Gemini API documentation.
+## Gemini Model Policy
+Keep model IDs server-owned in `gateway/lib/hairstyleAi.js`. Do not duplicate raw model IDs in browser code. Route `/analyze` to `gemini-4-hydrogen` with `MEDIUM` thinking and zero `temperature`. Route `generationMode: 'fast'` (default) to `gemini-3.1-flash-lite-image` and `generationMode: 'studio'` to `gemini-nano-banana-2.1`. Verify future model updates against official Gemini API documentation.
 
-## Secret handling
-- Never add `VITE_GEMINI_API_KEY`; Vite would publish it in the browser bundle.
-- The server-side `GEMINI_API_KEY` owns the five-successful-image-generations-per-IP daily allowance. Recommendation analysis does not consume it.
-- A user may override the shared key at runtime. Validate the personal key through the non-generating proxy endpoint before activation, keep it only in React memory, and pass it transiently in `X-Gemini-API-Key`.
-- A valid personal key bypasses the shared daily spend cap but remains subject to the gateway's separate abuse limiter. Never silently fall back to the shared key when a supplied personal key is malformed or rejected.
-- The gateway must never log, store, return, or send either key to analytics.
-- Never commit real API keys or screenshots containing keys.
+## Secret Handling
+- Never add `VITE_GEMINI_API_KEY` because Vite bundles `VITE_*` variables into public browser code.
+- Use server-side `GEMINI_API_KEY` for the shared allowance of five successful image generations per IP per UTC day.
+- Validate personal keys through `/api/hairstyle-ai-studio/validate-key`, store them in React memory only, and pass `X-Gemini-API-Key` transiently.
+- Keep the per-IP abuse limiter active on personal keys and never fall back to the shared key when a personal key fails.
+- Never log, persist, return, or send API keys to analytics, screenshots, or commits.
 
-## UX rules
-Prioritize a polished mobile-first salon workflow: Upload → Style/layout → Generate → Refine → Share / Save / Salon Brief. Every visible control must change real output (no dead pickers). Avoid blocking `alert()` calls; use inline, recoverable UI.
+## UX Rules
+Preserve the mobile-first salon flow: Upload, Style, Generate, Refine, and Salon Brief. Every visible control must change real output. Keep interactive touch targets at least 44 by 44 CSS pixels. Use inline recoverable error banners instead of blocking `alert()` calls.
 
 ## Styling
-Tailwind is compiled via PostCSS (`tailwind.config.js` + `postcss.config.js`), not the CDN. The full `primary` scale and non-standard slate/gray/red steps live in the config — add any new shade there rather than referencing an undefined class.
+Compile Tailwind through PostCSS (`tailwind.config.js` and `postcss.config.js`). Add custom color shades in `tailwind.config.js` before referencing them in components.
 
-## Privacy rules
-User face images are sensitive. Clearly explain when images are sent to Gemini, keep browser history local unless server storage is explicitly added, and preserve delete/clear-history affordances.
+## Privacy Rules
+Explain clearly when the app sends face photos to Gemini. Keep saved history in browser storage only and preserve delete and clear-all controls.

@@ -510,6 +510,7 @@ test('Gemini validation checks required models with header-only authentication',
   });
   assert.equal(result.response.statusCode, 200);
   assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /\/models\/gemini-4-hydrogen$/);
   assert.equal(calls.every(({ url }) => !url.includes(PERSONAL_KEY)), true);
   assert.equal(calls.every(({ init }) => init.headers['x-goog-api-key'] === PERSONAL_KEY), true);
 });
@@ -757,5 +758,166 @@ test('hosted Gemini health changes capabilities and blocks hosted requests with 
   assert.equal(calledUpstream, true);
 
   resetHostedGeminiHealthForTesting();
+});
+
+test('Gemini 4 Hydrogen and Omni 1.2 Flash are allowlisted and hosted maxOutputTokens defaults to 32768', async () => {
+  const captured = [];
+  const handler = createRealWorldReasoningHandler({ logger: () => {} });
+  const env = {
+    ...BASE_ENV,
+    GEMINI_API_KEY: HOSTED_KEY,
+    RWR_DAILY_AI_CAP: '10',
+  };
+  const hydrogen = await invoke({
+    handler,
+    path: 'ai/v1beta/models/gemini-4-hydrogen:generateContent',
+    method: 'POST',
+    headers: { origin: 'https://fieldwork.test', 'content-type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: 'plan mission' }] }] }),
+    env,
+    fetchImpl: async (url, init) => {
+      captured.push({ url: String(url), init });
+      return new Response('{"candidates":[]}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+  });
+  assert.equal(hydrogen.response.statusCode, 200);
+  assert.equal(JSON.parse(captured[0].init.body).generationConfig.maxOutputTokens, 32_768);
+
+  const omni12 = await invoke({
+    handler,
+    path: 'ai/v1beta/interactions',
+    method: 'POST',
+    headers: {
+      origin: 'https://fieldwork.test',
+      'content-type': 'application/json',
+      'x-atlas-gemini-key': PERSONAL_KEY,
+    },
+    body: JSON.stringify({ model: 'gemini-omni-1.2-flash', input: 'tour' }),
+    env,
+    fetchImpl: async () => new Response('{}', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }),
+  });
+  assert.equal(omni12.response.statusCode, 200);
+});
+
+test('Google Maps Experience MCP proxy enforces method, origin, key, JSON-RPC allowlists, daily cap, and attribution headers', async () => {
+  const handler = createRealWorldReasoningHandler({ logger: () => {} });
+
+  const getMethod = await invoke({
+    handler,
+    path: 'mcp',
+    method: 'GET',
+    env: { ...BASE_ENV, GMP_MCP_KEY: 'mcp-test-key' },
+  });
+  assert.equal(getMethod.response.statusCode, 405);
+
+  const crossOrigin = await invoke({
+    handler,
+    path: 'mcp',
+    method: 'POST',
+    headers: { origin: 'https://evil.example', 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+    env: { ...BASE_ENV, GMP_MCP_KEY: 'mcp-test-key' },
+  });
+  assert.equal(crossOrigin.response.statusCode, 429);
+
+  const missingKey = await invoke({
+    handler,
+    path: 'mcp',
+    method: 'POST',
+    headers: { origin: 'https://fieldwork.test', 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+    env: BASE_ENV,
+  });
+  assert.equal(missingKey.response.statusCode, 503);
+
+  const invalidRpc = await invoke({
+    handler,
+    path: 'mcp',
+    method: 'POST',
+    headers: { origin: 'https://fieldwork.test', 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '1.0', id: 1, method: 'tools/list' }),
+    env: { ...BASE_ENV, GMP_MCP_KEY: 'mcp-test-key' },
+  });
+  assert.equal(invalidRpc.response.statusCode, 400);
+
+  const disallowedMethod = await invoke({
+    handler,
+    path: 'mcp',
+    method: 'POST',
+    headers: { origin: 'https://fieldwork.test', 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'resources/read' }),
+    env: { ...BASE_ENV, GMP_MCP_KEY: 'mcp-test-key' },
+  });
+  assert.equal(disallowedMethod.response.statusCode, 403);
+
+  const disallowedTool = await invoke({
+    handler,
+    path: 'mcp',
+    method: 'POST',
+    headers: { origin: 'https://fieldwork.test', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'delete_account', arguments: {} },
+    }),
+    env: { ...BASE_ENV, GMP_MCP_KEY: 'mcp-test-key' },
+  });
+  assert.equal(disallowedTool.response.statusCode, 403);
+
+  let upstream;
+  const env = {
+    ...BASE_ENV,
+    RWR_GMP_MCP_KEY: 'rwr-mcp-key',
+    GMP_SERVER_API_KEY: 'fallback-gmp-key',
+    RWR_DAILY_MCP_CAP: '1',
+  };
+  const rpcBody = JSON.stringify({
+    jsonrpc: '2.0',
+    id: 'req-1',
+    method: 'tools/call',
+    params: { name: 'resolve_maps_urls', arguments: { urls: ['https://maps.app.goo.gl/abc'] } },
+  });
+  const allowed = await invoke({
+    handler,
+    path: 'mcp',
+    method: 'POST',
+    headers: {
+      origin: 'https://fieldwork.test',
+      referer: 'https://fieldwork.test/?prompt=secret',
+      'content-type': 'application/json',
+    },
+    body: rpcBody,
+    env,
+    fetchImpl: async (url, init) => {
+      upstream = { url: new URL(url), init };
+      return new Response(JSON.stringify({ jsonrpc: '2.0', id: 'req-1', result: { content: [] } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+  });
+  assert.equal(allowed.response.statusCode, 200);
+  assert.equal(upstream.url.href, 'https://mapstools.googleapis.com/mcp');
+  assert.equal(upstream.init.headers['X-Goog-Api-Key'], 'rwr-mcp-key');
+  assert.equal(upstream.init.headers['X-Goog-Maps-Solution-ID'], GMP_SOLUTION_ID);
+  assert.equal(upstream.init.headers.referer, undefined);
+  assert.equal(upstream.init.headers.origin, undefined);
+
+  const capped = await invoke({
+    handler,
+    path: 'mcp',
+    method: 'POST',
+    headers: { origin: 'https://fieldwork.test', 'content-type': 'application/json' },
+    body: rpcBody,
+    env,
+  });
+  assert.equal(capped.response.statusCode, 429);
 });
 

@@ -71,6 +71,7 @@ export const COMMON_TOOLS: ToolDefinition[] = [
   capabilityTool('clear_map'),
   capabilityTool('draw_route'),
   capabilityTool('get_environment'),
+  capabilityTool('create_maps_shortlist'),
   askMapsTool,
   capabilityTool('show_notice'),
   RENDER_SURFACE_TOOL,

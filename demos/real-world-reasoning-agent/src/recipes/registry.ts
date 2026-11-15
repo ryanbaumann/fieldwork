@@ -14,11 +14,12 @@ export const RECIPES: ExperienceManifest[] = [
   {
     id: 'concierge',
     title: 'Concierge',
-    tagline: 'One sentence in — a walkable day out, reasoned into order and drawn on the map.',
-    placeholder: 'Describe your perfect day…',
+    tagline: 'One sentence in, a walkable day out, reasoned into order and drawn on the map.',
+    placeholder: 'Describe your day or paste Google Maps links for a Maps List…',
     starters: [
-      'Plan a walkable Saturday near the Ferry Building — coffee, art, then dinner',
-      "It's raining — build my best indoor day downtown and show me the route",
+      'Plan a walkable Saturday near the Ferry Building: coffee, art, then dinner',
+      'Build a coffee and gallery shortlist near the Ferry Building as a Maps List',
+      "It's raining: build my best indoor day downtown and show me the route",
     ],
     capabilities: ['propose_itinerary', 'update_itinerary', 'set_travel_mode', 'play_tour', 'make_postcard'],
     mapMode: '2d',
@@ -27,7 +28,7 @@ export const RECIPES: ExperienceManifest[] = [
   {
     id: 'insight',
     title: 'Insight',
-    tagline: 'Judge any block on air, weather, solar and live commutes — with receipts.',
+    tagline: 'Judge any block on air, weather, solar and live commutes with receipts.',
     placeholder: 'Name a block to judge…',
     starters: [
       'Analyze the Mission District for someone who bikes to work',
@@ -44,7 +45,7 @@ export const RECIPES: ExperienceManifest[] = [
     placeholder: 'Give the dispatcher an order…',
     starters: [
       'Which van should take the next unassigned job, and why?',
-      'Traffic just spiked downtown — reroute anything at risk',
+      'Traffic just spiked downtown: reroute anything at risk',
     ],
     capabilities: ['get_fleet_state', 'eta_matrix', 'assign_job', 'set_avoid_zone', 'set_sim_speed', 'follow_van'],
     mapMode: '2d',
@@ -54,7 +55,7 @@ export const RECIPES: ExperienceManifest[] = [
     id: 'cinema',
     title: 'Cinema',
     tagline: 'Fly a photoreal 3D city while the agent narrates only what it can prove.',
-    placeholder: 'Name a place — Atlas flies there…',
+    placeholder: 'Name a place and Atlas flies there…',
     starters: [
       'Take me on a 3D tour of the waterfront and tell me what I am seeing',
       'Orbit Coit Tower and explain why it is where it is',

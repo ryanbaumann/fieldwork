@@ -97,6 +97,7 @@ export const CATALOG_COMPONENT_NAMES = new Set<string>([
   'ComparisonTable',
   'ConfirmationResult',
   'GroundingAttribution',
+  'NextActions',
 ]);
 
 const ROOT_ID = 'root';
@@ -116,7 +117,7 @@ const ROOT_ID = 'root';
  */
 export type PropPrimitive = 'string' | 'number' | 'array' | 'object';
 export interface PropSpec {
-  type: PropPrimitive;
+  type: PropPrimitive | readonly PropPrimitive[];
   required?: boolean;
 }
 export const COMPONENT_PROP_SPEC: Record<string, Record<string, PropSpec>> = {
@@ -139,16 +140,23 @@ export const COMPONENT_PROP_SPEC: Record<string, Record<string, PropSpec>> = {
   },
   GoogleMap: {
     center: { type: 'object' },
+    lat: { type: 'number' },
+    lng: { type: 'number' },
     zoom: { type: 'number' },
     tilt: { type: 'number' },
     mode: { type: 'string' },
     heading: { type: 'number' },
+    label: { type: 'string' },
     mapId: { type: 'string' },
     gestureHandling: { type: 'string' },
+    origin: { type: ['object', 'string'] },
+    destination: { type: ['object', 'string'] },
     anchorMarker: { type: 'object' },
     markers: { type: 'array' },
     routes: { type: 'array' },
     travelMode: { type: 'string' },
+    placePrimaryType: { type: 'string' },
+    contentToken: { type: 'string' },
   },
   Button: { child: { type: 'string', required: true } },
   AdCreative: {
@@ -174,6 +182,10 @@ export const COMPONENT_PROP_SPEC: Record<string, Record<string, PropSpec>> = {
     url: { type: 'string', required: true },
     placeUrl: { type: 'string' },
     provider: { type: 'string' },
+  },
+  NextActions: {
+    actions: { type: 'array', required: true },
+    label: { type: 'string' },
   },
 };
 
@@ -292,9 +304,12 @@ function isBinding(v: unknown): v is DataBinding {
 /** A prop value is acceptable when it's a binding, a mustache string, or the
  *  declared primitive type. Bindings and mustache tokens resolve at render time,
  *  so they always pass regardless of the declared type. */
-function propValueOk(value: unknown, type: PropPrimitive): boolean {
+function propValueOk(value: unknown, type: PropPrimitive | readonly PropPrimitive[]): boolean {
   if (isBinding(value)) return true;
   if (typeof value === 'string' && MUSTACHE_TOKEN.test(value)) return true;
+  if (Array.isArray(type)) {
+    return (type as readonly PropPrimitive[]).some((candidate) => propValueOk(value, candidate));
+  }
   if (type === 'array') return Array.isArray(value);
   // A record (not an array) — `isRecord` already excludes arrays and null.
   if (type === 'object') return isRecord(value);
@@ -303,7 +318,10 @@ function propValueOk(value: unknown, type: PropPrimitive): boolean {
 
 /** Human hint describing what a prop accepts, reused by both the "required" and
  *  "wrong type" messages so the model sees a consistent, actionable shape. */
-function propHint(prop: string, type: PropPrimitive): string {
+function propHint(prop: string, type: PropPrimitive | readonly PropPrimitive[]): string {
+  if (Array.isArray(type)) {
+    return `a ${(type as readonly PropPrimitive[]).join(' or ')}, or a {"path":"…"} binding`;
+  }
   if (type === 'number') return 'a number or a {"path":"…"} binding';
   if (type === 'array') return 'an array or a {"path":"…"} binding';
   if (type === 'object') return 'an object or a {"path":"…"} binding';

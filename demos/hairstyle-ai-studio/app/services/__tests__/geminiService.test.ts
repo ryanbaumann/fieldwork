@@ -117,4 +117,29 @@ describe('refineHairstyleImage', () => {
     expect(body.currentImage).toBe('data:image/png;base64,cur');
     expect(body.refinementInstruction).toBe('shorter bangs');
   });
+
+  it('forwards studio generationMode for generate and refine', async () => {
+    mockFetch.mockResolvedValue(jsonResponse({ image: 'data:image/jpeg;base64,studio' }));
+    await generateHairstyleImage(
+      API_KEY,
+      { front: 'data:image/png;base64,f', side: null, back: null },
+      'Textured shag',
+      null,
+      null,
+      'studio',
+      'salon-sheet'
+    );
+    await refineHairstyleImage(
+      API_KEY,
+      'data:image/jpeg;base64,studio',
+      'warmer copper tone',
+      null,
+      null,
+      'studio',
+      'salon-sheet'
+    );
+
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body).generationMode).toBe('studio');
+    expect(JSON.parse(mockFetch.mock.calls[1][1].body).generationMode).toBe('studio');
+  });
 });

@@ -16,11 +16,14 @@
  * (moving the camera, sending a prompt) stays in `actions.ts`.
  */
 
+import { buildMapsShortlistUrl, isValidMapsShortlistUrl } from '@/lib/mapsUrl';
+
 export type ActionName =
   | 'fly_to'
   | 'select_place'
   | 'send_prompt'
   | 'open_url'
+  | 'open_maps_shortlist'
   | 'download_image'
   | 'explorer_change_travel_mode';
 
@@ -29,6 +32,7 @@ export type ResolvedAction =
   | { name: 'select_place'; placeId: string }
   | { name: 'send_prompt'; prompt: string }
   | { name: 'open_url'; url: string }
+  | { name: 'open_maps_shortlist'; url: string }
   | { name: 'download_image'; dataUrl: string; filename: string }
   | { name: 'explorer_change_travel_mode'; travelMode: 'WALK' | 'DRIVE' };
 
@@ -102,6 +106,25 @@ export function resolveSurfaceAction(name: string, context: Record<string, unkno
       const url = text(context.url);
       if (!url || !isSafeHref(url)) return { ok: false, reason: 'open_url requires an https or mailto link' };
       return { ok: true, action: { name: 'open_url', url } };
+    }
+    case 'open_maps_shortlist': {
+      const rawUrl = text(context.url);
+      if (rawUrl) {
+        if (!isValidMapsShortlistUrl(rawUrl)) {
+          return { ok: false, reason: 'open_maps_shortlist requires a valid Google Maps shortlist URL' };
+        }
+        return { ok: true, action: { name: 'open_maps_shortlist', url: rawUrl } };
+      }
+      const rawIds = Array.isArray(context.placeIds)
+        ? context.placeIds
+        : typeof context.placeIds === 'string'
+          ? context.placeIds.split(',')
+          : [];
+      const built = buildMapsShortlistUrl(rawIds);
+      if (!built) {
+        return { ok: false, reason: 'open_maps_shortlist requires 1-20 valid canonical Place IDs' };
+      }
+      return { ok: true, action: { name: 'open_maps_shortlist', url: built } };
     }
     case 'download_image': {
       const dataUrl = text(context.dataUrl);

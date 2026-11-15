@@ -52,10 +52,11 @@ export const RefinementTools: React.FC<RefinementToolsProps> = ({ selectedOption
           return (
             <button
               key={tool.id}
+              type="button"
               onClick={() => setActiveTab(tool.id)}
               disabled={disabled}
               className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border shrink-0
+                min-h-[44px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border shrink-0
                 ${isActive
                   ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm'
                   : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200/60 dark:border-slate-800 hover:border-slate-350 dark:hover:border-slate-700'}
@@ -80,10 +81,11 @@ export const RefinementTools: React.FC<RefinementToolsProps> = ({ selectedOption
           return (
             <button
               key={option}
+              type="button"
               onClick={() => onToggle(option)}
               disabled={disabled}
               className={`
-                text-xs px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap font-medium
+                min-h-[44px] inline-flex items-center text-xs px-3.5 py-1.5 rounded-xl border transition-all whitespace-nowrap font-medium
                 ${isSelected
                   ? 'bg-primary border-primary text-white shadow-sm'
                   : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-850 text-slate-650 dark:text-slate-300 hover:border-primary-350'}

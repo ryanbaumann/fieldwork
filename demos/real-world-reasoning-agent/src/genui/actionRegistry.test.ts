@@ -67,4 +67,35 @@ describe('surface action registry', () => {
     expect(resolveSurfaceAction('select_place', { placeId: 'abc' }).ok).toBe(true);
     expect(resolveSurfaceAction('select_place', {}).ok).toBe(false);
   });
+
+  it('validates open_maps_shortlist URLs and canonical Place ID arrays strictly', () => {
+    const fromIds = resolveSurfaceAction('open_maps_shortlist', {
+      placeIds: ['places/ChIJN1t_tDeuEmsRUsoyG83frY4', 'ChIJd8BlQ2BZwokRAFUEcm_qrcA'],
+    });
+    expect(fromIds).toEqual({
+      ok: true,
+      action: {
+        name: 'open_maps_shortlist',
+        url: 'https://www.google.com/maps/@?api=1&map_action=shortlist&place_ids=ChIJN1t_tDeuEmsRUsoyG83frY4,ChIJd8BlQ2BZwokRAFUEcm_qrcA&utm_source=atlas&utm_campaign=shortlist',
+      },
+    });
+
+    const validUrl =
+      'https://www.google.com/maps/@?api=1&map_action=shortlist&place_ids=ChIJN1t_tDeuEmsRUsoyG83frY4&utm_source=atlas&utm_campaign=shortlist';
+    expect(resolveSurfaceAction('open_maps_shortlist', { url: validUrl })).toEqual({
+      ok: true,
+      action: { name: 'open_maps_shortlist', url: validUrl },
+    });
+
+    expect(
+      resolveSurfaceAction('open_maps_shortlist', {
+        placeIds: ['grounded-place-1', 'synthetic-candidate-a'],
+      }).ok,
+    ).toBe(false);
+    expect(
+      resolveSurfaceAction('open_maps_shortlist', {
+        url: 'https://evil.example/maps/@?api=1&map_action=shortlist&place_ids=ChIJN1t_tDeuEmsRUsoyG83frY4',
+      }).ok,
+    ).toBe(false);
+  });
 });

@@ -208,13 +208,25 @@ describe('/capabilities preflight', () => {
     const port = await startServer({ GEMINI_KEY: 'dummy', GMP_SERVER_KEY: 'dummy', GMP_RATE_LIMIT: '1000' });
     const response = await fetch(`http://127.0.0.1:${port}/capabilities`);
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ maps: true, gemini: true, mapsGrounding: true, groundingLite: true });
+    expect(await response.json()).toEqual({
+      maps: true,
+      gemini: true,
+      hostedGemini: true,
+      mapsGrounding: true,
+      groundingLite: true,
+    });
   }, 25_000);
 
   it('fails closed when either server capability is absent', async () => {
     const port = await startServer({ GEMINI_KEY: '', GMP_SERVER_KEY: '', GMP_RATE_LIMIT: '1000' });
     const response = await fetch(`http://127.0.0.1:${port}/capabilities`);
-    expect(await response.json()).toEqual({ maps: false, gemini: false, mapsGrounding: false, groundingLite: false });
+    expect(await response.json()).toEqual({
+      maps: false,
+      gemini: false,
+      hostedGemini: false,
+      mapsGrounding: false,
+      groundingLite: false,
+    });
   }, 25_000);
 });
 

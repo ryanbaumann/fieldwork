@@ -53,8 +53,15 @@ test('model advertising decisions are delivered for review and send no identity 
     fetchImpl,
   });
   assert.equal(result.decision, 'review');
+  assert.equal(requestUrl, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-4-hydrogen:generateContent');
   assert.doesNotMatch(requestUrl, /key=/);
   assert.equal(requestHeaders['x-goog-api-key'], 'test-key');
+  assert.deepEqual(requestBody.generationConfig, {
+    thinkingConfig: { thinkingLevel: 'low' },
+    maxOutputTokens: 1024,
+    responseMimeType: 'application/json',
+  });
+  assert.equal('temperature' in requestBody.generationConfig, false);
   const modelText = requestBody.contents[0].parts[0].text;
   assert.doesNotMatch(modelText, /name:|email:/i);
 });

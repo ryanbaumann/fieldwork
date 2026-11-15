@@ -12,6 +12,7 @@ export const TOOL_RATIONALE: Record<string, string> = {
   search_places: 'Finding real, tool-sourced places instead of guessing',
   get_place_details: 'Pulling live details so every fact is verifiable',
   get_environment: 'Reading live air, weather and pollen for this spot',
+  create_maps_shortlist: 'Resolving places into a shareable Google Maps list',
   ask_maps: 'Grounding the answer in Google Maps data',
   draw_route: 'Showing the real route so the plan is legible',
 

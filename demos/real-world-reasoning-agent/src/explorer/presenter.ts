@@ -1,5 +1,6 @@
 import type { A2uiMessage, ComponentNode } from '@/genui/protocol';
 import { ATLAS_CATALOG_ID } from '@/genui/protocol';
+import { MAX_SHORTLIST_PLACES, isValidPlaceId, normalizePlaceId } from '@/lib/mapsUrl';
 import type { ExplorerAttribution, ExplorerCandidate, ExplorerView } from './contracts';
 
 const TERMINAL = new Set<ExplorerView['stage']>([
@@ -139,28 +140,55 @@ export function buildExplorerSurface(view: ExplorerView, create: boolean): A2uiM
     children.push('explorer-limitations');
     components.push({ id: 'explorer-limitations', component: 'Text', variant: 'caption', text: view.limitations.join(' ') });
   }
+  const shortlistPlaceIds =
+    view.dataMode === 'live'
+      ? Array.from(
+          new Set(
+            view.candidates
+              .map((candidate) => normalizePlaceId(candidate.id))
+              .filter((id) => isValidPlaceId(id)),
+          ),
+        ).slice(0, MAX_SHORTLIST_PLACES)
+      : [];
+
   // The surface owns what comes next. The shell used to hardcode the
   // counterfactual, so only the shell could decide it existed; now the presenter
   // that knows a winner was found is the thing that offers the comparison.
-  if (view.winnerId) {
+  if (view.winnerId || shortlistPlaceIds.length >= 2) {
     const nextMode = view.travelMode === 'WALK' ? 'DRIVE' : 'WALK';
-    const winner = view.candidates.find((candidate) => candidate.id === view.winnerId);
+    const winner = view.winnerId
+      ? view.candidates.find((candidate) => candidate.id === view.winnerId)
+      : undefined;
     children.push('next-actions');
     components.push({
       id: 'next-actions',
       component: 'NextActions',
       label: 'What next',
       actions: [
-        {
-          label: nextMode === 'DRIVE' ? 'Compare driving' : 'Compare walking',
-          emphasis: 'primary',
-          action: { event: { name: 'explorer_change_travel_mode', context: { travelMode: nextMode } } },
-        },
+        ...(view.winnerId
+          ? [
+              {
+                label: nextMode === 'DRIVE' ? 'Compare driving' : 'Compare walking',
+                emphasis: 'primary',
+                action: { event: { name: 'explorer_change_travel_mode', context: { travelMode: nextMode } } },
+              },
+            ]
+          : []),
         ...(winner?.placeUrl
-          ? [{
-              label: 'Open in Google Maps',
-              action: { event: { name: 'open_url', context: { url: winner.placeUrl } } },
-            }]
+          ? [
+              {
+                label: 'Open in Google Maps',
+                action: { event: { name: 'open_url', context: { url: winner.placeUrl } } },
+              },
+            ]
+          : []),
+        ...(shortlistPlaceIds.length >= 2
+          ? [
+              {
+                label: `Open as Maps List (${shortlistPlaceIds.length}) ↗`,
+                action: { event: { name: 'open_maps_shortlist', context: { placeIds: shortlistPlaceIds } } },
+              },
+            ]
           : []),
       ],
     });

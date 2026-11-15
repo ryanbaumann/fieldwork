@@ -63,7 +63,7 @@ function findPython() {
 if (!existsSync(scriptPath)) {
   err(
     `Could not find portable_infographic.py at: ${scriptPath}\n` +
-    "  This is a packaging bug — please open an issue at\n" +
+    "  This is a packaging bug. Please open an issue at\n" +
     "  https://github.com/ryanbaumann/infographic-agent/issues"
   );
   process.exit(1);
@@ -84,8 +84,8 @@ if (showHelp) {
 infographic-agent v${pkg.version}
 
 Generate a professional infographic PNG directly with Gemini: a research
-agent (gemini-3.8-flash) prepares and validates the prompt, then the image
-model (gemini-3.1-flash-lite-image) renders it. No browser or Playwright needed.
+agent (gemini-4-hydrogen) prepares and validates the prompt, then the image
+model (gemini-nano-banana-2.1) renders it. No browser or Playwright needed.
 
 Usage:
   npx infographic-agent "<topic>" [options]
@@ -95,7 +95,8 @@ Options:
   --output, -o <path>    Output PNG path (default: infographic.png)
   --mode, -m <mode>      data-story | executive-summary | technical-deep-dive |
                          classroom | quick-slide | custom  (default: data-story)
-  --aspect, -a <ratio>   1:1 | 9:16 | 16:9 | 3:4 | 4:3 | 1:4  (default: 9:16)
+  --aspect, -a <ratio>   1:1 | 9:16 | 16:9 | 3:4 | 4:3 | 1:4  (default: 16:9)
+  --image-model <id>     gemini-nano-banana-2.1 | gemini-3.1-flash-lite-image
   --instructions, -i     Extra styling / content instructions
   --no-research          Skip the research agent; generate straight from your text
   --no-open              Do not auto-open the result

@@ -32,9 +32,21 @@ export const ResultView: React.FC<ResultViewProps> = ({
   };
 
   const handleOpenNewTab = () => {
-    const win = window.open();
+    if (!imageUrl.startsWith('data:image/') && !imageUrl.startsWith('https://')) {
+      return;
+    }
+    const win = window.open('about:blank', '_blank');
     if (win) {
-      win.document.write(`<img src="${imageUrl}" style="max-width:100%;height:auto;" alt="Infographic" />`);
+      win.opener = null;
+      const img = win.document.createElement('img');
+      img.src = imageUrl;
+      img.alt = topic ? `Infographic for ${topic}` : 'Infographic';
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.display = 'block';
+      win.document.body.style.margin = '0';
+      win.document.body.style.backgroundColor = '#0c0e12';
+      win.document.body.replaceChildren(img);
     }
   };
 

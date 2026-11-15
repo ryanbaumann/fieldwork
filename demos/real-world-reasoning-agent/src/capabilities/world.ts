@@ -17,7 +17,15 @@ import { createCapabilityRegistry, resolveCapabilityProfile } from './manifest';
 import { searchText, placeDetails } from '@/services/places';
 import { computeRoute } from '@/services/routes';
 import { environmentSnapshot } from '@/services/env';
-import type { TravelMode } from '@/lib/types';
+import { resolveMapsUrlsMcp, resolveNamesMcp } from '@/services/mapsExperience';
+import {
+  MAX_SHORTLIST_PLACES,
+  buildMapsShortlistUrl,
+  isValidPlaceId,
+  normalizePlaceId,
+  parseMapsPlaceInput,
+} from '@/lib/mapsUrl';
+import type { PlaceLite, TravelMode } from '@/lib/types';
 
 const ACCENT = '#6d5ef3';
 
@@ -316,6 +324,155 @@ export const getEnvironmentCapability: CapabilityDefinition = {
   },
 };
 
+export const createMapsShortlistCapability: CapabilityDefinition = {
+  manifest: manifest(
+    'world.places.shortlist',
+    'create_maps_shortlist',
+    'Resolve Google Maps URLs (google.com/maps/place/..., maps.app.goo.gl/..., ?place_ids=...), Place IDs, or place queries into up to 20 canonical Place IDs, drop numbered markers on the map, and return a 1-click Google Maps List URL (map_action=shortlist).',
+    {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Google Maps URLs, Place IDs, or place queries to include in the shortlist (up to 20).',
+        },
+        text: {
+          type: 'string',
+          description: 'Optional raw text containing pasted Google Maps links, Place IDs, or newline-separated place queries.',
+        },
+        placeIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Explicit canonical Google Place IDs.',
+        },
+        urls: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Explicit Google Maps URLs to resolve.',
+        },
+        queries: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Explicit place name queries to resolve.',
+        },
+        lat: { type: 'number', description: 'Optional bias latitude for resolving place queries.' },
+        lng: { type: 'number', description: 'Optional bias longitude for resolving place queries.' },
+      },
+    },
+    {
+      type: 'object',
+      properties: {
+        ok: { type: 'boolean' },
+        count: { type: 'number' },
+        shortlistUrl: { type: 'string' },
+        placeIds: { type: 'array' },
+        places: { type: 'array' },
+      },
+      required: ['ok', 'count'],
+    },
+  ),
+  async execute(args) {
+    const near = args.lat != null && args.lng != null
+      ? { lat: num(args.lat), lng: num(args.lng) }
+      : undefined;
+
+    const rawInputs: unknown[] = [];
+    if (Array.isArray(args.items)) rawInputs.push(...args.items);
+    if (typeof args.text === 'string') rawInputs.push(args.text);
+    if (Array.isArray(args.urls)) rawInputs.push(...args.urls);
+    if (Array.isArray(args.queries)) rawInputs.push(...args.queries);
+
+    const parsed = parseMapsPlaceInput(rawInputs);
+    const candidatePlaceIds = new Set<string>(parsed.placeIds);
+    if (Array.isArray(args.placeIds)) {
+      for (const rawId of args.placeIds) {
+        const cleanId = normalizePlaceId(rawId);
+        if (isValidPlaceId(cleanId)) candidatePlaceIds.add(cleanId);
+      }
+    }
+
+    const resolvedById = new Map<string, Partial<PlaceLite> & { id: string }>();
+
+    for (const id of candidatePlaceIds) {
+      if (resolvedById.size >= MAX_SHORTLIST_PLACES) break;
+      const cleanId = normalizePlaceId(id);
+      if (!isValidPlaceId(cleanId) || resolvedById.has(cleanId)) continue;
+      const detail = await placeDetails(cleanId).catch(() => null);
+      if (detail) {
+        resolvedById.set(cleanId, { ...detail, id: cleanId });
+      } else {
+        resolvedById.set(cleanId, { id: cleanId });
+      }
+    }
+
+    if (parsed.urls.length > 0 && resolvedById.size < MAX_SHORTLIST_PLACES) {
+      const fromUrls = await resolveMapsUrlsMcp(parsed.urls, { near });
+      for (const place of fromUrls) {
+        if (resolvedById.size >= MAX_SHORTLIST_PLACES) break;
+        const cleanId = normalizePlaceId(place.id);
+        if (!isValidPlaceId(cleanId) || resolvedById.has(cleanId)) continue;
+        resolvedById.set(cleanId, { ...place, id: cleanId });
+      }
+    }
+
+    if (parsed.queries.length > 0 && resolvedById.size < MAX_SHORTLIST_PLACES) {
+      const fromQueries = await resolveNamesMcp(parsed.queries, { near });
+      for (const place of fromQueries) {
+        if (resolvedById.size >= MAX_SHORTLIST_PLACES) break;
+        const cleanId = normalizePlaceId(place.id);
+        if (!isValidPlaceId(cleanId) || resolvedById.has(cleanId)) continue;
+        resolvedById.set(cleanId, { ...place, id: cleanId });
+      }
+    }
+
+    const placeIds = [...resolvedById.keys()].slice(0, MAX_SHORTLIST_PLACES);
+    const shortlistUrl = buildMapsShortlistUrl(placeIds);
+    if (!shortlistUrl) {
+      return {
+        data: {
+          ok: false,
+          count: 0,
+          error: 'No valid canonical Google Place IDs could be resolved for a shortlist.',
+        },
+        effects: [],
+      };
+    }
+
+    const entries = placeIds.map((id) => resolvedById.get(id)!);
+    const markers: EffectMarker[] = [];
+    for (const entry of entries) {
+      if (entry.location && (entry.location.lat !== 0 || entry.location.lng !== 0)) {
+        markers.push({
+          position: entry.location,
+          label: String(markers.length + 1),
+          title: entry.name ?? entry.id,
+          color: ACCENT,
+          placeId: entry.id,
+        });
+      }
+    }
+
+    return {
+      data: {
+        ok: true,
+        count: placeIds.length,
+        shortlistUrl,
+        placeIds,
+        places: entries.map((entry, index) => ({
+          index: index + 1,
+          placeId: entry.id,
+          name: entry.name,
+          rating: entry.rating,
+          address: entry.formattedAddress,
+          location: entry.location,
+        })),
+      },
+      effects: placementEffects(markers),
+    };
+  },
+};
+
 export const WORLD_CAPABILITIES = [
   searchPlacesCapability,
   getPlaceDetailsCapability,
@@ -323,6 +480,7 @@ export const WORLD_CAPABILITIES = [
   addMarkersCapability,
   drawRouteCapability,
   getEnvironmentCapability,
+  createMapsShortlistCapability,
 ] as const;
 
 export const WORLD_PROFILE_IDS = WORLD_CAPABILITIES.map(({ manifest }) => manifest.id);

@@ -8,10 +8,12 @@ import {
   validateGeminiCredential,
   selectGeminiCredential,
   validateMetadata,
+  validateMcpRpcRequest,
   toProxyDiagRecord,
   classifyProxyOutcome,
   shouldHeartbeat,
   HEARTBEAT_MS,
+  GMP_SOLUTION_ID,
   upstreamHeaders,
 } from './lib.mjs';
 
@@ -20,17 +22,19 @@ const root = normalize(join(__dirname, '..'));
 const dist = join(root, 'dist');
 const port = Number(process.env.PORT || 8080);
 const gmpKey = (process.env.GMP_SERVER_KEY || '').trim();
+const gmpMcpKey = (process.env.GMP_MCP_KEY || process.env.RWR_GMP_MCP_KEY || '').trim() || gmpKey;
 const geminiKey = (process.env.GEMINI_KEY || '').trim();
 const aiLimit = Number(process.env.AI_RATE_LIMIT || 36000);
 const gmpLimit = Number(process.env.GMP_RATE_LIMIT || 180000);
+const mcpLimit = Number(process.env.RWR_MCP_RATE_LIMIT || process.env.MCP_RATE_LIMIT || 120);
 const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
-// Hosted-key budget guard. At current 3.6 Flash pricing, the defaults bound a
-// UTC day's aggregate request payload to ~1.4 MB and model output to at most
-// 50 * 2,048 tokens. This is intentionally conservative for a public demo.
-// BYOK traffic uses the user's own project and bypasses these hosted spend caps.
+// Hosted-key budget guard. Defaults bound a UTC day's aggregate request payload
+// to ~1.4 MB and allow up to 32,768 output tokens per turn so thinking tokens
+// never starve visible output. BYOK traffic bypasses hosted spend caps.
 const dailyAiCap = Number(process.env.DAILY_AI_CAP || 50);
 const dailyAiInputBytes = Number(process.env.DAILY_AI_INPUT_BYTES || 1_400_000);
-const hostedAiMaxOutputTokens = Number(process.env.HOSTED_AI_MAX_OUTPUT_TOKENS || 2_048);
+const hostedAiMaxOutputTokens = Number(process.env.HOSTED_AI_MAX_OUTPUT_TOKENS || 32_768);
+const dailyMcpCap = Number(process.env.RWR_DAILY_MCP_CAP || process.env.DAILY_MCP_CAP || 250);
 const dailyVideoCap = Number(process.env.DAILY_VIDEO_CAP || 0);
 const bodyCap = Number(process.env.BODY_CAP_BYTES || 1024 * 1024);
 const timeoutMs = Number(process.env.UPSTREAM_TIMEOUT_MS || 60_000);
@@ -44,7 +48,7 @@ const buckets = new Map();
 // Min interval between `ok` proxy heartbeats per endpoint; 0 disables them.
 const heartbeatMs = Number(process.env.PROXY_HEARTBEAT_MS ?? HEARTBEAT_MS);
 const heartbeats = new Map();
-let daily = { day: new Date().toISOString().slice(0, 10), ai: 0, inputBytes: 0, video: 0 };
+let daily = { day: new Date().toISOString().slice(0, 10), ai: 0, inputBytes: 0, video: 0, mcp: 0 };
 
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 // Cloud Run / GFE appends the real client IP as the LAST X-Forwarded-For hop.
@@ -83,7 +87,7 @@ function security() {
   };
 }
 async function body(req) { const chunks = []; let total = 0; for await (const c of req) { total += c.length; if (total > bodyCap) throw new Error('body_too_large'); chunks.push(c); } return Buffer.concat(chunks); }
-function resetDaily() { const day = new Date().toISOString().slice(0, 10); if (daily.day !== day) daily = { day, ai: 0, inputBytes: 0, video: 0 }; }
+function resetDaily() { const day = new Date().toISOString().slice(0, 10); if (daily.day !== day) daily = { day, ai: 0, inputBytes: 0, video: 0, mcp: 0 }; }
 function allowedPhotoTarget(raw) {
   try {
     const target = new URL(raw);
@@ -173,8 +177,33 @@ createServer(async (req, res) => {
     return sendJson(res, 200, {
       maps: Boolean(gmpKey),
       gemini: Boolean(geminiKey),
+      hostedGemini: Boolean(geminiKey),
       mapsGrounding: Boolean(geminiKey),
       groundingLite: Boolean(geminiKey),
+    });
+  }
+  if (url.pathname === '/mcp' || url.pathname === '/api/real-world-reasoning-agent/mcp') {
+    resetDaily();
+    if (req.method !== 'POST') return sendProxy(res, 'mcp', 405, 'MCP proxy only accepts POST');
+    if (!sameOrigin(req) || !rate(req, 'mcp', mcpLimit)) return sendProxy(res, 'mcp', 429, 'The demo is busy right now; try again in a few minutes');
+    if (!gmpMcpKey) return sendProxy(res, 'mcp', 503, 'GMP MCP key is not configured');
+    let buf;
+    try { buf = await body(req); } catch (e) { return sendProxy(res, 'mcp', e.message === 'body_too_large' ? 413 : 400, 'Invalid request body'); }
+    let rpc;
+    try { rpc = JSON.parse(buf.toString('utf8')); } catch { return sendProxy(res, 'mcp', 400, 'Invalid JSON-RPC request body'); }
+    const v = validateMcpRpcRequest(rpc);
+    if (!v.ok) return sendProxy(res, 'mcp', v.status, v.reason);
+    if (daily.mcp >= dailyMcpCap) return sendProxy(res, 'mcp', 429, 'The shared Maps MCP daily budget is exhausted');
+    daily.mcp++;
+    return proxy(req, res, new URL('https://mapstools.googleapis.com/mcp'), {
+      buffer: buf,
+      endpoint: 'mcp',
+      rawHeaders: {
+        'content-type': 'application/json',
+        accept: req.headers.accept || 'application/json, text/event-stream',
+        'X-Goog-Api-Key': gmpMcpKey,
+        'X-Goog-Maps-Solution-ID': GMP_SOLUTION_ID,
+      },
     });
   }
   if (url.pathname.startsWith('/gmp/')) {

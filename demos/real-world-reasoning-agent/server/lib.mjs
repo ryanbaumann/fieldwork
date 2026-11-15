@@ -24,10 +24,18 @@ export const GEMINI_BYOK_HEADER = 'x-atlas-gemini-key';
 
 /** Production proxy allowlist. Keep in sync with src/lib/config.ts. */
 export const BASE_GEMINI_MODELS = Object.freeze([
+  'gemini-4-hydrogen',
+  'gemini-4-argon',
+  'gemini-4-carbon',
+  'gemini-nano-banana-2.1',
+  'gemini-omni-1.2-flash',
   'gemini-3.8-flash',
+  'gemini-3.8-flash-lite-tts',
+  'gemini-3.8-flash-tts',
   'gemini-3.7-flash',
   'gemini-3.7-pro',
   'gemini-3.6-flash',
+  'gemini-3.5-transcribe',
   'gemini-3.5-flash-lite',
   'gemini-3.5-flash',
   'gemini-3.1-flash-lite',
@@ -44,8 +52,45 @@ export const BASE_GEMINI_MODELS = Object.freeze([
 
 /** Models a key must be able to see before Atlas reports it as connected. */
 export const REQUIRED_GEMINI_MODELS = Object.freeze([
-  'gemini-3.8-flash',
+  'gemini-4-hydrogen',
 ]);
+
+export const SOLUTION_HEADER_HOSTS = new Set([
+  'maps.googleapis.com',
+  'airquality.googleapis.com',
+  'weather.googleapis.com',
+  'pollen.googleapis.com',
+  'solar.googleapis.com',
+  'mapstools.googleapis.com',
+]);
+
+export const ALLOWED_MCP_METHODS = new Set(['initialize', 'tools/list', 'tools/call']);
+export const ALLOWED_MCP_TOOLS = new Set([
+  'search_places',
+  'search_along_route',
+  'compute_routes',
+  'lookup_weather',
+  'resolve_names',
+  'resolve_maps_urls',
+]);
+
+export function validateMcpRpcRequest(rpc) {
+  if (!rpc || typeof rpc !== 'object' || Array.isArray(rpc) || rpc.jsonrpc !== '2.0' || typeof rpc.method !== 'string') {
+    return { ok: false, status: 400, reason: 'Invalid JSON-RPC 2.0 request object' };
+  }
+  if (!ALLOWED_MCP_METHODS.has(rpc.method)) {
+    return { ok: false, status: 403, reason: 'MCP method is not allowed' };
+  }
+  if (rpc.method === 'tools/call') {
+    const toolName = rpc.params && typeof rpc.params === 'object' && !Array.isArray(rpc.params)
+      ? rpc.params.name
+      : undefined;
+    if (typeof toolName !== 'string' || !ALLOWED_MCP_TOOLS.has(toolName)) {
+      return { ok: false, status: 403, reason: 'MCP tool is not allowed' };
+    }
+  }
+  return { ok: true };
+}
 
 export function allowedGeminiModels(extra = '') {
   return new Set([
@@ -136,7 +181,7 @@ export function upstreamHeaders(incoming, target) {
     origin: stripToOrigin(incoming.origin),
   };
   const host = target instanceof URL ? target.hostname : new URL(target).hostname;
-  if (host === 'weather.googleapis.com') {
+  if (SOLUTION_HEADER_HOSTS.has(host)) {
     headers['X-Goog-Maps-Solution-ID'] = GMP_SOLUTION_ID;
   }
   return headers;
@@ -200,7 +245,7 @@ export function validateMetadata(payload) {
 // query, url, prompt, or any Maps content.
 
 /** Fixed, coarse endpoint labels allowed in proxy telemetry. Never a path/query. */
-export const PROXY_ENDPOINTS = new Set(['ai', 'gmp', 'gmp:tile', 'gmp:photo']);
+export const PROXY_ENDPOINTS = new Set(['ai', 'gmp', 'gmp:tile', 'gmp:photo', 'mcp']);
 
 /** Map an HTTP status to a coarse, content-free failure class. */
 export function classifyProxyOutcome(status) {

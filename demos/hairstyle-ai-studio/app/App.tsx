@@ -7,7 +7,7 @@ import { SalonBriefModal } from './components/SalonBriefModal';
 import { LoadingView } from './components/LoadingView';
 import { GeminiKeyDialog } from './components/GeminiKeyDialog';
 import { useAppFlow } from './hooks/useAppFlow';
-import { Scissors, ShieldCheck, ChevronRight, KeyRound, Code2, ArrowLeft } from 'lucide-react';
+import { Scissors, ShieldCheck, ChevronRight, KeyRound, Code2 } from 'lucide-react';
 
 const FIELDWORK_URL = '/';
 const SOURCE_URL = 'https://github.com/ryanbaumann/fieldwork/tree/main/demos/hairstyle-ai-studio';
@@ -56,10 +56,9 @@ export const App = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           <a
             href={FIELDWORK_URL}
-            className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-500 hover:text-primary dark:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-slate-500 hover:text-primary dark:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
-            <ArrowLeft size={14} aria-hidden="true" />
-            <span>Fieldwork</span>
+            ← Fieldwork
           </a>
           <span className="h-4 w-px bg-slate-200 dark:bg-slate-700" aria-hidden="true" />
           <div className="flex items-center gap-2">
@@ -75,7 +74,7 @@ export const App = () => {
            <button
              onClick={() => navigateTo('upload')}
              aria-current={state.step === 'upload' ? 'step' : undefined}
-             className={`flex min-h-9 items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'upload' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}
+             className={`flex min-h-[44px] items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'upload' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}
            >
                 <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${state.step === 'upload' ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>1</span>
                 Upload
@@ -85,7 +84,7 @@ export const App = () => {
              onClick={() => navigateTo('style')}
              disabled={!canGoToStyle}
              aria-current={state.step === 'style' ? 'step' : undefined}
-             className={`flex min-h-9 items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'style' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400'} ${canGoToStyle && state.step !== 'style' ? 'hover:text-primary dark:hover:text-primary' : ''} ${!canGoToStyle ? 'opacity-40 cursor-not-allowed' : ''}`}
+             className={`flex min-h-[44px] items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'style' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400'} ${canGoToStyle && state.step !== 'style' ? 'hover:text-primary dark:hover:text-primary' : ''} ${!canGoToStyle ? 'opacity-40 cursor-not-allowed' : ''}`}
            >
                 <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${state.step === 'style' ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>2</span>
                 Style
@@ -95,7 +94,7 @@ export const App = () => {
              onClick={() => navigateTo('result')}
              disabled={!canGoToResult}
              aria-current={state.step === 'result' ? 'step' : undefined}
-             className={`flex min-h-9 items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'result' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400'} ${canGoToResult && state.step !== 'result' ? 'hover:text-primary dark:hover:text-primary' : ''} ${!canGoToResult ? 'opacity-40 cursor-not-allowed' : ''}`}
+             className={`flex min-h-[44px] items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${state.step === 'result' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary cursor-default' : 'text-slate-500 dark:text-slate-400'} ${canGoToResult && state.step !== 'result' ? 'hover:text-primary dark:hover:text-primary' : ''} ${!canGoToResult ? 'opacity-40 cursor-not-allowed' : ''}`}
            >
                 <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${state.step === 'result' ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>3</span>
                 Reveal
@@ -106,7 +105,7 @@ export const App = () => {
             <button
               type="button"
               onClick={() => setIsKeyDialogRequested(true)}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold text-slate-500 hover:text-primary dark:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-3"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold text-slate-500 hover:text-primary dark:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-3"
               aria-label={hasKey ? 'Manage Gemini API key' : 'Use your Gemini API key'}
             >
               <KeyRound size={15} aria-hidden="true" />
@@ -118,11 +117,11 @@ export const App = () => {
 
       {/* Mobile-first compact Stepper Bar (Context always visible) */}
       <div className="md:hidden flex items-center justify-center bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200/40 dark:border-slate-800 py-1.5 gap-2 text-[10px] font-bold tracking-wider uppercase text-slate-450 dark:text-slate-400">
-         <button onClick={() => navigateTo('upload')} className={`min-h-11 px-1 ${state.step === 'upload' ? 'text-primary' : ''}`}>1. Upload</button>
+         <button onClick={() => navigateTo('upload')} className={`min-h-[44px] px-2 ${state.step === 'upload' ? 'text-primary' : ''}`}>1. Upload</button>
          <ChevronRight size={10} className="text-slate-400" />
-         <button onClick={() => navigateTo('style')} disabled={!canGoToStyle} className={`min-h-11 px-1 ${state.step === 'style' ? 'text-primary' : ''} ${!canGoToStyle ? 'opacity-50' : ''}`}>2. Style</button>
+         <button onClick={() => navigateTo('style')} disabled={!canGoToStyle} className={`min-h-[44px] px-2 ${state.step === 'style' ? 'text-primary' : ''} ${!canGoToStyle ? 'opacity-50' : ''}`}>2. Style</button>
          <ChevronRight size={10} className="text-slate-400" />
-         <button onClick={() => navigateTo('result')} disabled={!canGoToResult} className={`min-h-11 px-1 ${state.step === 'result' ? 'text-primary' : ''} ${!canGoToResult ? 'opacity-50' : ''}`}>3. Reveal</button>
+         <button onClick={() => navigateTo('result')} disabled={!canGoToResult} className={`min-h-[44px] px-2 ${state.step === 'result' ? 'text-primary' : ''} ${!canGoToResult ? 'opacity-50' : ''}`}>3. Reveal</button>
       </div>
 
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto flex flex-col">
@@ -142,7 +141,7 @@ export const App = () => {
               <button
                 type="button"
                 onClick={() => setIsKeyDialogRequested(true)}
-                className="sm:hidden min-h-11 rounded-lg px-2 font-black text-primary-700 underline decoration-primary-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-300"
+                className="sm:hidden min-h-[44px] rounded-lg px-2 font-black text-primary-700 underline decoration-primary-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-300"
               >
                 Add a personal key
               </button>
@@ -158,13 +157,13 @@ export const App = () => {
                   <button
                     type="button"
                     onClick={() => setIsKeyDialogRequested(true)}
-                    className="mt-2 inline-flex items-center gap-1.5 font-bold text-red-700 underline decoration-red-300 underline-offset-4 hover:decoration-red-700 dark:text-red-300 dark:decoration-red-700 dark:hover:decoration-red-300"
+                    className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 font-bold text-red-700 underline decoration-red-300 underline-offset-4 hover:decoration-red-700 dark:text-red-300 dark:decoration-red-700 dark:hover:decoration-red-300"
                   >
                     Connect your Gemini API key
                   </button>
                 )}
               </div>
-              <button onClick={() => setState(prev => ({ ...prev, errorMessage: null }))} className="text-xs font-bold hover:underline">Dismiss</button>
+              <button onClick={() => setState(prev => ({ ...prev, errorMessage: null }))} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-xs font-bold hover:underline">Dismiss</button>
             </div>
           )}
 
