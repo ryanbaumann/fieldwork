@@ -25,21 +25,22 @@ export const MAPS_LIBRARIES = [
 export const USAGE_ATTRIBUTION_ID = 'gmp_git_agentskills_v1';
 
 /**
- * Gemini model ids — per installed gemini skills (training data is stale).
+ * Gemini model ids per installed gemini skills (training data is stale).
  * Every id is overridable at build time so a deployer can swap in a heavier
- * model without code changes. NEVER invent model ids — any override MUST also be
+ * model without code changes. NEVER invent model ids: any override MUST also be
  * added to the server's allowedModels allowlist (server/index.mjs, via
- * GENAI_EXTRA_MODELS) or the /ai proxy will reject it with 403. 
+ * GENAI_EXTRA_MODELS) or the /ai proxy will reject it with 403.
  *
- * Default routing: the main copilot is the orchestration agent and uses
- * `gemini-4-hydrogen` at HIGH thinking. Bounded task agents use
- * `gemini-4-hydrogen` at LOW thinking for classification, formatting, suggestions,
- * and voice STT transcription, and MEDIUM thinking for multimodal evidence analysis.
+ * Default routing: the main copilot and bounded task agents use
+ * `gemini-4-hydrogen` at LOW thinking by default for fast interactive tool loops,
+ * classification, formatting, suggestions, multimodal checks, and voice STT.
+ * Users can switch the copilot to `medium` or `high` thinking in the Admin Panel
+ * or via `VITE_GEMINI_CHAT_THINKING` for deeper reasoning.
  * Where task agents emit JSON (e.g. follow-up suggestions), we constrain them with
  * a Gemini structured-output `responseJsonSchema` so the model stays reliable.
  *
  * - `vision` grounds Scout's imagery reasoning (Street View + aerial). Defaults
- *   to the worker model at MEDIUM thinking; override with
+ *   to the worker model at LOW thinking; override with
  *   VITE_GEMINI_VISION_MODEL.
  * - `stt` transcribes microphone audio for the copilot's voice input. Defaults
  *   to the low-latency worker tier (already allowlisted); override with
@@ -99,27 +100,27 @@ export const MODELS = {
 export const VIDEO_GEN_ENABLED = import.meta.env.VITE_VIDEO_GEN_ENABLED !== 'false';
 
 /** Thinking level configurations based on the type of task:
- *  - 'orchestration' for max orchestration (Copilot multi-turn tool calling) -> HIGH
+ *  - 'orchestration' for interactive Copilot multi-turn tool calling -> LOW (overridable to MEDIUM/HIGH)
  *  - 'simpleUi' for immediate simple ui/ux (Grounding, Cinema Narration, Voice, Suggestions) -> LOW
- *  - 'other' for primary text and vision reasoning -> MEDIUM
+ *  - 'other' for primary text and vision checks -> LOW
  */
 export const THINKING_CONFIGS = {
   orchestration: {
-    thinkingLevel: ThinkingLevel.HIGH,
+    thinkingLevel: ThinkingLevel.LOW,
   },
   simpleUi: {
     thinkingLevel: ThinkingLevel.LOW,
   },
   other: {
-    thinkingLevel: ThinkingLevel.MEDIUM,
+    thinkingLevel: ThinkingLevel.LOW,
   },
 } as const;
 
 /** Public, inspectable routing contract used by the settings UI and tests. */
 export const AGENT_PROFILES = {
-  orchestrator: { model: MODELS.orchestrator, thinking: 'high' },
+  orchestrator: { model: MODELS.orchestrator, thinking: 'low' },
   fastWorker: { model: MODELS.worker, thinking: 'low' },
-  analysisWorker: { model: MODELS.vision, thinking: 'medium' },
+  analysisWorker: { model: MODELS.vision, thinking: 'low' },
 } as const;
 
 /**
@@ -134,7 +135,7 @@ export const DEFAULT_THINKING_CONFIG = THINKING_CONFIGS.other;
 
 /**
  * Safely resolves the thinkingConfig object based on model support.
- * - Gemini 4.x and 3.x models support thinkingLevel: LOW, MEDIUM, HIGH.
+ * - Gemini 4.x and 3.x models default to LOW thinking for responsive UI latency.
  * - Gemini 2.5 models support thinkingBudget.
  * - Image, TTS, and Omni models do not support thinking config and return undefined.
  */
@@ -151,12 +152,6 @@ export function getThinkingConfig(
 
   // Gemini 4.x and 3.x models (gemini-4-hydrogen, gemini-3.8-flash, etc.)
   if (/^gemini-(?:4|3)/i.test(model)) {
-    if (level === 'orchestration') {
-      return { thinkingLevel: ThinkingLevel.HIGH };
-    }
-    if (level === 'other') {
-      return { thinkingLevel: ThinkingLevel.MEDIUM };
-    }
     return { thinkingLevel: ThinkingLevel.LOW };
   }
 

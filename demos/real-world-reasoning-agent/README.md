@@ -52,10 +52,9 @@ Only the restricted browser Maps key ships in the client bundle. In production, 
 
 ### Model Configuration
 
-Atlas uses `gemini-4-hydrogen` with calibrated thinking tiers:
-- **Orchestrator (`HIGH` thinking):** Plans multi-step spatial tool calls and synthesizes grounded answers.
-- **Analysis worker (`MEDIUM` thinking):** Evaluates Street View, aerial imagery, and structured rubrics.
-- **Fast worker (`LOW` thinking):** Generates follow-up chips, formatting, and voice transcription.
+Atlas uses `gemini-4-hydrogen` with low-latency defaults and on-demand deeper reasoning:
+- **Orchestrator (`LOW` thinking default):** Runs fast multi-step spatial tool loops; switch to `MEDIUM` or `HIGH` in the Admin Panel or `VITE_GEMINI_CHAT_THINKING` for deeper planning.
+- **Analysis and fast workers (`LOW` thinking):** Evaluate Street View and aerial imagery, generate follow-up chips, format answers, and transcribe voice input.
 - **Generative video (`gemini-omni-1.2-flash`):** Renders optional tour and walkthrough clips.
 
 Hosted requests default `RWR_HOSTED_AI_MAX_OUTPUT_TOKENS` to `32768` so reasoning tokens never starve tool or A2UI output.

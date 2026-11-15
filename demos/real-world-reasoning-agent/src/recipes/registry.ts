@@ -19,7 +19,6 @@ export const RECIPES: ExperienceManifest[] = [
     starters: [
       'Plan a walkable Saturday near the Ferry Building: coffee, art, then dinner',
       'Build a coffee and gallery shortlist near the Ferry Building as a Maps List',
-      "It's raining: build my best indoor day downtown and show me the route",
     ],
     capabilities: ['propose_itinerary', 'update_itinerary', 'set_travel_mode', 'play_tour', 'make_postcard'],
     mapMode: '2d',
@@ -70,8 +69,8 @@ export const RECIPES: ExperienceManifest[] = [
     tagline: 'Turn a real storefront into a campaign: grounded copy, conditioned creatives, walk-time targeting.',
     placeholder: 'Name a business to turn into a campaign…',
     starters: [
-      'Build a campaign for a coffee shop near the Ferry Building',
-      'Target everyone within a 10-minute walk of this business',
+      'Build a campaign for Blue Bottle Coffee at the Ferry Building',
+      'Create a rainy-day story ad for a Mission District taqueria with a 10-minute walk radius',
     ],
     capabilities: [
       'set_campaign_business',
@@ -90,7 +89,7 @@ export const RECIPES: ExperienceManifest[] = [
     placeholder: 'What are we siting, and where…',
     starters: [
       'Find the best corner for a new bakery in North Beach and show your evidence',
-      'Compare the three strongest sites and recommend one',
+      'Compare storefronts along Valencia Street for an espresso bar and recommend one',
     ],
     capabilities: [
       'scout_area',

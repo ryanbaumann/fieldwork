@@ -54,6 +54,7 @@ export interface MapsGroundingProvider {
   }, signal?: AbortSignal): Promise<GroundingResult<GroundedRoute>>;
   lookupWeather(input: {
     placeId: string;
+    location?: { lat: number; lng: number };
     units: 'METRIC' | 'IMPERIAL';
   }, signal?: AbortSignal): Promise<GroundingResult<GroundedWeather>>;
 }

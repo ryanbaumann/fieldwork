@@ -170,7 +170,7 @@ export async function handleHairstyleAiApi({
             text: `Recommend one suitable hairstyle from this exact catalog: ${JSON.stringify(availableStyles)}. Return only JSON with "recommendedStyleId" (an exact catalog id or null). Do not infer or classify gender.`,
           },
         ],
-        thinkingConfig: { thinking_level: 'MEDIUM' },
+        thinkingConfig: { thinking_level: 'LOW' },
         fetchImpl,
         signal,
       });
