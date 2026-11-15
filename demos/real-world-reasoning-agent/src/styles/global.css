@@ -1651,6 +1651,27 @@ gmp-place-contextual {
     width: auto;
   }
 
+  .copilot-dock__composer {
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .copilot-dock__input {
+    min-width: 140px;
+  }
+
+  .recipe-picker__trigger {
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .recipe-picker__name {
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .copilot-dock--cinema {
     --copilot-bottom: calc(max(12px, env(safe-area-inset-bottom)) + 176px);
   }
@@ -2408,6 +2429,14 @@ gmp-place-contextual {
   .atlas-statusbar__city {
     max-width: 84px;
   }
+  .recipe-picker__name {
+    display: none;
+  }
+  .recipe-picker__trigger {
+    padding: 0 10px;
+    min-width: 44px;
+    justify-content: center;
+  }
 }
 
 /* ---- Hidden admin panel (model / thinking A-B tuner) ---- */
@@ -3121,8 +3150,10 @@ gmp-place-contextual {
 /* The fixed "ryanbaumann.dev" link sits over the status bar's right edge.
    Reserve that space so status items never slide under it, and on desktop
    keep the pill inside the 35px bar instead of hanging into the sidebar. */
-.atlas-statusbar {
-  padding-right: max(160px, calc(env(safe-area-inset-right) + 152px));
+@media (min-width: 761px) {
+  .atlas-statusbar {
+    padding-right: max(160px, calc(env(safe-area-inset-right) + 152px));
+  }
 }
 
 @media (pointer: fine) and (min-width: 761px) {

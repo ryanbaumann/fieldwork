@@ -7,7 +7,8 @@ export const allowedPhotoHosts = new Set([
 export function isAllowedPhotoUrl(rawUrl, hosts = allowedPhotoHosts) {
   try {
     const url = new URL(rawUrl);
-    return url.protocol === 'https:' && hosts.has(url.hostname);
+    return url.protocol === 'https:' && !url.username && !url.password
+      && (!url.port || url.port === '443') && hosts.has(url.hostname);
   } catch {
     return false;
   }

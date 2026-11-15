@@ -516,7 +516,11 @@ export function createRealWorldReasoningHandler({
 
   const sendProxy = (response, endpoint, status, body, config, headers = {}) => {
     logProxy(endpoint, status, config.heartbeatMs);
-    sendText(response, status, body, headers);
+    if (body !== null && typeof body === 'object') {
+      sendJson(response, status, body);
+    } else {
+      sendText(response, status, body, headers);
+    }
   };
 
   const proxy = async ({
@@ -608,7 +612,7 @@ export function createRealWorldReasoningHandler({
 
     if (path === '/capabilities') {
       if (request.method !== 'GET') {
-        sendText(response, 405, 'Capabilities only accepts GET');
+        sendJson(response, 405, { error: 'Capabilities only accepts GET' });
       } else {
         const byokHeader = headerValue(request.headers, GEMINI_BYOK_HEADER);
         const hasPersonalKey = Boolean(byokHeader && isPlausibleGeminiKey(byokHeader));
@@ -681,7 +685,7 @@ export function createRealWorldReasoningHandler({
         return true;
       }
       if (!gmpMcpKey) {
-        sendProxy(response, 'mcp', 503, 'GMP MCP key is not configured', config);
+        sendProxy(response, 'mcp', 503, { error: 'GMP MCP key is not configured' }, config);
         return true;
       }
       let body;
@@ -747,7 +751,7 @@ export function createRealWorldReasoningHandler({
 
     if (path.startsWith('/gmp/')) {
       if (!gmpKey) {
-        sendText(response, 503, 'GMP server key is not configured');
+        sendJson(response, 503, { error: 'GMP server key is not configured' });
         return true;
       }
       if (path === '/gmp/placephoto') {
@@ -826,7 +830,7 @@ export function createRealWorldReasoningHandler({
         return true;
       }
       if (credential.source === 'none') {
-        sendProxy(response, 'ai', 503, 'Gemini key is not configured', config);
+        sendProxy(response, 'ai', 503, { error: 'Gemini key is not configured' }, config);
         return true;
       }
       if (credential.source === 'hosted' && !isHostedGeminiHealthy()) {
@@ -834,7 +838,7 @@ export function createRealWorldReasoningHandler({
           response,
           'ai',
           503,
-          'The shared Gemini allowance is temporarily unavailable. Add your own key to continue.',
+          { error: 'The shared Gemini allowance is temporarily unavailable. Add your own key to continue.' },
           config,
         );
         return true;

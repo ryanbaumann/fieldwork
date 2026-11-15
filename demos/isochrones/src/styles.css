@@ -285,7 +285,19 @@ gmp-place-details {
   }
   .sheet-grabber { position: absolute; top: 0.5rem; left: 50%; width: 2.7rem; height: 0.25rem; border-radius: 999px; background: #475569; transform: translateX(-50%); }
   .mobile-sheet-bar strong { font-size: 0.92rem; }
-  .panel-toggle { border: 0; color: #67e8f9; background: transparent; font-weight: 800; cursor: pointer; padding-inline: 0.5rem; }
+  .panel-toggle {
+    border: 0;
+    color: #67e8f9;
+    background: transparent;
+    font-weight: 800;
+    cursor: pointer;
+    padding-inline: 0.5rem;
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
   .panel-content { min-height: auto; padding: 0 0.9rem max(1rem, env(safe-area-inset-bottom)); }
   .panel-header { gap: 0; }
   .panel-header .eyebrow, .panel-header .lede { display: none; }
