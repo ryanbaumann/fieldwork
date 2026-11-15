@@ -120,4 +120,37 @@ describe('Google world providers', () => {
     await expect(routesProvider.computeRoute({ origin: 'a', destination: 'b' }, context)).resolves.toMatchObject({ status: 'cancelled' });
     expect(loadLibrary).not.toHaveBeenCalled();
   });
+
+  it('converts canonical Place IDs into Place instances and passes street addresses as strings for Route.computeRoutes', async () => {
+    class FakePlace {
+      readonly id: string;
+      constructor(opts: { id: string }) {
+        this.id = opts.id;
+      }
+    }
+    const computeRoutes = vi.fn().mockResolvedValue({
+      routes: [{
+        path: [{ lat: 37.7955, lng: -122.3937 }, { lat: 37.797, lng: -122.395 }],
+        durationMillis: 420_000,
+        distanceMeters: 550,
+      }],
+    });
+    loadLibrary.mockImplementation(async (name: string) => {
+      if (name === 'routes') return { Route: { computeRoutes } };
+      if (name === 'places') return { Place: FakePlace };
+      return {};
+    });
+
+    const outcome = await routesProvider.computeRoute({
+      origin: '1 Ferry Building, San Francisco, CA',
+      destination: 'places/ChIJ1234567890abcdef',
+      travelMode: 'WALK',
+    });
+
+    expect(outcome.status).toBe('success');
+    const callArg = computeRoutes.mock.calls[0][0];
+    expect(callArg.origin).toBe('1 Ferry Building, San Francisco, CA');
+    expect(callArg.destination).toBeInstanceOf(FakePlace);
+    expect(callArg.destination.id).toBe('ChIJ1234567890abcdef');
+  });
 });

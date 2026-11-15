@@ -95,7 +95,7 @@ test('analysis is stateless, bounded, and uses the caller key only upstream', as
   const payload = JSON.parse(upstreamRequest.body);
   assert.equal(payload.model, 'gemini-4-hydrogen');
   assert.equal(payload.store, false);
-  assert.deepEqual(payload.generation_config, { thinking_level: 'medium' });
+  assert.deepEqual(payload.generation_config, { thinking_level: 'low' });
   assert.equal('temperature' in payload.generation_config, false);
   assert.match(payload.input[1].text, /Do not infer or classify gender/);
   assert.doesNotMatch(JSON.stringify(result), new RegExp(API_KEY));

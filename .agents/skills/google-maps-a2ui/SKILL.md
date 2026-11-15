@@ -101,3 +101,11 @@ https://www.google.com/maps/@?api=1&map_action=shortlist&place_ids=<id1,id2,...>
 5. Resolve pasted Google Maps links (`google.com/maps/place/...`, `maps.app.goo.gl/...`) via `resolve_maps_urls` before building the URL.
 6. Register the typed `open_maps_shortlist` surface action and open validated URLs with `window.open(url, '_blank', 'noopener,noreferrer')`.
 7. Render a 1-click `Open as Maps List (N)` affordance when a surface, itinerary, or active map has at least 2 valid Place IDs.
+
+## 6. Maps JavaScript `Route.computeRoutes` and Grounding Chunk Rules
+
+1. Pass `{ location: { lat, lng } }`, a `new Place({ id })` instance, or a plain address string to `Route.computeRoutes`.
+2. Never pass `{ placeId }` or `{ address }` objects to `Route.computeRoutes`; the Maps JavaScript SDK rejects both shapes.
+3. Strip `places/` and `placeId:` prefixes before constructing `new Place({ id })`.
+4. Filter out review entries (`/maps/reviews/` URIs and `Review of ...` titles) from Gemini `groundingChunks` before deduplicating places.
+5. Strip trailing ` - Google Maps` suffixes from `groundingChunks[].maps.title` and parse `**Location:** lat, lng` from `maps.text`.

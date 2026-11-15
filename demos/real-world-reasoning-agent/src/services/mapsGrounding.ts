@@ -1,11 +1,14 @@
 import { genai } from '@/ai/client';
 import { MODELS, getThinkingConfig } from '@/lib/config';
+import { haversine } from '@/lib/geo';
 import type {
   ExplorerAttribution,
   GroundedPlace,
   GroundingResult,
   MapsGroundingProvider,
 } from '@/explorer/contracts';
+import { mapsReady } from './maps';
+import { placesProvider } from './places';
 import { routesProvider } from './routes';
 import { weather } from './env';
 
@@ -23,6 +26,7 @@ interface GroundingChunkMaps {
   title?: string;
   uri?: string;
   placeId?: string;
+  text?: string;
 }
 
 interface GroundingChunk {
@@ -36,14 +40,22 @@ interface GroundingMetadata {
   googleMapsWidgetContextToken?: string;
 }
 
+function cleanMapsTitle(rawTitle: string): string {
+  return rawTitle.replace(/\s+-\s+Google\s+Maps$/i, '').trim();
+}
+
+function isReviewChunk(rawTitle: string, uri: string): boolean {
+  return /\/maps\/reviews\//i.test(uri) || /^review\s+of\s+/i.test(rawTitle.trim());
+}
+
 /** Extracts candidate coordinate hints from grounded text if present. */
 function parseCoordinatesFromText(text: string, title: string): { lat: number; lng: number } | undefined {
   const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const titleIndex = text.search(new RegExp(escapedTitle, 'i'));
   const searchSlice = titleIndex >= 0 ? text.slice(titleIndex, titleIndex + 250) : text;
 
-  // Match (37.79, -122.39) or lat: 37.79, lng: -122.39
-  const pattern = /(?:lat(?:itude)?[:\s]+)?(-?\d{1,2}\.\d{3,7})[,\s]+(?:lng|long(?:itude)?[:\s]+)?(-?\d{1,3}\.\d{3,7})/i;
+  // Match **Location:** 37.79, -122.39 or (37.79, -122.39) or lat: 37.79, lng: -122.39
+  const pattern = /(?:(?:\*\*location:\*\*|lat(?:itude)?)[:\s]+)?(-?\d{1,2}\.\d{3,7})[,\s]+(?:lng|long(?:itude)?[:\s]+)?(-?\d{1,3}\.\d{3,7})/i;
   const match = searchSlice.match(pattern);
   if (match) {
     const lat = Number.parseFloat(match[1]);
@@ -55,10 +67,72 @@ function parseCoordinatesFromText(text: string, title: string): { lat: number; l
   return undefined;
 }
 
+function cancellationFromSignal(signal?: AbortSignal) {
+  return {
+    get aborted() {
+      return Boolean(signal?.aborted);
+    },
+    subscribe: (fn: () => void) => {
+      signal?.addEventListener('abort', fn);
+      return () => signal?.removeEventListener('abort', fn);
+    },
+  };
+}
+
 export const mapsGroundingProvider: MapsGroundingProvider = {
   async searchPlaces(input, signal) {
     if (signal?.aborted) return { status: 'cancelled' };
     try {
+      // Fast primary path in live browsers: query Places API (New) directly (~250ms)
+      // for canonical Place IDs and exact coordinates, falling back to Gemini Maps Grounding.
+      if (mapsReady()) {
+        const cancellation = cancellationFromSignal(signal);
+        let placesOutcome = await placesProvider.searchText(
+          { query: input.query, near: input.near, radius: 1500, maxResults: 8 },
+          { cancellation },
+        );
+        if (signal?.aborted || placesOutcome.status === 'cancelled') return { status: 'cancelled' };
+        if (placesOutcome.status === 'empty') {
+          placesOutcome = await placesProvider.searchText(
+            { query: input.query, near: input.near, radius: 8000, maxResults: 8 },
+            { cancellation },
+          );
+          if (signal?.aborted || placesOutcome.status === 'cancelled') return { status: 'cancelled' };
+        }
+        if (placesOutcome.status === 'success' || placesOutcome.status === 'partial') {
+          const seen = new Set<string>();
+          const directPlaces: GroundedPlace[] = placesOutcome.value
+            .filter((place): place is typeof place & { location: { lat: number; lng: number } } => Boolean(
+              place.id
+              && place.location
+              && Number.isFinite(place.location.lat)
+              && Number.isFinite(place.location.lng),
+            ))
+            .filter((place) => {
+              if (seen.has(place.id)) return false;
+              seen.add(place.id);
+              return true;
+            })
+            .sort((a, b) => haversine(input.near, a.location) - haversine(input.near, b.location))
+            .slice(0, 5)
+            .map((place) => {
+              const placeUrl = place.googleMapsUri && place.googleMapsUri.startsWith('https://')
+                ? place.googleMapsUri
+                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${encodeURIComponent(place.id)}`;
+              return {
+                id: place.id,
+                label: place.name,
+                location: place.location,
+                placeUrl,
+                attribution: { title: place.name, url: placeUrl },
+              };
+            });
+          if (directPlaces.length > 0) {
+            return { status: 'success', value: directPlaces };
+          }
+        }
+      }
+
       const thinkingConfig = getThinkingConfig(MODELS.utility, 'simpleUi');
       const prompt = [
         `Find 3 to 5 real places matching "${input.query}" near latitude ${input.near.lat}, longitude ${input.near.lng}.`,
@@ -88,16 +162,25 @@ export const mapsGroundingProvider: MapsGroundingProvider = {
       const chunks = Array.isArray(metadata?.groundingChunks) ? metadata.groundingChunks : [];
       const summary = typeof response.text === 'string' && response.text.trim() ? response.text.trim() : undefined;
 
+      const seenPlaces = new Set<string>();
       const places: GroundedPlace[] = chunks.flatMap((chunk, index) => {
         const maps = chunk.maps;
         if (!maps) return [];
-        const title = typeof maps.title === 'string' && maps.title.trim() ? maps.title.trim() : undefined;
+        const rawTitle = typeof maps.title === 'string' && maps.title.trim() ? maps.title.trim() : undefined;
         const uri = typeof maps.uri === 'string' && maps.uri.startsWith('https://') ? maps.uri : undefined;
         const placeId = typeof maps.placeId === 'string' && maps.placeId.trim() ? maps.placeId.trim() : undefined;
+        const chunkText = typeof maps.text === 'string' && maps.text.trim() ? maps.text.trim() : undefined;
 
-        if (!title || !uri) return [];
+        if (!rawTitle || !uri || isReviewChunk(rawTitle, uri)) return [];
+        const title = cleanMapsTitle(rawTitle);
+        if (!title) return [];
 
-        const parsedCoords = summary ? parseCoordinatesFromText(summary, title) : undefined;
+        const dedupeKey = placeId ?? uri;
+        if (seenPlaces.has(dedupeKey)) return [];
+        seenPlaces.add(dedupeKey);
+
+        const parsedCoords = (chunkText ? parseCoordinatesFromText(chunkText, title) : undefined)
+          ?? (summary ? parseCoordinatesFromText(summary, title) : undefined);
         // Jitter slightly if coordinates are derived from near center so candidate markers are distinct
         const angle = (index * 2 * Math.PI) / Math.max(chunks.length, 1);
         const fallbackLat = input.near.lat + (0.002 * Math.cos(angle));
@@ -136,19 +219,25 @@ export const mapsGroundingProvider: MapsGroundingProvider = {
       const destination = hasRealPlaceId
         ? input.destinationPlaceId
         : (input.destinationLocation ?? input.destinationPlaceId);
+      const cancellation = cancellationFromSignal(signal);
 
-      const result = await routesProvider.computeRoute(
+      let result = await routesProvider.computeRoute(
         { origin: input.origin, destination, travelMode: input.travelMode },
-        {
-          cancellation: {
-            aborted: Boolean(signal?.aborted),
-            subscribe: (fn) => {
-              signal?.addEventListener('abort', fn);
-              return () => signal?.removeEventListener('abort', fn);
-            },
-          },
-        },
+        { cancellation },
       );
+
+      if (
+        hasRealPlaceId
+        && result.status !== 'success'
+        && result.status !== 'cancelled'
+        && !signal?.aborted
+        && input.destinationLocation
+      ) {
+        result = await routesProvider.computeRoute(
+          { origin: input.origin, destination: input.destinationLocation, travelMode: input.travelMode },
+          { cancellation },
+        );
+      }
 
       if (signal?.aborted || result.status === 'cancelled') return { status: 'cancelled' };
       if (result.status === 'success' && result.value) {
@@ -172,8 +261,7 @@ export const mapsGroundingProvider: MapsGroundingProvider = {
   async lookupWeather(input, signal) {
     if (signal?.aborted) return { status: 'cancelled' };
     try {
-      // Default location lookup for the weather snapshot
-      const loc = { lat: 37.7749, lng: -122.4194 };
+      const loc = input.location ?? { lat: 37.7749, lng: -122.4194 };
       const weatherData = await weather(loc);
       if (signal?.aborted) return { status: 'cancelled' };
       if (weatherData && typeof weatherData.condition === 'string' && Number.isFinite(weatherData.tempC)) {

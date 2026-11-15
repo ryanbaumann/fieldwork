@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAtlas } from '@/state/store';
 import { useMission } from '@/mission/store';
 import { CITIES } from '@/lib/cities';
-import { Landing } from './Landing';
+import { GETTING_STARTED_QUERIES, Landing } from './Landing';
 
 const { startExplorerJourney } = vi.hoisted(() => ({
   startExplorerJourney: vi.fn(),
@@ -61,12 +61,15 @@ afterEach(async () => {
 });
 
 describe('Landing cold open', () => {
-  it('renders only "What do you want to do?" without superfluous marketing or boilerplate copy', () => {
+  it('renders "What do you want to do?" with two concise getting-started queries and zero marketing fluff', () => {
     const heading = container.querySelector('h1');
     expect(heading?.textContent).toBe('What do you want to do?');
     expect(container.querySelectorAll('textarea')).toHaveLength(1);
     expect(container.querySelectorAll('.mission-launch')).toHaveLength(1);
     expect(container.querySelector<HTMLTextAreaElement>('textarea')?.value).toBe('');
+
+    const starters = Array.from(container.querySelectorAll<HTMLButtonElement>('.mission-starter'));
+    expect(starters.map((btn) => btn.textContent)).toEqual([...GETTING_STARTED_QUERIES]);
 
     expect(container.textContent).not.toContain('Find the right place.');
     expect(container.textContent).not.toContain('One evidence-first decision');
@@ -76,6 +79,18 @@ describe('Landing cold open', () => {
     expect(container.textContent).not.toContain('Explore recipes');
     expect(container.textContent).not.toContain('Preference Passport');
     expect(container.querySelector('[aria-label="Data mode"]')).toBeNull();
+  });
+
+  it('launches startExplorerJourney immediately when a getting-started query is clicked', async () => {
+    const starters = Array.from(container.querySelectorAll<HTMLButtonElement>('.mission-starter'));
+    expect(starters).toHaveLength(2);
+
+    await act(async () => starters[1].click());
+    expect(startExplorerJourney).toHaveBeenCalledWith(expect.objectContaining({
+      goal: GETTING_STARTED_QUERIES[1],
+      cityId: 'sf',
+      mode: 'live',
+    }));
   });
 
   it('does not request geolocation until Near me is activated, then allows revocation', async () => {

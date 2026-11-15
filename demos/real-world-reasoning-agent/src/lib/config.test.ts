@@ -10,7 +10,7 @@ import {
 } from './config';
 
 describe('default Gemini routing', () => {
-  it('routes orchestration and task agents to gemini-4-hydrogen with calibrated thinking levels', () => {
+  it('routes orchestration and task agents to gemini-4-hydrogen with low-latency defaults', () => {
     expect(MODELS.orchestrator).toBe('gemini-4-hydrogen');
     expect(MODELS.chat).toBe(MODELS.orchestrator);
     expect(MODELS.worker).toBe('gemini-4-hydrogen');
@@ -18,18 +18,18 @@ describe('default Gemini routing', () => {
     expect(MODELS.vision).toBe(MODELS.worker);
     expect(MODELS.omni).toBe('gemini-omni-1.2-flash');
     expect(AGENT_PROFILES).toEqual({
-      orchestrator: { model: 'gemini-4-hydrogen', thinking: 'high' },
+      orchestrator: { model: 'gemini-4-hydrogen', thinking: 'low' },
       fastWorker: { model: 'gemini-4-hydrogen', thinking: 'low' },
-      analysisWorker: { model: 'gemini-4-hydrogen', thinking: 'medium' },
+      analysisWorker: { model: 'gemini-4-hydrogen', thinking: 'low' },
     });
   });
 
-  it('uses high thinking for orchestration and medium thinking for evidence analysis', () => {
+  it('defaults orchestration and evidence analysis to low thinking for responsive UI turnaround', () => {
     expect(getThinkingConfig(MODELS.vision, 'other')).toEqual({
-      thinkingLevel: ThinkingLevel.MEDIUM,
+      thinkingLevel: ThinkingLevel.LOW,
     });
     expect(getChatThinkingConfig(MODELS.orchestrator, 'orchestration')).toEqual({
-      thinkingLevel: ThinkingLevel.HIGH,
+      thinkingLevel: ThinkingLevel.LOW,
     });
   });
 
@@ -39,12 +39,15 @@ describe('default Gemini routing', () => {
     });
   });
 
-  it('allows the orchestrator to be tuned down to low or medium, coercing minimal to low on gemini-4', () => {
+  it('allows the orchestrator to be overridden to medium or high, coercing minimal to low on gemini-4', () => {
     expect(getChatThinkingConfig(MODELS.orchestrator, 'orchestration', 'low')).toEqual({
       thinkingLevel: ThinkingLevel.LOW,
     });
     expect(getChatThinkingConfig(MODELS.orchestrator, 'orchestration', 'medium')).toEqual({
       thinkingLevel: ThinkingLevel.MEDIUM,
+    });
+    expect(getChatThinkingConfig(MODELS.orchestrator, 'orchestration', 'high')).toEqual({
+      thinkingLevel: ThinkingLevel.HIGH,
     });
     expect(getChatThinkingConfig(MODELS.orchestrator, 'orchestration', 'minimal')).toEqual({
       thinkingLevel: ThinkingLevel.LOW,

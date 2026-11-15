@@ -222,6 +222,11 @@ ${instructions ? `Additional Style Instructions: ${instructions}` : ''}
 
 Output valid JSON adhering to the schema.`;
 
+      const requestedThinking = cleanText(body?.thinkingLevel, 16).toUpperCase();
+      const thinkingLevel = requestedThinking === 'HIGH' || requestedThinking === 'MEDIUM'
+        ? requestedThinking
+        : 'LOW';
+
       const interaction = await createInteraction({
         apiKey,
         model: ORCHESTRATOR_MODEL,
@@ -229,7 +234,7 @@ Output valid JSON adhering to the schema.`;
           { type: 'text', text: RESEARCH_SYSTEM_PROMPT },
           { type: 'text', text: promptDirective },
         ],
-        thinkingConfig: { thinking_level: 'MEDIUM' },
+        thinkingConfig: { thinking_level: thinkingLevel },
         fetchImpl,
         signal,
       });

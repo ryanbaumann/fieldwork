@@ -9,7 +9,7 @@ import { createFixtureWorld } from '@/world/fixtures';
 import { createExplorerFixture } from './fixtures';
 import { buildExplorerSurface } from './presenter';
 import { buildExplorerFallbackAnswer, generateExplorerAnswer } from './answer';
-import { classifyExplorerIntent } from './intent';
+import { classifyExplorerIntent, parseTravelMinutes } from './intent';
 import { rerunExplorerRoutes, runExplorer } from './runtime';
 import { suggestFollowups } from '@/ai/followups';
 import type { ExplorerDependencies, ExplorerRun, ExplorerRunInput, ExplorerTravelMode, ExplorerUpdate } from './contracts';
@@ -92,7 +92,7 @@ export function startExplorerJourney(input: {
     units: city.country === 'US' ? 'IMPERIAL' : 'METRIC',
     travelMode: intent.travelMode,
     intent,
-    maxTravelMinutes: 15,
+    maxTravelMinutes: parseTravelMinutes(input.goal),
     surfaceId: 'universal-explorer',
     signal,
   };
@@ -119,13 +119,15 @@ export function startExplorerJourney(input: {
     activeRun = run;
     activeAnswerId = uid('answer');
     state.addMsg({ id: activeAnswerId, role: 'model', text: buildExplorerFallbackAnswer(run.view), streaming: false, ts: Date.now() });
-    if (run.view.dataMode !== 'sample' && run.view.winnerId) {
-      const answer = await boundedExplorerAnswer(run.view, signal);
-      if (runGeneration === generation && !activeAbort?.signal.aborted && activeAnswerId) {
-        state.updateMsg(activeAnswerId, { text: answer, streaming: false });
-      }
+    const [answer, followups] = await Promise.all([
+      run.view.dataMode !== 'sample' && run.view.winnerId
+        ? boundedExplorerAnswer(run.view, signal)
+        : Promise.resolve(null),
+      suggestFollowups(atlas().activeScenario, signal),
+    ]);
+    if (answer && runGeneration === generation && !activeAbort?.signal.aborted && activeAnswerId) {
+      state.updateMsg(activeAnswerId, { text: answer, streaming: false });
     }
-    const followups = await suggestFollowups(atlas().activeScenario, signal);
     if (runGeneration === generation && !activeAbort?.signal.aborted && followups.length) {
       state.setFollowups(followups);
     }
@@ -149,13 +151,15 @@ export function changeExplorerTravelMode(travelMode: ExplorerTravelMode): void {
     activeRun = run;
     if (!activeAnswerId) return;
     state.updateMsg(activeAnswerId, { text: buildExplorerFallbackAnswer(run.view), streaming: false });
-    if (run.view.dataMode !== 'sample' && run.view.winnerId) {
-      const answer = await boundedExplorerAnswer(run.view, signal);
-      if (runGeneration === generation && !activeAbort?.signal.aborted && activeAnswerId) {
-        state.updateMsg(activeAnswerId, { text: answer, streaming: false });
-      }
+    const [answer, followups] = await Promise.all([
+      run.view.dataMode !== 'sample' && run.view.winnerId
+        ? boundedExplorerAnswer(run.view, signal)
+        : Promise.resolve(null),
+      suggestFollowups(atlas().activeScenario, signal),
+    ]);
+    if (answer && runGeneration === generation && !activeAbort?.signal.aborted && activeAnswerId) {
+      state.updateMsg(activeAnswerId, { text: answer, streaming: false });
     }
-    const followups = await suggestFollowups(atlas().activeScenario, signal);
     if (runGeneration === generation && !activeAbort?.signal.aborted && followups.length) {
       state.setFollowups(followups);
     }

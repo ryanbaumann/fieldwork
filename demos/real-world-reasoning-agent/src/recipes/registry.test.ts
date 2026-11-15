@@ -42,10 +42,16 @@ describe('recipe manifests', () => {
     }
   });
 
-  it('gives every recipe honest, non-empty starters and presentation', () => {
+  it('gives every recipe honest, self-contained Turn-1 starters and presentation', () => {
     for (const recipe of RECIPES) {
-      expect(recipe.starters.length, `${recipe.id} needs starters`).toBeGreaterThan(0);
-      for (const starter of recipe.starters) expect(starter.trim().length).toBeGreaterThan(10);
+      expect(recipe.starters, `${recipe.id} should expose 2 concise starters`).toHaveLength(2);
+      for (const starter of recipe.starters) {
+        expect(starter.trim().length).toBeGreaterThan(10);
+        expect(
+          starter,
+          `${recipe.id} starter "${starter}" must work on Turn 1 without prior state`,
+        ).not.toMatch(/\bthis business\b|\bthree strongest sites\b/i);
+      }
       expect(recipe.tagline.trim().length).toBeGreaterThan(10);
       expect(recipe.mapMode).toBe(SCENARIOS[recipe.id].mapMode);
       expect(recipe.accent).toBe(SCENARIOS[recipe.id].accent);
