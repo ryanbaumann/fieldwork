@@ -108,7 +108,7 @@ export class CopilotEngine {
     this.tools = new Map(tools.map((t) => [t.declaration.name ?? '', t]));
 
     const city = useAtlas.getState().cities.find(c => c.id === cityId) ?? DEFAULT_CITY_PRESET;
-    // The orchestration agent defaults to Gemini 3.6 Flash at MEDIUM thinking.
+    // The orchestration agent defaults to gemini-4-hydrogen at LOW thinking for snappy tool loops.
     // Bounded task agents use the worker profiles in config.ts.
     const thinkingConfig = getChatThinkingConfig(
       model,

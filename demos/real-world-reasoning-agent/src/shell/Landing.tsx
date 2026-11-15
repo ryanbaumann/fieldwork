@@ -8,7 +8,12 @@ import { startExplorerJourney } from '@/explorer/controller';
 import { preflightCapabilities, type CapabilityStatus } from './capabilityPreflight';
 import { useGenui } from '@/genui/store';
 
-const DEFAULT_GOAL = 'Find a nearby café with the shortest verified walk; tell me whether I need a jacket.';
+const DEFAULT_GOAL = 'Coffee within a 10-minute walk';
+
+export const GETTING_STARTED_QUERIES = [
+  'Coffee within a 10-minute walk',
+  'Park or viewpoint within a 15-minute walk',
+] as const;
 
 type LocationState = 'sample' | 'locating' | 'using' | 'error';
 
@@ -18,6 +23,7 @@ export function Landing() {
   const apiHealth = useAtlas((state) => state.apiHealth);
   const setKeyDialogOpen = useAtlas((state) => state.setKeyDialogOpen);
   const [goal, setGoal] = useState('');
+  const [pendingGoal, setPendingGoal] = useState<string | null>(null);
   const [locationState, setLocationState] = useState<LocationState>('sample');
   const [selectedLocation, setSelectedLocation] = useState<LatLng | null>(null);
   const credential = useSyncExternalStore(
@@ -57,6 +63,31 @@ export function Landing() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!pendingGoal || !capabilities) return;
+    if (capabilities.mode === 'live') {
+      const nextGoal = pendingGoal;
+      setPendingGoal(null);
+      startExplorerJourney({
+        goal: nextGoal,
+        cityId,
+        mode: 'live',
+        location: selectedLocation ?? undefined,
+      });
+      return;
+    }
+    setPendingGoal(null);
+    if (
+      capabilities.browserMaps
+      && capabilities.serverMaps
+      && capabilities.online
+      && capabilities.apiHealth === 'ok'
+      && capabilities.gemini === false
+    ) {
+      setKeyDialogOpen(true);
+    }
+  }, [capabilities, cityId, pendingGoal, selectedLocation, setKeyDialogOpen]);
+
   if (dismissed) return null;
 
   const liveStatus = capabilities?.mode === 'live' ? 'ready' : capabilities ? 'unavailable' : 'checking';
@@ -92,22 +123,32 @@ export function Landing() {
     );
   };
 
-  const start = () => {
+  const start = (overrideGoal?: string) => {
+    const resolvedGoal = (overrideGoal ?? goal).trim() || DEFAULT_GOAL;
+    if (liveStatus === 'checking') {
+      setPendingGoal(resolvedGoal);
+      return;
+    }
     if (liveStatus !== 'ready') return;
     startExplorerJourney({
-      goal: goal.trim() || DEFAULT_GOAL,
+      goal: resolvedGoal,
       cityId,
       mode: 'live',
       location: selectedLocation ?? undefined,
     });
   };
 
-  const submitOrConnect = () => {
+  const submitOrConnect = (overrideGoal?: string) => {
     if (needsGemini) {
       setKeyDialogOpen(true);
       return;
     }
-    start();
+    start(overrideGoal);
+  };
+
+  const runStarter = (starter: string) => {
+    setGoal(starter);
+    submitOrConnect(starter);
   };
 
   return (
@@ -197,7 +238,7 @@ export function Landing() {
             <button
               type="button"
               className="mission-launch"
-              onClick={submitOrConnect}
+              onClick={() => submitOrConnect()}
               disabled={liveStatus !== 'ready' && !needsGemini}
               aria-label={
                 liveStatus === 'ready'
@@ -223,6 +264,20 @@ export function Landing() {
             </button>
           </div>
         </section>
+
+        <div className="mission-starters" role="group" aria-label="Getting started queries">
+          {GETTING_STARTED_QUERIES.map((starter) => (
+            <button
+              key={starter}
+              type="button"
+              className="mission-starter"
+              onClick={() => runStarter(starter)}
+              disabled={liveStatus === 'unavailable' && !needsGemini}
+            >
+              {starter}
+            </button>
+          ))}
+        </div>
       </main>
     </div>
   );

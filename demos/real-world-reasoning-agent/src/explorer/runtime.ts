@@ -53,15 +53,17 @@ function initialView(input: ExplorerRunInput, dependencies: ExplorerDependencies
 
 export function cleanSearchQuery(query: string): string {
   let clean = query.trim();
+  // Remove weather/jacket conditions followups first:
+  clean = clean.replace(/(?:\s+and\s+|;\s*)(?:check\s+the\s+weather|tell\s+me\s+(?:if|whether)\s+I\s+need\s+a\s+jacket|do\s+I\s+need\s+a\s+jacket)\.?$/i, '');
   // Remove conversational prefixes:
   clean = clean.replace(/^(?:find\s+a\s+nearby|find\s+nearby|find\s+a|find|show\s+me\s+a\s+nearby|show\s+me\s+a|show\s+me|show|search\s+for\s+a|search\s+for|search)\s+/i, '');
-  // Remove travel mode/distance constraints suffixes:
+  // Remove explicit minute/travel-mode constraints:
+  clean = clean.replace(/\s+(?:that\s+)?I\s+can\s+(?:walk|drive|get)\s+to(?:\s+(?:within|under|in)\s+(?:a\s+)?\d{1,3}(?:\s*-\s*|\s+)min(?:ute)?s?)?/i, '');
+  clean = clean.replace(/\s+(?:within|under|in|up\s+to)\s+(?:a\s+|an\s+)?\d{1,3}(?:\s*-\s*|\s+)min(?:ute)?s?(?:\s+(?:walk|walking|drive|driving|bike|ride|trip|route))?\b/i, '');
   clean = clean.replace(/\s+with\s+the\s+shortest\s+verified\s+(?:walk|drive|route|trip)/i, '');
   clean = clean.replace(/\s+with\s+the\s+shortest\s+(?:walk|drive|route|trip)/i, '');
-  clean = clean.replace(/\s+with\s+verified\s+(?:walk|drive|route|trip)/i, '');
-  // Remove weather/jacket conditions followups:
-  clean = clean.replace(/;\s+tell\s+me\s+(?:if|whether)\s+I\s+need\s+a\s+jacket\.?$/i, '');
-  clean = clean.replace(/;\s+do\s+I\s+need\s+a\s+jacket\.?$/i, '');
+  clean = clean.replace(/\s+with\s+(?:a\s+short|verified)\s+(?:walk|drive|route|trip)/i, '');
+  clean = clean.replace(/\s+(?:nearby|near\s+me|around\s+here|close\s+by)$/i, '');
   // Remove trailing periods or question marks:
   clean = clean.replace(/[.;?!]+$/, '').trim();
   return clean || query;
@@ -255,6 +257,7 @@ export async function runExplorer(
 
   const weather = await dependencies.grounding.lookupWeather({
     placeId: winner.id,
+    location: winner.location,
     units: input.units ?? 'METRIC',
   }, input.signal);
   if (cancelled(input.signal) || weather.status === 'cancelled') {
@@ -350,6 +353,7 @@ export async function rerunExplorerRoutes(
   }, [], emit);
   const weather = await dependencies.grounding.lookupWeather({
     placeId: winner.id,
+    location: winner.location,
     units: input.units ?? 'METRIC',
   }, input.signal);
   if (cancelled(input.signal) || weather.status === 'cancelled') {

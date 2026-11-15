@@ -136,9 +136,9 @@ export function AdminPanel() {
       </label>
 
       <p className="admin-panel__hint">
-        Applies to your next message. <code>default</code> = high. Task agents use{' '}
-        <code>gemini-4-hydrogen</code> at low thinking, and multimodal analysis uses medium thinking. Switching
-        starts fresh model context.
+        Applies to your next message. <code>default</code> = low for fast interactive tool loops; select{' '}
+        <code>medium</code> or <code>high</code> for deeper reasoning. Task agents use{' '}
+        <code>gemini-4-hydrogen</code> at low thinking. Switching starts fresh model context.
       </p>
 
       <div className="admin-panel__row admin-panel__row--actions">

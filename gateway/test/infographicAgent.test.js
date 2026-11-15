@@ -91,7 +91,7 @@ test('handleInfographicAgentApi /prepare formats Interactions API request correc
   const payload = JSON.parse(upstreamInit.body);
   assert.equal(payload.model, 'gemini-4-hydrogen');
   assert.equal(payload.store, false);
-  assert.deepEqual(payload.generation_config, { thinking_level: 'medium' });
+  assert.deepEqual(payload.generation_config, { thinking_level: 'low' });
   assert.equal('temperature' in payload.generation_config, false);
   assert.equal(payload.input[0].text.includes('—'), false);
   assert.equal(result.json.analysis.title, 'Solar Boom');

@@ -2,6 +2,20 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-14 - Maps JS `Route.computeRoutes` waypoint contract, Gemini `groundingChunks` review noise, and Turn-1 starter state independence
+
+Context: Diagnosing slow (~12 to 32s) and empty (`"No candidate has a verified walk route"`) responses on `https://ryanbaumann.dev/real-world-reasoning-agent/` across Explorer prompts and recipe starters.
+
+Learning:
+1. Google Maps JavaScript SDK `google.maps.routes.Route.computeRoutes` accepts `{ location: { lat, lng } }`, a `google.maps.places.Place` instance (`new Place({ id })`), or a plain address `string`, whereas the Routes REST API accepts `{ placeId }` and `{ address }`. Passing `{ placeId: 'ChIJ...' }` or `{ address: '...' }` to the JS SDK throws `InvalidValueError: in property destination: not a string; ... and not an instance of Place; and unknown property placeId`, silently marking every Place-ID candidate route `unavailable`.
+2. Gemini `tools: [{ googleMaps: {} }]` (`groundingMetadata.groundingChunks`) takes ~8.5s per call, appends ` - Google Maps` to `maps.title`, places coordinates inside `maps.text` (`**Location:** lat, lng`), and emits multiple `Review of <Place> - Google Maps` (`https://www.google.com/maps/reviews/...`) chunks sharing the same `placeId`. Slicing `places.slice(0, 3)` without filtering review URIs and deduplicating `placeId`s yields duplicate review entries of a single venue instead of 3 distinct candidates. In browser hosts where Maps JS is loaded (`mapsReady()`), querying `Place.searchByText` sorted by `haversine(near, place.location)` returns canonical `ChIJ...` candidates with exact coordinates in ~250ms while keeping `googleMaps` grounding as a clean fallback.
+3. Multi-turn copilot loops on `gemini-4-hydrogen` at `ThinkingLevel.HIGH` spend 4 to 6s of internal reasoning per tool hop (20 to 32s across 4 to 5 sequential spatial tool calls). Defaulting interactive chat, vision, `/analyze`, and `/prepare` routes to `LOW` thinking (with opt-in `MEDIUM` / `HIGH` overrides) cuts interactive turnaround by 4 to 6x.
+4. Starter chips rendered on an empty Turn-1 canvas must never reference prior conversational state (`"this business"`, `"the three strongest sites"`), because clicking them cold forces the model to ask clarifying questions or return empty results.
+
+Evidence: Live Chrome Playwright `WAYPOINT_PROBE` and `GROUNDING_CHUNKS` diagnostics on `https://ryanbaumann.dev/real-world-reasoning-agent/` reproduced the `unknown property placeId` exception and 3x duplicate review chunks; unit suites across `demos/real-world-reasoning-agent` (`73/73` files, `598/598` tests) and `gateway` (`209/209` tests) verified the fixes.
+
+Use next time: Always instantiate `new Place({ id })` (with `places/` stripped) or pass `{ location }` / plain strings to Maps JS `Route.computeRoutes`, filter `/maps/reviews/` chunks and deduplicate `placeId`s on Gemini `groundingChunks`, default interactive multi-tool UI loops on `gemini-4-hydrogen` to `LOW` thinking, and enforce Turn-1 state independence in starter-chip tests.
+
 ## 2026-11-14 - Gemini 4 Hydrogen `maxOutputTokens` CoT starvation, `gemini-nano-banana-2.1` migration, and Maps Shortlist Place ID hygiene
 
 Context: Upgrading all Fieldwork gateway services, skills, and Labs (`real-world-reasoning-agent`, `infographic-agent`, `hairstyle-ai-studio`, `isochrones`, `contactSpam`) to `gemini-4-hydrogen`, `gemini-nano-banana-2.1`, Google Maps Experience MCP (`mapstools.googleapis.com/mcp`), `@googlemaps/a2ui@0.1.10`, and Google Maps Shortlist URLs (`map_action=shortlist`).

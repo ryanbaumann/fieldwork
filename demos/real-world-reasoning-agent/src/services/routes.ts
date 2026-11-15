@@ -15,23 +15,29 @@ const TRAVEL: Record<TravelMode, google.maps.TravelModeString> = {
 
 type Loc = LatLng | string;
 
-function waypoint(loc: Loc): google.maps.routes.Waypoint {
+async function resolveWaypoint(loc: Loc): Promise<google.maps.routes.Waypoint> {
   if (typeof loc === 'string') {
     const trimmed = loc.trim();
     const latLngMatch = trimmed.match(/^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/);
     if (latLngMatch) {
       return { location: { lat: parseFloat(latLngMatch[1]), lng: parseFloat(latLngMatch[3]) } };
     }
+    let cleanPlaceId: string | undefined;
     if (trimmed.startsWith('placeId:')) {
-      return { placeId: trimmed.slice(8) } as unknown as google.maps.routes.Waypoint;
+      cleanPlaceId = trimmed.slice(8).trim();
+    } else if (trimmed.startsWith('places/')) {
+      cleanPlaceId = trimmed.slice(7).trim();
+    } else if (/^(?:ChIJ|Eh[A-Za-z0-9]|Ei[A-Za-z0-9])[A-Za-z0-9_-]{8,}$/.test(trimmed)) {
+      cleanPlaceId = trimmed;
     }
-    if (trimmed.startsWith('places/')) {
-      return { placeId: trimmed.slice(7) } as unknown as google.maps.routes.Waypoint;
+    if (cleanPlaceId) {
+      const placesLib = await lib('places').catch(() => null);
+      if (typeof placesLib?.Place === 'function') {
+        return new placesLib.Place({ id: cleanPlaceId }) as unknown as google.maps.routes.Waypoint;
+      }
+      return cleanPlaceId as unknown as google.maps.routes.Waypoint;
     }
-    if (trimmed.startsWith('ChIJ') || trimmed.startsWith('E')) {
-      return { placeId: trimmed } as unknown as google.maps.routes.Waypoint;
-    }
-    return { address: trimmed } as unknown as google.maps.routes.Waypoint;
+    return trimmed as unknown as google.maps.routes.Waypoint;
   }
   return { location: loc };
 }
@@ -58,11 +64,15 @@ export const routesProvider: RoutesProvider = {
   async computeRoute(request, context) {
     return optionalProviderCall(routesEvidence(), context, async () => {
       const { Route } = await lib('routes');
+      const [origin, destination] = await Promise.all([
+        resolveWaypoint(request.origin),
+        resolveWaypoint(request.destination),
+      ]);
       const mode = request.travelMode ?? 'DRIVE';
       const drivingLike = mode === 'DRIVE' || mode === 'TWO_WHEELER';
       const { routes } = await Route.computeRoutes({
-        origin: waypoint(request.origin),
-        destination: waypoint(request.destination),
+        origin,
+        destination,
         intermediates: request.intermediates?.map((w) => ({ location: w })),
         travelMode: TRAVEL[mode],
         routingPreference: drivingLike && request.trafficAware !== false ? 'TRAFFIC_AWARE' : undefined,
