@@ -5,7 +5,7 @@ import { PromptInput } from './PromptInput';
 import { StyleGrid } from './StyleGrid';
 import { STYLE_PRINCIPLES, STYLES, LUCKY_PROMPTS } from '../data/styleOptions';
 import { GenerationMode, OutputLayout, HairstyleOption } from '../types';
-import { OUTPUT_LAYOUT_LABELS } from '../services/geminiModels';
+import { OUTPUT_LAYOUT_LABELS, GENERATION_MODE_LABELS } from '../services/geminiModels';
 
 // Flatten the real preset catalog so the model recommends an id we can actually match.
 const STYLE_CATALOG: HairstyleOption[] = STYLES.flatMap((section) =>
@@ -73,7 +73,7 @@ export const StepStyle: React.FC<StepStyleProps> = ({
       const { recommendedStyleId } = await analyzeUserImage(apiKey, userImage, STYLE_CATALOG);
       const match = STYLES.flatMap((section) => section.items).find((item) => item.id === recommendedStyleId);
       if (!match) throw new Error('No matching style returned.');
-      const value = `${match.label} - ${match.desc}`;
+      const value = `${match.label}: ${match.desc}`;
       setInputValue(value);
       setCustomPrompt('');
       onSelect(value);
@@ -157,7 +157,7 @@ export const StepStyle: React.FC<StepStyleProps> = ({
                     <div className="flex items-center gap-1.5 text-primary-600 dark:text-primary-400">
                     <Edit3 size={15} />
                     <span className="font-bold text-sm">Describe hairstyle</span>
-                    <span className="text-gray-400 text-xs font-normal hidden sm:inline">- or choose a trend below</span>
+                    <span className="text-gray-400 text-xs font-normal hidden sm:inline">or choose a trend below</span>
                     </div>
                 }
                 placeholder="Describe your desired cut, length, style, or color..."
@@ -166,25 +166,48 @@ export const StepStyle: React.FC<StepStyleProps> = ({
         </div>
       </div>
 
-      {/* Output presentation (the one setting that changes real output) */}
+      {/* Output presentation and quality */}
       <div className="mb-4 bg-white/70 dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-sm">
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="min-h-11 w-full flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
+          className="min-h-[44px] w-full flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
         >
           <div className="flex items-center gap-2">
             <Settings size={14} className="text-slate-400" />
-            <span>Output Presentation</span>
+            <span>Output & Quality</span>
             <span className="text-[10px] font-normal text-slate-400 ml-2 hidden sm:inline">
-              ({OUTPUT_LAYOUT_LABELS[outputLayout]})
+              ({OUTPUT_LAYOUT_LABELS[outputLayout]} · {GENERATION_MODE_LABELS[generationMode].label})
             </span>
           </div>
           {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
 
         {showAdvanced && (
-          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-850 animate-fadeIn">
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-850 space-y-4 animate-fadeIn">
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Sparkles size={14} className="text-primary-500" />
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Render Quality</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(Object.keys(GENERATION_MODE_LABELS) as GenerationMode[]).map((modeOption) => (
+                  <button
+                    key={modeOption}
+                    type="button"
+                    aria-pressed={generationMode === modeOption}
+                    onClick={() => onGenerationModeChange(modeOption)}
+                    className={`min-h-[44px] rounded-xl border px-3 py-2 text-left transition-all ${generationMode === modeOption ? 'border-primary-500 bg-primary-600 text-white shadow-sm' : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:border-primary-300'}`}
+                  >
+                    <span className="block text-xs font-bold">{GENERATION_MODE_LABELS[modeOption].label}</span>
+                    <span className={`block text-[10px] ${generationMode === modeOption ? 'text-primary-100' : 'text-slate-400'}`}>
+                      {GENERATION_MODE_LABELS[modeOption].desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
                 <Images size={14} className="text-indigo-500" />
@@ -194,8 +217,10 @@ export const StepStyle: React.FC<StepStyleProps> = ({
                 {(Object.keys(OUTPUT_LAYOUT_LABELS) as OutputLayout[]).map((layout) => (
                   <button
                     key={layout}
+                    type="button"
+                    aria-pressed={outputLayout === layout}
                     onClick={() => onOutputLayoutChange(layout)}
-                    className={`min-h-11 rounded-xl border px-1 py-2 text-[10px] sm:text-xs font-bold transition-all truncate ${outputLayout === layout ? 'border-indigo-500 bg-indigo-600 text-white shadow-sm' : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:border-indigo-300'}`}
+                    className={`min-h-[44px] rounded-xl border px-1 py-2 text-[10px] sm:text-xs font-bold transition-all truncate ${outputLayout === layout ? 'border-indigo-500 bg-indigo-600 text-white shadow-sm' : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:border-indigo-300'}`}
                   >
                     {OUTPUT_LAYOUT_LABELS[layout]}
                   </button>
@@ -263,9 +288,10 @@ export const StepStyle: React.FC<StepStyleProps> = ({
                     return (
                       <button
                         key={option}
+                        type="button"
                         onClick={() => handleAddToken(option)}
                         className={`
-                          text-[9px] font-bold px-2 py-1 rounded-md transition-all duration-200 border
+                          min-h-[44px] inline-flex items-center text-[10px] font-bold px-2.5 py-1 rounded-md transition-all duration-200 border
                           ${isSelected
                             ? 'bg-primary border-primary text-white'
                             : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200/60 dark:border-gray-700/60 hover:border-primary-300'}

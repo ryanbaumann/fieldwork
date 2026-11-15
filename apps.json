@@ -125,8 +125,8 @@
   },
   {
     "name": "real-world-reasoning-agent",
-    "title": "Atlas - Real World Reasoning Agent",
-    "description": "An interactive map agent that handles real-world geo reasoning problems using Maps APIs.",
+    "title": "Atlas: Real-World Reasoning Agent",
+    "description": "An interactive map agent that handles real-world spatial reasoning, live routes, and shared Google Maps Lists.",
     "path": "/real-world-reasoning-agent/",
     "dev_build_dir": "demos/real-world-reasoning-agent/dist",
     "source": {
@@ -173,7 +173,7 @@
   {
     "name": "isochrones",
     "title": "Meet in the Middle",
-    "description": "Set two starting points and find real coffee, food, drinks, or parks inside both travel-time areas.",
+    "description": "Set two starting points and find real coffee, food, drinks, or parks inside both travel-time areas, with one-click export to a Google Maps List.",
     "path": "/isochrones/",
     "dev_build_dir": "demos/isochrones/dist",
     "source": {

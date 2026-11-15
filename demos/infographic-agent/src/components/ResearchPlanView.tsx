@@ -20,7 +20,7 @@ export const ResearchPlanView: React.FC<ResearchPlanViewProps> = ({ analysis, pr
     <div className="analysis-box">
       <div className="analysis-header">
         <FileText size={14} style={{ display: 'inline', marginRight: '0.35rem', verticalAlign: 'middle' }} />
-        <span>Stage 1: Gemini 3.8 Flash Research & Architecture</span>
+        <span>Stage 1: Gemini 4 Hydrogen Research & Architecture</span>
       </div>
 
       {analysis.title && (
@@ -84,6 +84,8 @@ export const ResearchPlanView: React.FC<ResearchPlanViewProps> = ({ analysis, pr
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.25rem',
+              minHeight: '44px',
+              padding: '0 0.5rem',
               background: 'transparent',
               border: 'none',
               color: copied ? '#4ade80' : '#60a5fa',

@@ -139,7 +139,8 @@ export const StepUpload: React.FC<StepUploadProps> = ({ images, history, onUploa
                         Photos are sent to Google Gemini to generate looks and aren't stored on our servers. Your history stays in this browser.
                     </p>
                     <button
-                        className={`px-8 py-3 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all whitespace-nowrap
+                        type="button"
+                        className={`min-h-[44px] px-8 py-3 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all whitespace-nowrap
                             ${images.front
                                 ? 'bg-primary text-white shadow-glow hover:shadow-lg hover:bg-primary-dark cursor-pointer'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-500 cursor-not-allowed'}`}
@@ -159,8 +160,9 @@ export const StepUpload: React.FC<StepUploadProps> = ({ images, history, onUploa
                         You have {history.length} generated looks in this session.
                      </span>
                      <button
+                        type="button"
                         onClick={() => onJumpToResult(history[0])}
-                        className="text-primary dark:text-primary-light hover:text-primary-dark font-bold hover:underline"
+                        className="inline-flex min-h-[44px] items-center px-2 text-primary dark:text-primary-light hover:text-primary-dark font-bold hover:underline"
                     >
                         View History
                      </button>
@@ -172,10 +174,11 @@ export const StepUpload: React.FC<StepUploadProps> = ({ images, history, onUploa
       <div className="safe-area-bottom fixed bottom-0 inset-x-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] sm:hidden">
           <div className="p-4 flex flex-col gap-2">
             <button
+                type="button"
                 disabled={!images.front}
                 onClick={onNext}
                 className={`
-                    w-full flex items-center justify-between px-6 py-3 rounded-xl font-black uppercase tracking-wider text-sm transition-all
+                    min-h-[44px] w-full flex items-center justify-between px-6 py-3 rounded-xl font-black uppercase tracking-wider text-sm transition-all
                     ${images.front
                         ? 'bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-lg shadow-primary-500/25 ring-2 ring-primary-500/10'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}

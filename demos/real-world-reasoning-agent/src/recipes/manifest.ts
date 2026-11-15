@@ -39,6 +39,7 @@ export const COMMON_CAPABILITY_NAMES = [
   'clear_map',
   'draw_route',
   'get_environment',
+  'create_maps_shortlist',
   'ask_maps',
   'show_notice',
   'render_surface',

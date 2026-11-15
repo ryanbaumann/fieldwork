@@ -88,6 +88,34 @@ describe('Infographic Agent API Client', () => {
     expect(result.model).toBe('gemini-3.1-flash-lite-image');
   });
 
+  it('renders studio infographic image with gemini-nano-banana-2.1', async () => {
+    const mockResponse = {
+      image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      model: 'gemini-nano-banana-2.1',
+      aspect: '16:9',
+    };
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => mockResponse,
+    } as unknown as Response);
+    globalThis.fetch = fetchMock;
+
+    const result = await renderInfographic({
+      prompt: 'Generate a professional infographic image',
+      mode: 'data-story',
+      aspect: '16:9',
+      imageModel: 'gemini-nano-banana-2.1',
+    });
+
+    expect(result.model).toBe('gemini-nano-banana-2.1');
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.model).toBe('gemini-nano-banana-2.1');
+    expect(body.imageModel).toBe('gemini-nano-banana-2.1');
+  });
+
   it('validates api key correctly', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,

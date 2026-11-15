@@ -30,7 +30,13 @@ async function flushEffects() {
 
 beforeEach(async () => {
   startExplorerJourney.mockClear();
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ maps: true, gemini: true, mapsGrounding: true }), {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    maps: true,
+    gemini: true,
+    hostedGemini: true,
+    mapsGrounding: true,
+    groundingLite: true,
+  }), {
     status: 200,
     headers: { 'content-type': 'application/json' },
   })));
@@ -55,54 +61,52 @@ afterEach(async () => {
 });
 
 describe('Landing cold open', () => {
-  it('shows one prompt, one primary action, three examples, and truthful Live labeling', () => {
-    expect(container.textContent).toContain('Find the right place.');
-    expect(container.textContent).toContain('What should Atlas find?');
+  it('renders only "What do you want to do?" without superfluous marketing or boilerplate copy', () => {
+    const heading = container.querySelector('h1');
+    expect(heading?.textContent).toBe('What do you want to do?');
     expect(container.querySelectorAll('textarea')).toHaveLength(1);
     expect(container.querySelectorAll('.mission-launch')).toHaveLength(1);
-    expect(container.querySelectorAll('.mission-example')).toHaveLength(3);
-    expect(container.textContent).toContain('● Ready');
-    expect(container.textContent).toContain('Find with live evidence');
-    expect(container.textContent).toContain('Maps, grounding, and Gemini are ready. Device location is used only after you ask.');
-    expect(container.textContent).toContain('Gemini connected · Hosted');
-    expect(container.textContent).toContain('Use my key');
-    expect(container.textContent).toContain('Selected area: San Francisco');
-    expect(container.querySelector<HTMLTextAreaElement>('textarea')?.value).toBe(
-      'Find a nearby café with the shortest verified walk; tell me whether I need a jacket.',
-    );
-  });
+    expect(container.querySelector<HTMLTextAreaElement>('textarea')?.value).toBe('');
 
-  it('keeps recipes, developer concepts, mode controls, and preference controls out of the cold open', () => {
+    expect(container.textContent).not.toContain('Find the right place.');
+    expect(container.textContent).not.toContain('One evidence-first decision');
+    expect(container.textContent).not.toContain('What should Atlas find?');
+    expect(container.textContent).not.toContain('60 to 90 second mission');
+    expect(container.textContent).not.toContain('Maps, grounding, and Gemini are ready');
     expect(container.textContent).not.toContain('Explore recipes');
     expect(container.textContent).not.toContain('Preference Passport');
-    expect(container.textContent).not.toContain('Tune my passport');
-    expect(container.textContent).not.toContain('◆ Demo');
     expect(container.querySelector('[aria-label="Data mode"]')).toBeNull();
   });
 
-  it('does not request geolocation until Use my location is activated, then allows revocation', async () => {
+  it('does not request geolocation until Near me is activated, then allows revocation', async () => {
     expect(getCurrentPosition).not.toHaveBeenCalled();
-    const locationButton = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Use my location'))!;
+    const locationButton = container.querySelector<HTMLButtonElement>('[aria-label="Use my location"]')!;
 
     await act(async () => locationButton.click());
     expect(getCurrentPosition).toHaveBeenCalledTimes(1);
 
     const success = getCurrentPosition.mock.calls[0][0] as PositionCallback;
     await act(async () => success({ coords: { latitude: 37.79, longitude: -122.4 } } as GeolocationPosition));
-    expect(container.textContent).toContain('Using my location');
+    expect(container.textContent).toContain('My location');
     expect(useAtlas.getState().cityId).toBe('sf');
 
-    const remove = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Remove'))!;
+    const remove = container.querySelector<HTMLButtonElement>('[aria-label="Stop using my location"]')!;
     await act(async () => remove.click());
-    expect(container.textContent).toContain('Selected area: San Francisco');
-    expect(container.textContent).toContain('Use my location');
+    expect(container.textContent).toContain('Near me');
     expect(useAtlas.getState().cityId).toBe('sf');
   });
 
-  it('starts the automatically selected Live explorer', async () => {
+  it('starts the Live explorer with typed goal or default fallback', async () => {
+    const textarea = container.querySelector<HTMLTextAreaElement>('textarea')!;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+      setter?.call(textarea, 'Find coffee near Ferry Building');
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     const launch = container.querySelector<HTMLButtonElement>('.mission-launch')!;
     await act(async () => launch.click());
     expect(startExplorerJourney).toHaveBeenCalledWith(expect.objectContaining({
+      goal: 'Find coffee near Ferry Building',
       cityId: 'sf',
       mode: 'live',
     }));
@@ -114,13 +118,13 @@ describe('Landing cold open', () => {
 
     const launch = container.querySelector<HTMLButtonElement>('.mission-launch')!;
     expect(launch.disabled).toBe(true);
-    expect(container.textContent).toContain('Live services unavailable');
+    expect(container.textContent).toContain('Unavailable');
     await act(async () => launch.click());
     expect(startExplorerJourney).not.toHaveBeenCalled();
   });
 
   it('keeps exact coordinates out of global city state and scopes them to the launched mission', async () => {
-    const locationButton = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('Use my location'))!;
+    const locationButton = container.querySelector<HTMLButtonElement>('[aria-label="Use my location"]')!;
     await act(async () => locationButton.click());
     const success = getCurrentPosition.mock.calls[0][0] as PositionCallback;
     await act(async () => success({ coords: { latitude: 12.34, longitude: 56.78 } } as GeolocationPosition));
@@ -133,14 +137,5 @@ describe('Landing cold open', () => {
       cityId: 'sf',
       location: { lat: 12.34, lng: 56.78 },
     }));
-  });
-
-  it('copies an example into the prompt and returns focus to the textarea', async () => {
-    const example = container.querySelector<HTMLButtonElement>('.mission-example')!;
-    const textarea = container.querySelector<HTMLTextAreaElement>('textarea')!;
-    await act(async () => example.click());
-    expect(example.textContent).toBe('Café · walk');
-    expect(textarea.value).toBe('Find a nearby café with the shortest verified walk.');
-    expect(document.activeElement).toBe(textarea);
   });
 });

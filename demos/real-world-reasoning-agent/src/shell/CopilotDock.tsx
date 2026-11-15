@@ -14,6 +14,7 @@ import { SCENARIOS } from '@/scenarios/registry';
 import { sendToCopilot, abortCopilot } from '@/ai/session';
 import { useVoiceInput } from '@/shell/useVoiceInput';
 import { RecipePicker } from '@/shell/RecipePicker';
+import { RECIPES_BY_ID } from '@/recipes/registry';
 
 /** Grace period after end-of-speech before a dictated prompt auto-sends, so the
  *  user has a beat to cancel (by typing) if the transcript looks wrong. */
@@ -84,12 +85,14 @@ export function CopilotDock() {
           onKeyDown={(e) => e.key === 'Enter' && submit()}
           placeholder={
             streaming
-              ? 'Atlas is working — press Stop to interrupt…'
+              ? 'Atlas is working: press Stop to interrupt…'
               : voice.state === 'recording'
                 ? 'Listening… tap the mic to stop'
                 : voice.state === 'transcribing'
                   ? 'Transcribing…'
-                  : (mod.placeholder ?? `Ask Atlas — ${mod.title}…`)
+                  : (RECIPES_BY_ID.get(scenario)?.placeholder ??
+                    mod.placeholder ??
+                    `Ask Atlas (${mod.title}) or paste Maps links for a Maps List…`)
           }
           aria-label="Ask the Atlas copilot"
           className="copilot-dock__input"

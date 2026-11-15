@@ -4,6 +4,7 @@ import { useAtlas } from '@/state/store';
 import { getGeminiCredentialSnapshot, subscribeGeminiCredential } from '@/ai/client';
 import { lib } from '@/services/maps';
 import { placeDetails } from '@/services/places';
+import { USAGE_ATTRIBUTION_ID } from '@/lib/config';
 import { SCENARIOS } from '@/scenarios/registry';
 import { HowItsBuilt } from '@/shell/HowItsBuilt';
 
@@ -25,8 +26,8 @@ export function StatusBar() {
     health === 'ok'
       ? 'Maps renderer is live'
       : health === 'degraded'
-        ? 'Degraded — some services slow or failing'
-        : 'Offline — Google Maps failed to load';
+        ? 'Degraded: some services slow or failing'
+        : 'Offline: Google Maps failed to load';
 
   return (
     <>
@@ -126,7 +127,7 @@ function MapModeToggle() {
       className="atlas-statusbar__link atlas-statusbar__service"
       onClick={() => setMapMode(is3d ? '2d' : '3d')}
       aria-pressed={is3d}
-      title={is3d ? 'Photorealistic 3D — switch back to the 2D map' : 'Switch to the photorealistic 3D map'}
+      title={is3d ? 'Photorealistic 3D: switch back to the 2D map' : 'Switch to the photorealistic 3D map'}
     >
       {is3d ? <Box size={13} aria-hidden="true" /> : <MapIcon size={13} aria-hidden="true" />}
       <span className="atlas-statusbar__hide-xs">{is3d ? '3D' : '2D'}</span>
@@ -136,11 +137,12 @@ function MapModeToggle() {
 
 function PlaceAutocompleteSearch() {
   const hostRef = useRef<HTMLSpanElement>(null);
-  type PlaceAutocompleteEl = HTMLElement & { 
-    placeholder?: string; 
-    requestedLanguage?: string; 
+  type PlaceAutocompleteEl = HTMLElement & {
+    placeholder?: string;
+    requestedLanguage?: string;
     requestedRegion?: string;
     includedRegionCodes?: string[];
+    internalUsageAttributionIds?: string[];
   };
   const setMarkers = useAtlas((s) => s.setMarkers);
   const selectMarker = useAtlas((s) => s.selectMarker);
@@ -190,11 +192,22 @@ function PlaceAutocompleteSearch() {
     };
 
     void (async () => {
-      await lib('places');
+      const placesLib = await lib('places').catch(() => null);
       if (disposed || !hostRef.current) return;
-      const ctor = customElements.get('gmp-place-autocomplete');
-      if (!ctor) return;
-      element = new ctor() as PlaceAutocompleteEl;
+      const PlaceAutocomplete = (
+        placesLib as unknown as {
+          PlaceAutocompleteElement?: new (opts?: Record<string, unknown>) => PlaceAutocompleteEl;
+        } | null
+      )?.PlaceAutocompleteElement;
+      if (PlaceAutocomplete) {
+        element = new PlaceAutocomplete({
+          internalUsageAttributionIds: [USAGE_ATTRIBUTION_ID],
+        });
+      } else {
+        const ctor = customElements.get('gmp-place-autocomplete');
+        if (!ctor) return;
+        element = new ctor() as PlaceAutocompleteEl;
+      }
       element.className = 'atlas-place-autocomplete';
       element.placeholder = 'Search places';
       element.requestedLanguage = 'en';

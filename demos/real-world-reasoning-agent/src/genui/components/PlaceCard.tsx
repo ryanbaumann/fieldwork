@@ -8,19 +8,32 @@ import { resolveDynamic } from '../protocol';
 import type { SurfaceState } from '../store';
 import { lib } from '@/services/maps';
 import { USAGE_ATTRIBUTION_ID } from '@/lib/config';
+import { normalizePlaceId } from '@/lib/mapsUrl';
 import { dispatchSurfaceAction } from '../actions';
 import { buildAction } from './actionHelpers';
 
-export const PlaceCard: FC<{ node: ComponentNode; surface: SurfaceState; scope?: string }> = ({
+export const PlaceCard: FC<{
+  node: ComponentNode;
+  surface: SurfaceState;
+  scope?: string;
+  defaultOrientation?: 'horizontal' | 'vertical';
+}> = ({
   node,
   surface,
   scope,
+  defaultOrientation,
 }) => {
-  const placeId = resolveDynamic(node.placeId as Dynamic<string> | undefined, surface.dataModel, scope);
+  const rawPlaceId = resolveDynamic(node.placeId as Dynamic<string> | undefined, surface.dataModel, scope);
   const orientationRaw = resolveDynamic(node.orientation as Dynamic<string> | undefined, surface.dataModel, scope);
-  const orientation = orientationRaw === 'horizontal' ? 'horizontal' : 'vertical';
+  const fallbackOrientation =
+    defaultOrientation ?? (node.component === 'PlaceDetailsCompact' ? 'horizontal' : 'vertical');
+  const orientation =
+    orientationRaw === 'horizontal' || orientationRaw === 'vertical'
+      ? orientationRaw
+      : fallbackOrientation;
 
-  if (typeof placeId !== 'string') return null;
+  const placeId = normalizePlaceId(rawPlaceId);
+  if (!placeId) return null;
 
   return (
     <div className={`genui-placecard genui-placecard--${orientation}`}>
@@ -57,7 +70,7 @@ function PlaceUiKitDetails({ placeId, orientation = 'vertical' }: { placeId: str
   useEffect(() => {
     let disposed = false;
     let element: HTMLElement | null = null;
-    const cleanPlaceId = placeId?.trim();
+    const cleanPlaceId = normalizePlaceId(placeId);
     if (!cleanPlaceId) {
       setLoading(false);
       return;
@@ -67,29 +80,39 @@ function PlaceUiKitDetails({ placeId, orientation = 'vertical' }: { placeId: str
     setLoading(true);
 
     void (async () => {
-      await lib('places').catch(() => undefined);
+      const placesLib = await lib('places').catch(() => null);
       if (disposed || !hostRef.current) return;
 
-      const ctor = customElements.get('gmp-place-details-compact') ?? customElements.get('gmp-place-details');
-      if (!ctor) {
-        setUnsupported(true);
-        setLoading(false);
-        return;
-      }
+      const extraAttribution =
+        typeof window !== 'undefined'
+          ? (window as unknown as { A2UI_ATTRIBUTION_ID?: string }).A2UI_ATTRIBUTION_ID
+          : undefined;
+      const attributionIds = Array.from(
+        new Set([USAGE_ATTRIBUTION_ID, ...(extraAttribution ? [extraAttribution] : [])]),
+      );
 
-      element = new (ctor as CustomElementConstructor)();
+      const typedLib = placesLib as unknown as {
+        PlaceDetailsCompactElement?: new (opts?: Record<string, unknown>) => HTMLElement;
+        PlaceDetailsElement?: new (opts?: Record<string, unknown>) => HTMLElement;
+      } | null;
+      const LibCtor = typedLib?.PlaceDetailsCompactElement ?? typedLib?.PlaceDetailsElement;
+      if (LibCtor) {
+        element = new LibCtor({
+          internalUsageAttributionIds: attributionIds,
+        });
+      } else {
+        const ctor = customElements.get('gmp-place-details-compact') ?? customElements.get('gmp-place-details');
+        if (!ctor) {
+          setUnsupported(true);
+          setLoading(false);
+          return;
+        }
+        element = new (ctor as CustomElementConstructor)();
+      }
       element.className = 'genui-placecard__ui-kit';
       element.setAttribute('place', cleanPlaceId);
       element.setAttribute('orientation', orientation);
       element.setAttribute('truncation-preferred', '');
-      // Attribute the Places calls this element makes to the agent-skills program
-      // WITHOUT removing Google's own attribution (the gmp-place-attribution child
-      // below is Google's and stays).
-      const attributionId = (typeof window !== 'undefined' && (window as unknown as { A2UI_ATTRIBUTION_ID?: string }).A2UI_ATTRIBUTION_ID) || USAGE_ATTRIBUTION_ID;
-      element.setAttribute('internal-usage-attribution-ids', attributionId);
-      (element as unknown as { internalUsageAttributionIds?: string[] }).internalUsageAttributionIds = [
-        attributionId,
-      ];
 
       const requestEl = document.createElement('gmp-place-details-place-request');
       requestEl.setAttribute('place', cleanPlaceId);

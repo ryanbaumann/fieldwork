@@ -2,9 +2,10 @@ import { recordHostedGeminiFailure, recordHostedGeminiSuccess } from './rateLimi
 
 const INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 const MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const ORCHESTRATOR_MODEL = 'gemini-3.8-flash';
+const ORCHESTRATOR_MODEL = 'gemini-4-hydrogen';
 const DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-lite-image';
-const QUALITY_IMAGE_MODEL = 'gemini-3.1-flash-image';
+const QUALITY_IMAGE_MODEL = 'gemini-nano-banana-2.1';
+const LEGACY_IMAGE_MODEL = 'gemini-3.1-flash-image';
 const ALLOWED_IMAGE_MODELS = new Set([DEFAULT_IMAGE_MODEL, QUALITY_IMAGE_MODEL]);
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_IMAGE_DATA_CHARS = 8 * 1024 * 1024;
@@ -39,12 +40,12 @@ professional, text-accurate infographic.
 <prompt_rules>
 The "prompt" field you output is sent directly to an image-generation model. It must:
 - Start with: "Generate a professional infographic image"
-- Use positive framing only — describe what TO include, never negations.
+- Use positive framing only: describe what TO include, never negations.
 - Give step-by-step spatial instructions: "At the top, place X. Below that, add Y..."
 - Quote ALL text strings exactly, wrapped in quotation marks.
 - Specify exact colors using #hex values and describe typography (weight, size, style).
 - Include accessibility notes: minimum contrast 4.5:1 for normal text, 3:1 for large text.
-- Stay under 800 words — dense and precise, not verbose.
+- Stay under 800 words: dense and precise, not verbose.
 - End with composition notes: spacing, alignment, professional polish.
 </prompt_rules>
 
@@ -63,14 +64,14 @@ The "prompt" field you output is sent directly to an image-generation model. It 
 Respond with valid JSON only. No markdown fences. No extra text. Schema:
 {
   "analysis": {
-    "title": "string — compelling infographic title",
-    "subtitle": "string — supporting subtitle",
+    "title": "string: compelling infographic title",
+    "subtitle": "string: supporting subtitle",
     "sectionsCount": number,
     "dataPointsCount": number,
     "brandColors": ["#hex", "#hex", "..."],
-    "sourceAttribution": "string — source credits"
+    "sourceAttribution": "string: source credits"
   },
-  "prompt": "string — complete image generation prompt starting with 'Generate a professional infographic image'"
+  "prompt": "string: complete image generation prompt starting with 'Generate a professional infographic image'"
 }
 </output_format>`;
 
@@ -228,7 +229,7 @@ Output valid JSON adhering to the schema.`;
           { type: 'text', text: RESEARCH_SYSTEM_PROMPT },
           { type: 'text', text: promptDirective },
         ],
-        thinkingConfig: { thinking_level: 'LOW' },
+        thinkingConfig: { thinking_level: 'MEDIUM' },
         fetchImpl,
         signal,
       });
@@ -255,7 +256,8 @@ Output valid JSON adhering to the schema.`;
       const mode = cleanText(body?.mode, 40) || 'data-story';
       const aspect = cleanText(body?.aspect, 20) || '16:9';
       const rawModel = cleanText(body?.model || body?.imageModel, 60);
-      const imageModel = ALLOWED_IMAGE_MODELS.has(rawModel) ? rawModel : DEFAULT_IMAGE_MODEL;
+      const normalizedModel = rawModel === LEGACY_IMAGE_MODEL ? QUALITY_IMAGE_MODEL : rawModel;
+      const imageModel = ALLOWED_IMAGE_MODELS.has(normalizedModel) ? normalizedModel : DEFAULT_IMAGE_MODEL;
       const editInstruction = cleanText(body?.editInstruction, 2000);
       const previousImage = parseDataUrl(body?.previousImage || body?.previousImageBase64);
 
@@ -281,6 +283,7 @@ Output valid JSON adhering to the schema.`;
         apiKey,
         model: imageModel,
         input,
+        responseFormat: { type: 'image', aspect_ratio: aspect },
         fetchImpl,
         signal,
       });

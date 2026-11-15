@@ -233,7 +233,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
                     onClick={onSubmit}
                     disabled={(!value && !image && !url) || isGenerating}
                     className={`
-                        ${hideSubmitOnMobile ? 'hidden sm:flex' : 'flex'} items-center gap-2 px-6 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-lg ml-auto
+                        ${hideSubmitOnMobile ? 'hidden sm:flex' : 'flex'} min-h-[44px] items-center gap-2 px-6 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-lg ml-auto
                         ${value || image || url
                             ? 'bg-gradient-to-r from-primary-600 to-indigo-600 text-white hover:from-primary-500 hover:to-indigo-500 shadow-primary-500/30 hover:shadow-primary-500/50 hover:-translate-y-0.5 active:translate-y-0 active:scale-95'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'}
@@ -277,12 +277,12 @@ export const PromptInput: React.FC<PromptInputProps> = ({
                         onChange={(e) => setTempLink(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddLink()}
                         placeholder="https://..."
-                        className="flex-1 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                        className="flex-1 min-h-[44px] px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                     />
                     <button
                         type="button"
                         onClick={handleAddLink}
-                        className="px-3 py-2 bg-primary-600 text-white rounded-lg text-sm font-bold hover:bg-primary-700"
+                        className="min-h-[44px] min-w-[44px] px-3 py-2 bg-primary-600 text-white rounded-lg text-sm font-bold hover:bg-primary-700"
                     >
                         Add
                     </button>

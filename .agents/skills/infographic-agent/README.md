@@ -1,62 +1,57 @@
 # Infographic Agent Skill
 
-A standalone, agent-agnostic **skill** package for generating professional infographics, visual summaries, and data visualizations directly from text or topic descriptions with Gemini.
+This standalone skill generates infographic PNGs, visual summaries, and charts from text or topics with Gemini. It runs in local terminals and AI coding agents without browser or Playwright dependencies.
 
-This skill is designed to run in both local terminal environments and within AI coding agents (such as Claude Code, Cursor, Copilot, etc.) that support the Vercel agent skills ecosystem.
+## Installation and Setup
 
-## 🚀 Installation & Setup
-
-You can install this skill directly into your AI coding agent environment:
+Install the skill in your coding agent environment:
 
 ```bash
 npx skills add ryanbaumann/infographic-agent
 ```
 
-Alternatively, you can run the CLI tool directly without installation:
+Or install Python dependencies and run the CLI directly:
 
 ```bash
-# First run: installs the small Python dependencies (google-genai and pillow)
 npx infographic-agent --install
-
-# Generate an infographic
 npx infographic-agent "Top 5 programming languages in 2026"
 ```
 
-## 📋 Prerequisites
+## Prerequisites
 
-- **Python 3.9+**
-- **Gemini API Key**: Get a free key at [Google AI Studio](https://aistudio.google.com/apikey). Set it as:
+- **Python 3.9+**: Install `google-genai` and `pillow`.
+- **Gemini API Key**: Create a free key in [Google AI Studio](https://aistudio.google.com/apikey) and export it:
   ```bash
   export GEMINI_API_KEY="your-key"
   ```
-  *(If no key is configured in the environment, the CLI onboarding will guide you through getting one and saving it locally).*
-- **Vertex AI (Optional)**: If you prefer enterprise Vertex AI, configure Google Cloud Project details:
+  Run `npx infographic-agent --setup` to store the key locally if `GEMINI_API_KEY` is unset.
+- **Vertex AI (Optional)**: Set your Google Cloud project instead of an API key:
   ```bash
   export GOOGLE_CLOUD_PROJECT="your-project-id"
   ```
 
-## ⚙️ How It Works
+## Pipeline Architecture
 
-The skill runs a fast, browser-less two-agent pipeline powered by Gemini:
+The skill executes a three-step pipeline:
 
-1. **Research & Plan (`gemini-3.8-flash`)**: Grounds the topic with Google Search and returns the same Prepare contract as the web app: analysis metadata, exact text strings, and a precise renderer prompt.
-2. **Eval**: Runs deterministic checks for schema, explicit image prompt prefix, quoted text strings, source attribution, accessibility guidance, and prompt length before rendering.
-3. **Render (`gemini-3.1-flash-lite-image` by default)**: Renders the validated prompt directly into a high-quality, text-accurate infographic PNG. The portable skill can opt into `gemini-3.1-flash-image` via `--image-model` for quality-focused runs.
+1. **Research and Plan (`gemini-4-hydrogen`)**: Grounds the topic with Google Search using `MEDIUM` thinking (`LOW` with `--no-research`) and omits `temperature`.
+2. **Evaluate**: Validates schema fields, prompt prefix, quoted text labels, source attribution, contrast guidance, and word count.
+3. **Render (`gemini-nano-banana-2.1` default)**: Generates a text-accurate infographic PNG. Pass `--image-model gemini-3.1-flash-lite-image` for faster drafts. Legacy `gemini-3.1-flash-image` inputs normalize automatically to `gemini-nano-banana-2.1`.
 
-## 🛠️ CLI Flags & Options
+## CLI Flags
 
-All flags are fully compatible between the Python script and the `npx` execution:
-
-| Flag / Option | Short | Description | Default / Choices |
+| Flag | Short | Description | Default and Choices |
 | :--- | :--- | :--- | :--- |
-| `topic` | *None* | The topic, prompt, or content you want to visualize. | *None* |
-| `--output` | `-o` | File path where the output PNG will be saved. | `infographic.png` |
-| `--mode` | `-m` | Preset layout and style theme. | `data-story`<br>Choices: `classroom`, `custom`, `data-story`, `executive-summary`, `quick-slide`, `technical-deep-dive` |
-| `--aspect` | `-a` | Aspect ratio of the generated infographic image. | `9:16`<br>Choices: `1:1`, `1:4`, `3:4`, `4:3`, `9:16`, `16:9` |
-| `--instructions` | `-i` | Custom layout, design, or brand color rules. | `""` |
-| `--image-model` | *None* | Image model for the portable skill. | `gemini-3.1-flash-lite-image`<br>Choices: `gemini-3.1-flash-lite-image`, `gemini-3.1-flash-image` |
-| `--no-research` | *None* | Skip the research agent and generate directly (faster, no web search). | *Flag* |
-| `--yes` | `-y` | Non-interactive execution (no refine loop, best for CI/agents). | *Flag* |
-| `--setup` | *None* | Launch the interactive key onboarding walkthrough, then exit. | *Flag* |
+| `topic` | None | Topic or content to visualize. | Required unless `--text` is set |
+| `--output` | `-o` | Output PNG file path. | `infographic.png` |
+| `--mode` | `-m` | Visual layout preset. | `data-story` (`blog-post`, `brandkit`, `classroom`, `custom`, `data-story`, `executive-summary`, `portfolio-showcase`, `quick-slide`, `technical-deep-dive`) |
+| `--aspect` | `-a` | Output aspect ratio. | `16:9` (`1:1`, `1:4`, `3:4`, `4:3`, `9:16`, `16:9`, `16:10`, `21:9`) |
+| `--resolution` | `-r` | Requested image size. | `1K` (`0.5K`, `1K`, `2K`) |
+| `--instructions` | `-i` | Additional layout or color guidance. | `""` |
+| `--image-model` | None | Gemini image renderer model. | `gemini-nano-banana-2.1` (`gemini-nano-banana-2.1`, `gemini-3.1-flash-lite-image`) |
+| `--no-research` | None | Skip web search grounding and use `LOW` thinking. | Off |
+| `--yes` | `-y` | Generate once and exit without the refine loop. | Off |
+| `--no-open` | None | Do not open the output image automatically. | Off |
+| `--setup` | None | Configure the local Gemini API key and exit. | Off |
 
-For full documentation and examples, visit the main repository at [github.com/ryanbaumann/infographic-agent](https://github.com/ryanbaumann/infographic-agent).
+Visit [github.com/ryanbaumann/infographic-agent](https://github.com/ryanbaumann/infographic-agent) for additional examples.

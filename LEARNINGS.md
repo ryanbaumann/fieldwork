@@ -2,6 +2,21 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-14 - Gemini 4 Hydrogen `maxOutputTokens` CoT starvation, `gemini-nano-banana-2.1` migration, and Maps Shortlist Place ID hygiene
+
+Context: Upgrading all Fieldwork gateway services, skills, and Labs (`real-world-reasoning-agent`, `infographic-agent`, `hairstyle-ai-studio`, `isochrones`, `contactSpam`) to `gemini-4-hydrogen`, `gemini-nano-banana-2.1`, Google Maps Experience MCP (`mapstools.googleapis.com/mcp`), `@googlemaps/a2ui@0.1.10`, and Google Maps Shortlist URLs (`map_action=shortlist`).
+
+Learning:
+1. On `gemini-4-hydrogen`, `maxOutputTokens` caps combined internal thinking tokens plus visible response tokens, `minimal` thinking is unsupported (`low`, `medium`, `high` only), and sampling parameters (`temperature`, `topP`, `topK`) should be omitted. Tight legacy ceilings (`2_048` in `gateway/lib/realWorldReasoning.js` or `120` in `gateway/lib/contactSpam.js`) starve `HIGH`/`LOW` reasoning before JSON or tool calls finish emitting; raise hosted orchestration caps (`32_768`) and fast classifier caps (`1_024`).
+2. `gemini-3.1-flash-image` reached sunset on October 29, 2026 and is succeeded by `gemini-nano-banana-2.1` for studio-quality renders, while `gemini-3.1-flash-lite-image` (`Nano Banana 2 Lite`) remains active for fast low-latency renders. Normalizing incoming `'gemini-3.1-flash-image'` payloads to `'gemini-nano-banana-2.1'` in gateway handlers and portable CLI skills preserves backward compatibility for saved client configs.
+3. Google Maps URLs `map_action=shortlist` (`https://www.google.com/maps/@?api=1&map_action=shortlist&place_ids=...`) requires 1 to 20 canonical Place IDs without the `places/` resource prefix (`places/ChIJ...` -> `ChIJ...`). Grounded or fixture candidates in agent state may carry synthetic IDs (`grounded-place-0`, `sample-*`) or `places/` resource names; always strip `places/`, reject synthetic prefixes, and validate `/^[A-Za-z0-9_-]{10,256}$/` before rendering a Maps List action.
+4. In Google Maps JS SDK v3.66, mutating `element.setAttribute('internal-usage-attribution-ids', ...)` or `element.internalUsageAttributionIds = [...]` *after* constructing `gmp-place-autocomplete` via `customElements.get('gmp-place-autocomplete')` throws `TypeError: Cannot read properties of undefined (reading 'keys')` inside `places.js`. Always pass `{ internalUsageAttributionIds: [...] }` as constructor options to `new placesLib.PlaceAutocompleteElement(...)` / `new placesLib.PlaceDetailsCompactElement(...)`.
+5. Custom repo/user agent definitions without `EnableWriteTools: true` launch in read-only mode, whereas the built-in `self` subagent (`Model: "inherit"`) inherits both the parent Carbon model and full file/command tooling for parallel single-writer implementation packets.
+
+Evidence: Unit and integration suites across `gateway/test/*.test.js`, `demos/real-world-reasoning-agent`, `demos/infographic-agent`, `demos/hairstyle-ai-studio`, `demos/isochrones`, `.agents/skills/infographic-agent/test_portable_infographic.py`, `scripts/skill-improvement.mjs`, and headless Chromium Playwright checks across all 8 Lab routes (`1280x800`, `390x844`, `320x568`) verified `gemini-4-hydrogen` thinking configs, `gemini-nano-banana-2.1` routing, MCP JSON-RPC tool allowlisting, Shortlist URL hygiene, and zero Places UI Kit `pageErrors`.
+
+Use next time: Size `maxOutputTokens` for `thinking + visible output` on Gemini 4 models (never pass `temperature` or `minimal` thinking), pass `internalUsageAttributionIds` into Places UI Kit class constructors rather than mutating DOM attributes post-construction, normalize `places/` prefixes and reject synthetic IDs before constructing Google Maps URLs, and use `self` (`Model: "inherit"`) when delegating parallel Carbon implementation packets that require write/command tools.
+
 ## 2026-11-14 - Fixed-top `.skip-link` / escape-pill collisions, premature `← All notes` placement, and WCAG 2.5.3 logo back-links
 
 Context: Cross-viewport (`1280x800`, `390x844`, `320x568`) light/dark browser and design audit across Fieldwork (`portfolio/`), gateway auth/error pages (`gateway/`), and Labs (`demos/`).

@@ -11,8 +11,8 @@ export const Header: React.FC<HeaderProps> = ({ apiKey, onOpenKeyDialog }) => {
     <header className="app-header">
       <div className="header-inner">
         <div className="brand-group">
-          <a href="/" className="back-to-home" title="Back to Ryan Baumann">
-            ← Home
+          <a href="/" className="back-to-home" title="Back to Fieldwork">
+            ← Fieldwork
           </a>
           <div className="brand-icon">
             <Sparkles size={20} aria-hidden="true" />
@@ -20,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({ apiKey, onOpenKeyDialog }) => {
           <div>
             <div className="brand-title">
               Infographic Agent
-              <span className="brand-badge">Gemini 3.8 + 3.1</span>
+              <span className="brand-badge">Gemini 4 Hydrogen</span>
             </div>
           </div>
         </div>

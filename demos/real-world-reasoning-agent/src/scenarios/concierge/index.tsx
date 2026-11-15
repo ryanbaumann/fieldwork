@@ -9,9 +9,9 @@ import { redrawItinerary, stopTour } from './controller';
 export const conciergeModule: ScenarioModule = {
   id: 'concierge',
   title: 'Concierge',
-  tagline: 'One sentence in — a walkable day out. Real places, real hours, reasoned into order and drawn on the map.',
+  tagline: 'One sentence in, a walkable day out. Real places, real hours, reasoned into order and drawn on the map.',
   cta: 'Plan my day',
-  placeholder: 'Describe your perfect day…',
+  placeholder: 'Describe your day or paste Google Maps links for a Maps List…',
   icon: Compass,
   accent: '#f59e0b',
   mapMode: '2d',
@@ -37,8 +37,8 @@ Workflow you should follow:
 Only ever cite place facts returned by your tools this session.
 Whatever you recommend, give the one-line reason for it, grounded in a specific tool result.`,
   suggestions: [
-    'Plan a perfect Saturday near the Ferry Building: specialty coffee, a great museum, golden-hour dinner with a view — all walkable',
-    'A rainy-day itinerary of the best indoor things to do downtown',
+    'Plan a perfect Saturday near the Ferry Building: specialty coffee, a great museum, and golden-hour dinner with a view, all walkable',
+    'Build a walkable coffee and gallery shortlist near the Ferry Building as a Maps List',
     'Design a romantic evening in North Beach: aperitivo, dinner, dessert',
   ],
   Panel: ItineraryBoard,

@@ -53,3 +53,31 @@ export function midpoint(first, second) {
 export function nearbySearchRadius(first, second) {
   return Math.min(50_000, Math.max(1_500, distanceMeters(first, second) / 2 + 3_000));
 }
+
+const SYNTHETIC_PLACE_ID_RE =
+  /^(?:grounded-place-|sample-|mock-|fixture-|synthetic-|demo-|test-|fake-|placeholder-|place-\d+$)/i;
+
+export function normalizePlaceId(raw) {
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  const stripped = trimmed.replace(/^(?:places\/|placeId:)/i, '').trim();
+  if (!stripped || SYNTHETIC_PLACE_ID_RE.test(stripped)) return null;
+  if (!/^[A-Za-z0-9_-]{10,256}$/.test(stripped)) return null;
+  return stripped;
+}
+
+export function buildMapsShortlistUrl(placeIds, { utmSource = 'fieldwork_isochrones', utmCampaign = 'shortlist' } = {}) {
+  if (!Array.isArray(placeIds)) return null;
+  const validIds = [];
+  const seen = new Set();
+  for (const raw of placeIds) {
+    const normalized = normalizePlaceId(raw);
+    if (normalized && !seen.has(normalized)) {
+      seen.add(normalized);
+      validIds.push(normalized);
+      if (validIds.length === 20) break;
+    }
+  }
+  if (validIds.length === 0) return null;
+  return `https://www.google.com/maps/@?api=1&map_action=shortlist&place_ids=${validIds.join(',')}&utm_source=${encodeURIComponent(utmSource)}&utm_campaign=${encodeURIComponent(utmCampaign)}`;
+}

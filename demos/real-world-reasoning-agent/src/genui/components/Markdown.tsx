@@ -156,7 +156,7 @@ function renderInline(text: string): ReactNode[] {
       const href = link?.[2].trim() ?? '';
       nodes.push(
         isSafeHref(href) ? (
-          <a key={key} href={href} target="_blank" rel="noreferrer">
+          <a key={key} href={href} target="_blank" rel="noopener noreferrer">
             {renderInline(link?.[1] ?? '')}
           </a>
         ) : (

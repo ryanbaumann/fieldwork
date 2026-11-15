@@ -140,9 +140,10 @@ export const StepResult: React.FC<StepResultProps> = ({
             </div>
             {history.length > 0 && (
               <button
+                type="button"
                 onClick={handleClearHistoryClick}
                 aria-label="Clear all saved looks"
-                className={`flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md transition-colors ${confirmClear ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
+                className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-md transition-colors ${confirmClear ? 'bg-red-500 text-white' : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'}`}
               >
                 <Trash2 size={12} /> {confirmClear ? 'Confirm?' : 'Clear'}
               </button>
@@ -188,27 +189,31 @@ export const StepResult: React.FC<StepResultProps> = ({
         {/* Top Desktop Actions Bar (Hidden on Mobile) */}
         <div className="hidden sm:flex flex-wrap gap-4 justify-between items-center glass-panel p-4 rounded-2xl shadow-soft">
             <button
+                type="button"
                 onClick={onRestart}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold text-sm"
+                className="min-h-[44px] flex items-center gap-2 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-semibold text-sm"
             >
                 <RotateCcw size={16} /> <span>Start New Look</span>
             </button>
             <div className="flex gap-2">
                 <button
+                    type="button"
                     onClick={handleShare}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold text-sm transition-all"
+                    className="min-h-[44px] flex items-center gap-2 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold text-sm transition-all"
                 >
                     <Share2 size={16} /> <span>Share</span>
                 </button>
                 <button
+                    type="button"
                     onClick={() => onCtaClick('book')}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm hover:shadow-md transition-all"
+                    className="min-h-[44px] flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm hover:shadow-md transition-all"
                 >
                     <Scissors size={16} /> <span>Salon Brief</span>
                 </button>
                 <button
+                    type="button"
                     onClick={handleDownload}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold text-sm shadow-glow hover:shadow-lg transition-all"
+                    className="min-h-[44px] flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold text-sm shadow-glow hover:shadow-lg transition-all"
                 >
                     <Download size={16} /> Save Image
                 </button>
@@ -276,7 +281,8 @@ export const StepResult: React.FC<StepResultProps> = ({
           </div>
           <a
             href="https://ryanbaumann.dev/"
-            className="mt-3 inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-slate-950 px-5 py-2 text-sm font-bold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:bg-white dark:text-slate-950 dark:hover:bg-primary-100 sm:mt-0"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-slate-950 px-5 py-2 text-sm font-bold text-white transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:bg-white dark:text-slate-950 dark:hover:bg-primary-100 sm:mt-0"
           >
             Explore Fieldwork
           </a>

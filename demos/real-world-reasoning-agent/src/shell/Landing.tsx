@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ArrowRight, KeyRound, LocateFixed, MapPin, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, KeyRound, LocateFixed, Map as MapIcon, X } from 'lucide-react';
 import { GMP_BROWSER_KEY } from '@/lib/config';
 import { getGeminiCredentialSnapshot, subscribeGeminiCredential } from '@/ai/client';
 import type { LatLng } from '@/lib/types';
@@ -9,20 +9,15 @@ import { preflightCapabilities, type CapabilityStatus } from './capabilityPrefli
 import { useGenui } from '@/genui/store';
 
 const DEFAULT_GOAL = 'Find a nearby café with the shortest verified walk; tell me whether I need a jacket.';
-const EXAMPLES = [
-  { label: 'Café · walk', prompt: 'Find a nearby café with the shortest verified walk.' },
-  { label: 'Lunch + jacket', prompt: 'Find a nearby lunch spot with the shortest verified walk; tell me if I need a jacket.' },
-  { label: 'Errand · drive', prompt: 'Find a nearby errand stop with the shortest verified drive.' },
-];
 
 type LocationState = 'sample' | 'locating' | 'using' | 'error';
+
 export function Landing() {
   const dismissed = useAtlas((state) => state.landingDismissed);
   const cityId = useAtlas((state) => state.cityId);
-  const cities = useAtlas((state) => state.cities);
   const apiHealth = useAtlas((state) => state.apiHealth);
   const setKeyDialogOpen = useAtlas((state) => state.setKeyDialogOpen);
-  const [goal, setGoal] = useState(DEFAULT_GOAL);
+  const [goal, setGoal] = useState('');
   const [locationState, setLocationState] = useState<LocationState>('sample');
   const [selectedLocation, setSelectedLocation] = useState<LatLng | null>(null);
   const credential = useSyncExternalStore(
@@ -32,7 +27,6 @@ export function Landing() {
   );
   const [capabilities, setCapabilities] = useState<CapabilityStatus | null>(null);
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine !== false);
-  const originalCityId = useRef(cityId);
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -65,18 +59,11 @@ export function Landing() {
 
   if (dismissed) return null;
 
-  const sampleCity = cities.find((item) => item.id === originalCityId.current) ?? cities[0];
   const liveStatus = capabilities?.mode === 'live' ? 'ready' : capabilities ? 'unavailable' : 'checking';
   const mapsReady = Boolean(
     capabilities?.browserMaps && capabilities.serverMaps && capabilities.online && capabilities.apiHealth === 'ok',
   );
   const needsGemini = mapsReady && capabilities?.gemini === false;
-  const hostedGemini = Boolean(capabilities?.gemini && credential.source !== 'byok');
-
-  const chooseExample = (example: string) => {
-    setGoal(example);
-    promptRef.current?.focus();
-  };
 
   const stopUsingLocation = () => {
     setSelectedLocation(null);
@@ -115,90 +102,125 @@ export function Landing() {
     });
   };
 
+  const submitOrConnect = () => {
+    if (needsGemini) {
+      setKeyDialogOpen(true);
+      return;
+    }
+    start();
+  };
+
   return (
     <div className="atlas-cold-open">
       <div className="atlas-cold-open__scrim" />
       <main className="atlas-cold-open__content">
-        <section className="atlas-cold-open__hero">
-          <div className="atlas-cold-open__eyebrow"><Sparkles size={14} aria-hidden="true" /> One evidence-first decision</div>
-          <h1>Find the right place.<br /><span>Prove it.</span></h1>
-          <p>Describe what you need. Atlas checks real candidates, verifies travel time, and recommends one with evidence.</p>
-        </section>
+        <h1 id="atlas-landing-heading" className="atlas-cold-open__title">
+          What do you want to do?
+        </h1>
 
-        <section className="glass mission-brief" aria-label="Mission brief">
-          <div className="mission-brief__header">
-            <div><span className="mission-brief__kicker">60–90 second mission</span><h2>What should Atlas find?</h2></div>
-            <span className={`mission-capability mission-capability--${liveStatus}`} role="status">
-              {liveStatus === 'ready'
-                ? '● Ready'
-                : liveStatus === 'checking' ? 'Checking services…' : needsGemini ? 'Maps ready · Connect Gemini' : 'Live unavailable'}
-            </span>
+        <section className="glass mission-brief" aria-labelledby="atlas-landing-heading">
+          <div className="mission-field">
+            <textarea
+              ref={promptRef}
+              aria-labelledby="atlas-landing-heading"
+              value={goal}
+              onChange={(event) => setGoal(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  submitOrConnect();
+                }
+              }}
+              rows={3}
+              autoFocus
+            />
           </div>
 
-          <label className="mission-field">
-            <span>Goal</span>
-            <textarea ref={promptRef} value={goal} onChange={(event) => setGoal(event.target.value)} rows={3} />
-          </label>
+          {locationState === 'error' ? (
+            <p className="mission-location__error" role="status">
+              Location unavailable.
+            </p>
+          ) : null}
 
-          <div className="mission-examples" aria-label="Example goals">
-            {EXAMPLES.map((example) => (
-              <button key={example.prompt} type="button" className="mission-example" title={example.prompt} onClick={() => chooseExample(example.prompt)}>{example.label}</button>
-            ))}
-          </div>
+          <div className="mission-toolbar">
+            <div className="mission-toolbar__left">
+              <button
+                type="button"
+                className={`mission-pill${locationState === 'using' ? ' is-active' : ''}`}
+                onClick={useMyLocation}
+                disabled={locationState === 'locating'}
+                aria-pressed={locationState === 'using'}
+                aria-label={
+                  locationState === 'using'
+                    ? 'Stop using my location'
+                    : locationState === 'locating'
+                      ? 'Locating'
+                      : 'Use my location'
+                }
+                title={locationState === 'using' ? 'Stop using my location' : 'Use my location'}
+              >
+                {locationState === 'using' ? <X size={15} aria-hidden="true" /> : <LocateFixed size={15} aria-hidden="true" />}
+                <span>
+                  {locationState === 'using'
+                    ? 'My location'
+                    : locationState === 'locating'
+                      ? 'Locating…'
+                      : 'Near me'}
+                </span>
+              </button>
 
-          <div className="mission-location" aria-live="polite">
-            <span><MapPin size={15} aria-hidden="true" /> {locationState === 'using' ? 'Using my location for this mission' : `Selected area: ${sampleCity.name}`}</span>
-            <button type="button" onClick={useMyLocation} disabled={locationState === 'locating'}>
-              {locationState === 'using' ? <X size={15} aria-hidden="true" /> : <LocateFixed size={15} aria-hidden="true" />}
-              {locationState === 'using' ? 'Remove' : locationState === 'locating' ? 'Locating…' : 'Use my location'}
-            </button>
-          </div>
-          {locationState === 'error' ? <p className="mission-location__error" role="status">Location was not shared. The selected area is still active.</p> : null}
+              <button
+                type="button"
+                className="mission-pill"
+                onClick={() => {
+                  useAtlas.getState().dismissLanding();
+                  useGenui.getState().clearScenario('scout');
+                }}
+                aria-label="Open map"
+                title="Open map"
+              >
+                <MapIcon size={15} aria-hidden="true" />
+                <span>Map</span>
+              </button>
 
-          <div className={`mission-gemini${credential.source === 'byok' || hostedGemini ? ' is-ready' : ''}`}>
-            <span>
-              <KeyRound size={15} aria-hidden="true" />
-              {credential.source === 'byok'
-                ? 'Gemini connected · Personal key'
-                : hostedGemini ? 'Gemini connected · Hosted' : 'Gemini is required for agent reasoning'}
-            </span>
-            <button type="button" onClick={() => setKeyDialogOpen(true)}>
-              {credential.source === 'byok' ? 'Manage' : hostedGemini ? 'Use my key' : 'Connect key'}
-            </button>
-          </div>
+              <button
+                type="button"
+                className={`mission-pill mission-pill--icon${credential.source === 'byok' ? ' is-active' : ''}`}
+                onClick={() => setKeyDialogOpen(true)}
+                aria-label="Gemini API key"
+                title={credential.source === 'byok' ? 'Manage personal Gemini API key' : 'Use personal Gemini API key'}
+              >
+                <KeyRound size={15} aria-hidden="true" />
+              </button>
+            </div>
 
-          <div className="mission-actions" style={{ display: 'flex', gap: '12px', marginTop: '12px', width: '100%', flexWrap: 'wrap' }}>
             <button
               type="button"
               className="mission-launch"
-              style={{ flex: 1 }}
-              onClick={needsGemini ? () => setKeyDialogOpen(true) : start}
+              onClick={submitOrConnect}
               disabled={liveStatus !== 'ready' && !needsGemini}
+              aria-label={
+                liveStatus === 'ready'
+                  ? 'Go'
+                  : liveStatus === 'checking'
+                    ? 'Checking services'
+                    : needsGemini
+                      ? 'Connect Gemini key'
+                      : 'Unavailable'
+              }
             >
-              {liveStatus === 'ready'
-                ? <>Find with live evidence <ArrowRight size={18} aria-hidden="true" /></>
-                : liveStatus === 'checking' ? 'Checking services…' : needsGemini ? <>Connect Gemini to continue <KeyRound size={16} aria-hidden="true" style={{ marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }} /></> : 'Live services unavailable'}
+              {liveStatus === 'ready' ? (
+                <ArrowRight size={18} aria-hidden="true" />
+              ) : liveStatus === 'checking' ? (
+                '…'
+              ) : needsGemini ? (
+                <>
+                  Connect key <KeyRound size={15} aria-hidden="true" />
+                </>
+              ) : (
+                'Unavailable'
+              )}
             </button>
-            <button
-              type="button"
-              className="mission-launch-secondary"
-              style={{ flex: 'none' }}
-              onClick={() => {
-                useAtlas.getState().dismissLanding();
-                useGenui.getState().clearScenario('scout');
-              }}
-            >
-              Skip to Demos
-            </button>
-          </div>
-          <div className="mission-privacy"><ShieldCheck size={13} aria-hidden="true" />
-            {liveStatus === 'ready'
-              ? 'Maps, grounding, and Gemini are ready. Device location is used only after you ask.'
-              : liveStatus === 'checking'
-                ? 'Verifying Maps, grounding, and both agent models before launch.'
-                : needsGemini
-                  ? 'Connect a Gemini key above; no reload is needed.'
-                  : 'Check your connection and Maps configuration, then reload.'}
           </div>
         </section>
       </main>

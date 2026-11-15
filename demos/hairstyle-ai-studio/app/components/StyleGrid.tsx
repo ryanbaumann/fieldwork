@@ -34,9 +34,10 @@ export const StyleGrid: React.FC<StyleGridProps> = ({
             {(['All', 'Women', 'Men'] as const).map((tab) => (
                 <button
                 key={tab}
+                type="button"
                 onClick={() => onTabChange(tab)}
                 aria-pressed={activeTab === tab}
-                className={`min-h-11 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+                className={`min-h-[44px] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
                     activeTab === tab
                     ? 'bg-primary-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-100'
@@ -69,7 +70,7 @@ export const StyleGrid: React.FC<StyleGridProps> = ({
                     key={item.id}
                     aria-pressed={isSelected}
                     aria-label={`${isSelected ? 'Selected' : 'Try'} ${item.label}: ${item.desc}`}
-                    onClick={() => onSelect(`${item.label} - ${item.desc}`)}
+                    onClick={() => onSelect(`${item.label}: ${item.desc}`)}
                     className={`
                       relative group rounded-2xl overflow-hidden text-left bg-white dark:bg-slate-900 border transition-all duration-300
                       snap-start shrink-0 w-[220px] sm:w-auto sm:shrink

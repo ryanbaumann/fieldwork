@@ -6,7 +6,7 @@ import { validateSanitized } from '@/diagnostics/telemetry';
 type SendState = { kind: 'idle' | 'sending' | 'ok' | 'error'; msg?: string };
 
 /** Production orchestrator models known to be on the server allowlist. */
-const CHAT_MODELS = ['gemini-3.8-flash'];
+const CHAT_MODELS = ['gemini-4-hydrogen', 'gemini-3.8-flash'];
 const THINKING: ThinkingChoice[] = ['default', 'low', 'medium', 'high'];
 
 /**
@@ -65,7 +65,7 @@ export function AdminPanel() {
       });
       if (res.status === 204) setSendState({ kind: 'ok', msg: `Sent ${records.length} record(s).` });
       else if (res.status === 403) setSendState({ kind: 'error', msg: 'Consent required.' });
-      else if (res.status === 429) setSendState({ kind: 'error', msg: 'Busy — try again shortly.' });
+      else if (res.status === 429) setSendState({ kind: 'error', msg: 'Busy. Try again shortly.' });
       else if (res.status === 400) setSendState({ kind: 'error', msg: 'Rejected by the server.' });
       else setSendState({ kind: 'error', msg: `Unexpected response (${res.status}).` });
     } catch {
@@ -136,8 +136,8 @@ export function AdminPanel() {
       </label>
 
       <p className="admin-panel__hint">
-        Applies to your next message. <code>default</code> = high. Task agents use
-        <code>gemini-3.8-flash</code> at low thinking. Switching
+        Applies to your next message. <code>default</code> = high. Task agents use{' '}
+        <code>gemini-4-hydrogen</code> at low thinking, and multimodal analysis uses medium thinking. Switching
         starts fresh model context.
       </p>
 
@@ -202,7 +202,7 @@ export function AdminPanel() {
         </p>
       )}
       <p className="admin-panel__hint">
-        Export and send contain only structural metadata (tool, status, category) —
+        Export and send contain only structural metadata (tool, status, category),
         never prompts, Maps content, ids, or locations. The send is opt-in and
         requires the consent above.
       </p>

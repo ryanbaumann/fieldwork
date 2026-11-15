@@ -14,9 +14,10 @@ function jsonResponse(body, { ok = true, status = 200 } = {}) {
   };
 }
 
-test('current model routing uses gemini-3.8-flash for opt-in analysis and the image-capable model for edits', () => {
-  assert.equal(HAIRSTYLE_MODELS.vision, 'gemini-3.8-flash');
+test('current model routing uses gemini-4-hydrogen for opt-in analysis and Nano Banana 2 Lite / 2.1 for edits', () => {
+  assert.equal(HAIRSTYLE_MODELS.vision, 'gemini-4-hydrogen');
   assert.equal(HAIRSTYLE_MODELS.image, 'gemini-3.1-flash-lite-image');
+  assert.equal(HAIRSTYLE_MODELS.studioImage, 'gemini-nano-banana-2.1');
 });
 
 test('API key validation rejects empty, short, and malformed values', () => {
@@ -92,9 +93,10 @@ test('analysis is stateless, bounded, and uses the caller key only upstream', as
   assert.equal(upstreamRequest.headers['x-goog-api-key'], API_KEY);
   assert.equal(upstreamRequest.headers['Api-Revision'], '2026-05-20');
   const payload = JSON.parse(upstreamRequest.body);
-  assert.equal(payload.model, HAIRSTYLE_MODELS.vision);
+  assert.equal(payload.model, 'gemini-4-hydrogen');
   assert.equal(payload.store, false);
-  assert.deepEqual(payload.generation_config, { thinking_level: 'low' });
+  assert.deepEqual(payload.generation_config, { thinking_level: 'medium' });
+  assert.equal('temperature' in payload.generation_config, false);
   assert.match(payload.input[1].text, /Do not infer or classify gender/);
   assert.doesNotMatch(JSON.stringify(result), new RegExp(API_KEY));
 });
@@ -171,6 +173,49 @@ test('generation makes one stateless image interaction and returns a data URL', 
   assert.equal(upstreamPayload.model, HAIRSTYLE_MODELS.image);
   assert.equal(upstreamPayload.store, false);
   assert.equal(upstreamPayload.response_format.image_size, '1K');
+});
+
+test('studio generationMode routes generate and refine to gemini-nano-banana-2.1', async () => {
+  const modelsUsed = [];
+  const fetchImpl = async (_url, init) => {
+    const payload = JSON.parse(init.body);
+    modelsUsed.push(payload.model);
+    return jsonResponse({
+      steps: [{
+        type: 'model_output',
+        content: [{ type: 'image', mime_type: 'image/jpeg', data: 'ZmluYWw=' }],
+      }],
+    });
+  };
+
+  const genResult = await handleHairstyleAiApi({
+    pathname: '/api/hairstyle-ai-studio/generate',
+    method: 'POST',
+    apiKey: API_KEY,
+    body: {
+      images: { front: FRONT_IMAGE, side: null, back: null },
+      styleDescription: 'Editorial wolf cut',
+      generationMode: 'studio',
+      outputLayout: 'salon-sheet',
+    },
+    fetchImpl,
+  });
+  assert.equal(genResult.statusCode, 200);
+
+  const refineResult = await handleHairstyleAiApi({
+    pathname: '/api/hairstyle-ai-studio/refine',
+    method: 'POST',
+    apiKey: API_KEY,
+    body: {
+      currentImage: FRONT_IMAGE,
+      refinementInstruction: 'Add warm copper highlights',
+      generationMode: 'studio',
+      outputLayout: 'salon-sheet',
+    },
+    fetchImpl,
+  });
+  assert.equal(refineResult.statusCode, 200);
+  assert.deepEqual(modelsUsed, ['gemini-nano-banana-2.1', 'gemini-nano-banana-2.1']);
 });
 
 test('upstream authentication and quota failures are sanitized', async () => {

@@ -37,7 +37,7 @@ Rules:
   the value lives in the data model.
 - Every Button/ChoicePicker needs an action: {"event":{"name":"<action>","context":{...}}}.
   Built-in actions: fly_to {lat,lng,zoom?}, select_place {placeId}, send_prompt
-  {prompt}, open_url {url}, download_image {dataUrl}. Any other name is sent back
+  {prompt}, open_url {url}, open_maps_shortlist {placeIds?,url?}, download_image {dataUrl}. Any other name is sent back
   to you as a user turn so you can respond.
 
 Catalog cheat sheet (the "Atlas A2UI v1.0 / v0.9 subset" + Maps Agentic UI Toolkit (MAUI) catalog):
@@ -53,8 +53,8 @@ Catalog cheat sheet (the "Atlas A2UI v1.0 / v0.9 subset" + Maps Agentic UI Toolk
   value(s) are merged into the action context as "selection", and any literal
   "{selection}" token in a context string is replaced with it.
 - StatGrid {items:[{label,value,hint?}]} — stat tile grid.
-- PlaceCard / PlaceDetailsCompact {placeId, orientation?: vertical|horizontal} — fetches live Place details via Places UI Kit; footer has Show-on-map/Ask buttons. Use "vertical" for single place, "horizontal" for lists.
-- MapPreview / GoogleMap {center?,lat?,lng?,zoom?,markers?,anchorMarker?,label?,mapId?,gestureHandling?} — static/interactive map card, tap flies camera there.
+- PlaceCard / PlaceDetailsCompact {placeId, orientation?: horizontal|vertical} — fetches live Place details via Places UI Kit; footer has Show-on-map/Ask buttons. PlaceDetailsCompact defaults to "horizontal"; use "vertical" for a single focal place, "horizontal" for lists.
+- MapPreview / GoogleMap {center?,lat?,lng?,zoom?,mode?: roadmap|satellite|hybrid,origin?,destination?,routes?,travelMode?,placePrimaryType?,contentToken?,markers?,anchorMarker?,label?,mapId?,gestureHandling?} — static/interactive map card, tap flies camera there.
 - AdCreative {imageRef,headline,body?,cta?,badge?} — poster card, always badged
   "AI-generated image".
 - Video {url, poster?} — inline player; url/poster accept https/data:video URLs

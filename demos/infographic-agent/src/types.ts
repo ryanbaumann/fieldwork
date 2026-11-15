@@ -21,7 +21,7 @@ export type AspectRatio =
 
 export type ImageModelOption =
   | 'gemini-3.1-flash-lite-image'
-  | 'gemini-3.1-flash-image';
+  | 'gemini-nano-banana-2.1';
 
 export interface InfographicAnalysis {
   title?: string;

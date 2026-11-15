@@ -93,7 +93,7 @@ export const GeminiKeyDialog = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-slate-800"
+            className="flex min-w-[44px] min-h-[44px] shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-slate-800"
             aria-label="Close API key dialog"
           >
             <X size={20} />
@@ -160,7 +160,7 @@ export const GeminiKeyDialog = ({
               <button
                 type="button"
                 onClick={() => setIsVisible((visible) => !visible)}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
+                className="absolute inset-y-0 right-0 flex min-w-[44px] min-h-[44px] w-12 items-center justify-center text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
                 aria-label={isVisible ? 'Hide API key' : 'Show API key'}
               >
                 {isVisible ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -168,7 +168,7 @@ export const GeminiKeyDialog = ({
             </div>
             <p id="gemini-key-help" className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               The proxy validates your key without generating content. It stays in this tab’s memory and is never stored or sent to analytics.{' '}
-              <a className="inline-flex min-h-9 items-center py-1 font-bold text-primary-600 underline underline-offset-2 dark:text-primary-400" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+              <a className="inline-flex min-h-[44px] items-center py-1 font-bold text-primary-600 underline underline-offset-2 dark:text-primary-400" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
                 Create a key ↗
               </a>
             </p>

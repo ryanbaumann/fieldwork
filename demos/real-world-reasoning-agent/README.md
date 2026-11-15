@@ -1,93 +1,90 @@
-# Atlas — a real-world reasoning agent
+# Atlas: Real-World Reasoning Agent on Google Maps
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node 20.19+](https://img.shields.io/badge/node-%3E%3D20.19-brightgreen.svg)](package.json)
 
-> **A personal project by [Ryan Baumann](https://github.com/ryanbaumann).** Atlas is not an official Google product and is not affiliated with, sponsored, or endorsed by Google. It is an independent demo built on the public [Google Maps Platform](https://developers.google.com/maps) and [Gemini API](https://ai.google.dev/gemini-api/docs) — bring your own API keys, and you are responsible for your own usage and billing.
+> **A personal project by [Ryan Baumann](https://github.com/ryanbaumann).** Atlas is an independent demo built on the public [Google Maps Platform](https://developers.google.com/maps?utm_campaign=gmp_git_agentskills_v1) and [Gemini API](https://ai.google.dev/gemini-api/docs). Atlas is not an official Google product. Bring your own API keys; you control your usage and billing.
 
-The canonical source now lives in
-[ryanbaumann/fieldwork](https://github.com/ryanbaumann/fieldwork/tree/main/demos/real-world-reasoning-agent).
-Fieldwork serves the production build at `/real-world-reasoning-agent/`. See
-[PROVENANCE.md](PROVENANCE.md) for the pinned source snapshot and migration
-boundary.
+The canonical source lives in [ryanbaumann/fieldwork](https://github.com/ryanbaumann/fieldwork/tree/main/demos/real-world-reasoning-agent). Fieldwork serves the production build at `/real-world-reasoning-agent/`. See [PROVENANCE.md](PROVENANCE.md) for the pinned source snapshot and migration boundary.
 
-Atlas is a Vite + React map agent that combines Maps data and imagery with Gemini to compare locations and render interactive results. A mission can inspect a site, compare candidates, ask for approval, and create campaign materials. Six journeys provide starting points for different tasks. Tool traces let you inspect the evidence behind a result; model-generated conclusions still need review.
-
-<!-- TODO(demo-gif): record a short capture of the Scout mission (brief → compare → approve → 3D reveal),
-     save it as docs/screens/demo.gif (keep it under ~10 MB so it autoplays on GitHub),
-     then replace this comment block with:
-![Atlas demo — the Scout mission from brief to 3D reveal](docs/screens/demo.gif)
--->
+Atlas is a Vite and React map agent. It combines Google Maps Platform data, Street View imagery, Maps Experience MCP tools, and `gemini-4-hydrogen` to evaluate locations and render interactive A2UI surfaces. Six journeys provide starting points for spatial tasks. Tool traces expose the retrieved evidence behind each result.
 
 ![Atlas landing screen](docs/screens/00-landing.png)
 
 ## Journeys
 
 | Journey | What it does |
-|---|---|
-| **Concierge** | One sentence in — a walkable day out. Real places, real hours, reasoned into order and drawn on the map. |
-| **Insight** | Click any block. The agent pulls air, weather, solar, and live commutes — and hands down a verdict with receipts. |
-| **Fleet** | A dispatcher that watches live traffic and weighs every tradeoff before it commits a single van. |
-| **Cinema** | Explore a photorealistic 3D city with narration informed by retrieved evidence. |
-| **Ad Studio** | Point at a storefront. Get back a campaign: grounded copy, conditioned creatives, walk-time targeting. |
-| **Scout** | It walks the block on Street View, reads frontage and visible street activity, then defends its site pick with evidence. |
+| :--- | :--- |
+| **Concierge** | Turns one prompt or pasted Maps links into a walkable itinerary and shareable Google Maps List. |
+| **Insight** | Evaluates any block across air quality, weather, solar potential, and live commutes with evidence. |
+| **Fleet** | Tracks live traffic and compares route ETAs before assigning a van. |
+| **Cinema** | Flies across a photorealistic 3D city with narration grounded in retrieved place data. |
+| **Ad Studio** | Builds storefront campaigns with grounded copy, conditioned creatives, and walk-time targeting. |
+| **Scout** | Inspects blocks on Street View, scores candidate corners, and defends its pick with evidence. |
 
-## Why this matters for developers
+## Core Developer Features
 
-- **Visible tool traces.** Status chips and a progress panel show tool calls so you can compare the retrieved evidence with the answer.
-- **3D exploration.** Cinema connects narration with a photorealistic 3D view of the city. Verify narrated claims before relying on them.
-- **Replay links.** Any completed run yields a one-click link that re-opens Atlas in the same journey + city and re-runs the prompt live — so sharing a result means sharing the *agent reasoning*, not a screenshot. Click **How it's built** in any journey to see the exact prompt and tools behind it.
+- **Visible tool traces:** Status chips and the live work panel show every tool call so you can compare retrieved data against the answer.
+- **Google Maps Shortlists:** Paste Google Maps links (`google.com/maps/place/...`, `maps.app.goo.gl/...`), Place IDs, or queries to generate a 1-click Google Maps List (`map_action=shortlist`) with up to 20 canonical Place IDs.
+- **Google Maps Experience MCP:** Proxies allowlisted JSON-RPC 2.0 tool calls (`search_places`, `search_along_route`, `compute_routes`, `lookup_weather`, `resolve_names`, `resolve_maps_urls`) to `https://mapstools.googleapis.com/mcp` and registers Agentic Data Visualization `contentToken` values on the Maps JS SDK.
+- **Replay links:** Completed runs produce a 1-click link that reopens Atlas in the same journey and city to rerun the prompt live. Click **How it's built** in the header to inspect the active system prompt and tool declarations.
 
-## Generative UI (A2UI)
+## Generative UI (`@googlemaps/a2ui@0.1.10`)
 
-Every journey's copilot can render interactive surfaces in the chat dock (place carousels, choice chips, stat grids, image cards, camera buttons) instead of only text. Atlas speaks the [Maps Agentic UI Toolkit](https://github.com/googlemaps/a2ui) **A2UI v0.9** protocol via a `render_surface` tool and renders it with a native React catalog; wire compatibility is validated against the official `@a2ui/web_core` schemas in CI. See **[docs/GENUI.md](docs/GENUI.md)**.
+Every journey copilot renders interactive surfaces in the chat column through the `render_surface` tool. Atlas supports the [Maps Agentic UI Toolkit](https://github.com/googlemaps/a2ui) A2UI v1.0 and v0.9 envelopes (`a2ui://maps-agentic-ui-catalog.json` and `atlas://maps-agentic-ui-catalog`), including `GoogleMap` route/place props (`mode`, `origin`, `destination`, `routes`, `travelMode`, `placePrimaryType`, `contentToken`) and dark-themed `PlaceDetailsCompact` cards. CI validates wire compatibility against `@a2ui/web_core`. See [docs/GENUI.md](docs/GENUI.md).
 
-## Voice input
+## Voice Input
 
-Tap the microphone in the copilot composer to **speak your request** instead of typing. Audio is transcribed by the low-latency task-agent model (`gemini-3.8-flash` by default, override with `VITE_GEMINI_STT_MODEL`) running with **LOW thinking** for the fastest turnaround, and the transcript drops into the input box for you to review before sending. Recording starts only on an explicit tap, audio is sent once through the same-origin `/ai` proxy, and the mic is released as soon as you stop. Real-time bidirectional voice via the Gemini [Live API](https://ai.google.dev/gemini-api/docs/live-api) is tracked in [docs/FUTURE_WORK.md](docs/FUTURE_WORK.md).
+Tap the microphone in the copilot composer to dictate a request. Atlas transcribes audio with `gemini-4-hydrogen` at `LOW` thinking (override with `VITE_GEMINI_STT_MODEL`) and inserts the text into the composer for review. Recording starts only on an explicit tap, sends audio once through the same-origin `/ai` proxy, and releases the microphone immediately on stop. See [docs/FUTURE_WORK.md](docs/FUTURE_WORK.md) for Live API notes.
 
 ## Architecture
 
 ```text
 Browser
   ├─ Maps JavaScript SDK with VITE_GMP_API_KEY (restricted browser key)
-  ├─ A2UI surfaces ← render_surface tool ← Gemini copilot
-  ├─ /api/real-world-reasoning-agent/gmp/* → Fieldwork gateway → Google Maps Platform REST/static APIs
-  └─ /api/real-world-reasoning-agent/ai/*  → Fieldwork gateway → Gemini API (model-allowlisted)
+  ├─ A2UI surfaces <- render_surface tool <- gemini-4-hydrogen copilot
+  ├─ /api/real-world-reasoning-agent/mcp   -> Fieldwork gateway -> mapstools.googleapis.com/mcp
+  ├─ /api/real-world-reasoning-agent/gmp/* -> Fieldwork gateway -> Google Maps Platform REST/static APIs
+  └─ /api/real-world-reasoning-agent/ai/*  -> Fieldwork gateway -> Gemini API (model-allowlisted)
 ```
 
-Only the restricted browser Maps key is bundled into the app. In production, Fieldwork's `gateway/server.js` proxies Google Maps Platform REST and Gemini calls and enforces model allowlists. The standalone `server/` modules remain as migration inputs and test fixtures. The gateway reads `GMP_SERVER_API_KEY` and `GEMINI_API_KEY` for hosted access. A user may instead connect a personal Gemini key from the cold open or the **AI key** control; it stays in tab memory, travels in a private same-origin header, overrides hosted access for that tab, and is never stored in URLs, browser storage, chat, or diagnostics.
+Only the restricted browser Maps key ships in the client bundle. In production, `gateway/server.js` proxies Google Maps Platform REST, Maps Experience MCP, and Gemini API calls behind strict allowlists, rate limits, and daily caps. Users can also connect a personal Gemini key from the landing screen or **AI key** header button; the key stays in tab memory only and never enters URLs, storage, chat, or diagnostics.
 
-### Model configuration
+### Model Configuration
 
-Atlas uses `gemini-3.8-flash` at high thinking as the orchestration model. Bounded task agents also use `gemini-3.8-flash`: low thinking for formatting, suggestions, voice STT transcription, and multimodal evidence analysis. Image, TTS, and optional video keep their purpose-built models. Model IDs remain overridable through the environment variables documented below.
+Atlas uses `gemini-4-hydrogen` with calibrated thinking tiers:
+- **Orchestrator (`HIGH` thinking):** Plans multi-step spatial tool calls and synthesizes grounded answers.
+- **Analysis worker (`MEDIUM` thinking):** Evaluates Street View, aerial imagery, and structured rubrics.
+- **Fast worker (`LOW` thinking):** Generates follow-up chips, formatting, and voice transcription.
+- **Generative video (`gemini-omni-1.2-flash`):** Renders optional tour and walkthrough clips.
 
-### Bring your own Gemini key
+Hosted requests default `RWR_HOSTED_AI_MAX_OUTPUT_TOKENS` to `32768` so reasoning tokens never starve tool or A2UI output.
 
-Open **Connect Gemini** on the first screen (or **AI key** in the app header), paste a key from [Google AI Studio](https://aistudio.google.com/apikey), and choose **Test and connect**. Atlas verifies access to both the orchestrator and task-agent models without generating content. The key lasts only for the current tab and can be disconnected immediately; reloading clears it. Requests still pass through Atlas's guarded same-origin proxy, so use a deployment you trust. Your Gemini usage and billing apply to your key.
+### Bring Your Own Gemini Key
 
-## Local development
+Open **Connect key** on the landing screen (or **AI key** in the header), paste a key from [Google AI Studio](https://aistudio.google.com/apikey), and select **Test and connect**. Atlas checks model access against `gemini-4-hydrogen` without generating billable tokens. Reloading the tab clears the key.
 
-Prerequisites: Node.js 20.19+ and a Google Cloud project with the Maps JavaScript, Places (New), Routes, Map Tiles, Geocoding, Air Quality, Weather, Pollen, Solar, and Static Maps/Street View APIs enabled ([create API keys](https://console.cloud.google.com/google/maps-apis/credentials)), plus a [Gemini API key](https://aistudio.google.com/apikey) with Google Maps Grounding enabled.
+## Local Development
+
+Prerequisites: Node.js 20.19+, a Google Cloud project with Maps JavaScript, Places (New), Routes, Map Tiles, Geocoding, Air Quality, Weather, Pollen, Solar, and Static Maps/Street View enabled ([create API keys](https://console.cloud.google.com/google/maps-apis/credentials)), and a [Gemini API key](https://aistudio.google.com/apikey).
 
 1. Create an ignored `.env` file and set:
-   - `VITE_GMP_API_KEY` — restricted browser key for Maps JavaScript, Places (New), Routes, and Map Tiles.
-   - `VITE_GMP_MAP_ID` — optional public map ID; when unset, Atlas uses `DEFAULT_MAP_ID` from `src/lib/config.ts`.
-   - `GMP_SERVER_API_KEY` — server-side Google Maps Platform REST/static key.
-   - `GEMINI_API_KEY` — server-side Gemini key (used for Gemini reasoning and Google Maps Grounding).
+   - `VITE_GMP_API_KEY`: Restricted browser key for Maps JavaScript, Places (New), Routes, and Map Tiles.
+   - `VITE_GMP_MAP_ID`: Optional public Map ID (defaults to `DEMO_MAP_ID` in `src/lib/config.ts`).
+   - `GMP_SERVER_API_KEY`: Server key for Google Maps Platform REST, Static Maps, and Maps Experience MCP.
+   - `GMP_MCP_KEY`: Optional dedicated key for `mapstools.googleapis.com/mcp` (falls back to `GMP_SERVER_API_KEY`).
+   - `GEMINI_API_KEY`: Server key for Gemini reasoning and Google Maps Grounding.
 
-   Vite also accepts the legacy local aliases `GMP_SERVER_KEY` and `GEMINI_KEY`. Use the canonical names above for the Fieldwork gateway.
-
-2. Install and run:
+2. Install dependencies and start the dev server:
 
    ```bash
    npm ci
    npm run dev
    ```
 
-Vite keeps development equivalents for `/api/real-world-reasoning-agent/capabilities`, `/api/real-world-reasoning-agent/gmp/*`, and `/api/real-world-reasoning-agent/ai/*`, so local development does not require a separate server process.
+Vite mounts local development routes for `/api/real-world-reasoning-agent/capabilities`, `/mcp`, `/gmp/*`, and `/ai/*`.
 
-## Fieldwork production integration
+## Fieldwork Production Integration
 
 Build the workspace package from this directory:
 
@@ -95,33 +92,23 @@ Build the workspace package from this directory:
 npm run build
 ```
 
-Fieldwork's root build stages `dist/` at `/real-world-reasoning-agent/`. The
-snapshot's bounded server modules remain under `server/` as migration input for
-the shared gateway. They are not a second production server inside the
-Fieldwork container. `npm run preview` builds the package and starts the shared
-Fieldwork gateway from the repository root.
+Fieldwork stages `dist/` at `/real-world-reasoning-agent/`. Run `npm run preview` to build the package and start the shared Fieldwork gateway from the repository root.
 
-## Tests
+## Tests and Smoke Checks
 
-`npm run test:unit` runs the vitest suite (A2UI protocol/store, schema parity against `@a2ui/web_core`, the Ad Studio prompt builder + targeting-ring math, and Scout score fusion / vision JSON parsing). `npm test` runs typecheck, unit tests, and the source-integrity unit tests. Fieldwork CI discovers and builds this package through `apps.json`.
+Run `npm run test:unit` for the Vitest suite (A2UI protocol, `@a2ui/web_core` parity, Maps Shortlist URL hygiene, Maps Experience MCP fallback, and capability effects). Run `npm test` for typecheck, unit tests, and source-integrity checks.
 
-## Smoke test
-
-`npm run smoke` drives each journey in a headless browser and asserts the map canvas paints. It needs a running preview server and a Chromium binary:
+Run `npm run smoke` against a running preview server with Chromium to verify that every journey renders:
 
 ```bash
-npm run preview &                     # serves the built app on :8080
+npm run preview &
 ALLOW_LIVE_MAPS_BROWSER=1 CHROMIUM_PATH=/path/to/chromium npm run smoke
 ```
 
-Override the target with `SMOKE_URL` (defaults to `http://localhost:8080`). Screenshots are written to `/tmp/atlas-journey-smoke` unless `SMOKE_OUT` is set. The explicit `ALLOW_LIVE_MAPS_BROWSER=1` acknowledgement is required because the smoke mounts the configured Maps JavaScript renderer and may incur Google Maps Platform costs.
+## Security Notes
 
-## Security notes
+Keep `GMP_SERVER_API_KEY`, `GMP_MCP_KEY`, and `GEMINI_API_KEY` server-side only; never commit them. Restrict `VITE_GMP_API_KEY` by HTTP referrer and enabled Maps APIs. See [SECURITY.md](SECURITY.md) for key-handling rules.
 
-Keep `GMP_SERVER_API_KEY` and hosted `GEMINI_API_KEY` server-side only (`.env` locally, the Fieldwork gateway in production); never commit them. A user-entered Gemini key is deliberately tab-scoped and never persisted, but any same-origin JavaScript can access in-memory credentials; use BYOK only on a deployment you trust. Restrict `VITE_GMP_API_KEY` by HTTP referrer and to the specific Maps APIs it needs, since it ships in the client bundle. See [SECURITY.md](SECURITY.md) for reporting and key-handling expectations.
+## Contributing and License
 
-## Contributing & license
-
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the lightweight workflow. Released under the [MIT License](LICENSE).
-
-Atlas is maintained by [Ryan Baumann](https://github.com/ryanbaumann) as a personal project. If it helped you build something with maps + agents, a ⭐ helps others find it.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow. Released under the [MIT License](LICENSE).

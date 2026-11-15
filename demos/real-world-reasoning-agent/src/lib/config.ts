@@ -32,33 +32,32 @@ export const USAGE_ATTRIBUTION_ID = 'gmp_git_agentskills_v1';
  * GENAI_EXTRA_MODELS) or the /ai proxy will reject it with 403. 
  *
  * Default routing: the main copilot is the orchestration agent and uses
- * `gemini-3.8-flash` at HIGH thinking. Bounded task agents use
- * `gemini-3.8-flash` at LOW thinking for classification, formatting, suggestions,
- * voice STT transcription, and multimodal evidence analysis. Where task agents emit JSON
- * (e.g. follow-up suggestions), we constrain them with a Gemini structured-output
- * `responseJsonSchema` so the model stays reliable without paying for a
- * bigger one.
+ * `gemini-4-hydrogen` at HIGH thinking. Bounded task agents use
+ * `gemini-4-hydrogen` at LOW thinking for classification, formatting, suggestions,
+ * and voice STT transcription, and MEDIUM thinking for multimodal evidence analysis.
+ * Where task agents emit JSON (e.g. follow-up suggestions), we constrain them with
+ * a Gemini structured-output `responseJsonSchema` so the model stays reliable.
  *
  * - `vision` grounds Scout's imagery reasoning (Street View + aerial). Defaults
- *   to the worker model at LOW thinking; override with
+ *   to the worker model at MEDIUM thinking; override with
  *   VITE_GEMINI_VISION_MODEL.
  * - `stt` transcribes microphone audio for the copilot's voice input. Defaults
  *   to the low-latency worker tier (already allowlisted); override with
  *   VITE_GEMINI_STT_MODEL. Runs with LOW thinking for the fastest turnaround.
- * - `omni` targets the Gemini "omni" model, which is a VIDEO generation model
- *   driven through the Interactions API (see src/ai/video.ts) — NOT an
- *   image-understanding model. It powers the Cinema tour-video and Scout
+ * - `omni` targets the Gemini "omni" model (`gemini-omni-1.2-flash`), which is a
+ *   VIDEO generation model driven through the Interactions API (see src/ai/video.ts)
+ *   rather than a text chat model. It powers the Cinema tour-video and Scout
  *   walkthrough-video surfaces, and is inert unless VITE_VIDEO_GEN_ENABLED is
- *   set and the id is allowlisted (GENAI_EXTRA_MODELS).
+ *   set and the id is allowlisted.
  */
 const ORCHESTRATOR_MODEL =
   import.meta.env.VITE_GEMINI_ORCHESTRATOR_MODEL ||
   import.meta.env.VITE_GEMINI_CHAT_MODEL ||
-  'gemini-3.8-flash';
+  'gemini-4-hydrogen';
 const WORKER_MODEL =
   import.meta.env.VITE_GEMINI_WORKER_MODEL ||
   import.meta.env.VITE_GEMINI_UTILITY_MODEL ||
-  'gemini-3.8-flash';
+  'gemini-4-hydrogen';
 const VISION_MODEL =
   import.meta.env.VITE_GEMINI_VISION_MODEL ||
   WORKER_MODEL;
@@ -67,7 +66,7 @@ const STT_MODEL =
   WORKER_MODEL;
 
 export const MODELS = {
-  /** Main orchestrator (copilot chat in every journey). Defaults to gemini-3.8-flash. */
+  /** Main orchestrator (copilot chat in every journey). Defaults to gemini-4-hydrogen. */
   orchestrator: ORCHESTRATOR_MODEL,
   /** Legacy alias for {@link MODELS.orchestrator}. */
   chat: ORCHESTRATOR_MODEL,
@@ -84,7 +83,7 @@ export const MODELS = {
   /** Image generation model used for Ad Studio assets and visuals. */
   image: import.meta.env.VITE_GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-lite-image',
   /** Video generation model (Interactions API) powering Cinema and Scout video. */
-  omni: import.meta.env.VITE_GEMINI_OMNI_MODEL || 'gemini-omni-1.1-flash-preview',
+  omni: import.meta.env.VITE_GEMINI_OMNI_MODEL || 'gemini-omni-1.2-flash',
 } as const;
 
 /**
@@ -102,7 +101,7 @@ export const VIDEO_GEN_ENABLED = import.meta.env.VITE_VIDEO_GEN_ENABLED !== 'fal
 /** Thinking level configurations based on the type of task:
  *  - 'orchestration' for max orchestration (Copilot multi-turn tool calling) -> HIGH
  *  - 'simpleUi' for immediate simple ui/ux (Grounding, Cinema Narration, Voice, Suggestions) -> LOW
- *  - 'other' for primary text and vision reasoning -> LOW
+ *  - 'other' for primary text and vision reasoning -> MEDIUM
  */
 export const THINKING_CONFIGS = {
   orchestration: {
@@ -112,7 +111,7 @@ export const THINKING_CONFIGS = {
     thinkingLevel: ThinkingLevel.LOW,
   },
   other: {
-    thinkingLevel: ThinkingLevel.LOW,
+    thinkingLevel: ThinkingLevel.MEDIUM,
   },
 } as const;
 
@@ -120,7 +119,7 @@ export const THINKING_CONFIGS = {
 export const AGENT_PROFILES = {
   orchestrator: { model: MODELS.orchestrator, thinking: 'high' },
   fastWorker: { model: MODELS.worker, thinking: 'low' },
-  analysisWorker: { model: MODELS.vision, thinking: 'low' },
+  analysisWorker: { model: MODELS.vision, thinking: 'medium' },
 } as const;
 
 /**
@@ -135,7 +134,7 @@ export const DEFAULT_THINKING_CONFIG = THINKING_CONFIGS.other;
 
 /**
  * Safely resolves the thinkingConfig object based on model support.
- * - Gemini 3.x models support thinkingLevel: LOW, MEDIUM, HIGH.
+ * - Gemini 4.x and 3.x models support thinkingLevel: LOW, MEDIUM, HIGH.
  * - Gemini 2.5 models support thinkingBudget.
  * - Image, TTS, and Omni models do not support thinking config and return undefined.
  */
@@ -150,10 +149,13 @@ export function getThinkingConfig(
     return undefined;
   }
 
-  // Gemini 3.x models (gemini-3.8, gemini-3.7, gemini-3.6, gemini-3.5, gemini-3.1)
-  if (/^gemini-3/i.test(model)) {
+  // Gemini 4.x and 3.x models (gemini-4-hydrogen, gemini-3.8-flash, etc.)
+  if (/^gemini-(?:4|3)/i.test(model)) {
     if (level === 'orchestration') {
       return { thinkingLevel: ThinkingLevel.HIGH };
+    }
+    if (level === 'other') {
+      return { thinkingLevel: ThinkingLevel.MEDIUM };
     }
     return { thinkingLevel: ThinkingLevel.LOW };
   }
@@ -193,7 +195,7 @@ const THINKING_LEVEL_BY_NAME: Record<string, ThinkingLevel> = {
 
 /**
  * Thinking config for the copilot chat model. Honors `CHAT_THINKING_OVERRIDE`
- * when set (Gemini 3.x supports `thinkingLevel`); otherwise falls back to the
+ * when set (Gemini 4.x and 3.x support `thinkingLevel`); otherwise falls back to the
  * per-scenario default via {@link getThinkingConfig}.
  */
 export function getChatThinkingConfig(
@@ -201,9 +203,9 @@ export function getChatThinkingConfig(
   level: 'orchestration' | 'other',
   override?: string | null,
 ): { thinkingLevel?: ThinkingLevel; thinkingBudget?: number } | undefined {
-  // Precedence: explicit runtime override (admin panel) → env → per-scenario default.
+  // Precedence: explicit runtime override (admin panel) -> env -> per-scenario default.
   const name = (override ?? CHAT_THINKING_OVERRIDE)?.toLowerCase();
-  if (name && THINKING_LEVEL_BY_NAME[name] && /^gemini-3/i.test(model)) {
+  if (name && THINKING_LEVEL_BY_NAME[name] && /^gemini-(?:4|3)/i.test(model)) {
     return { thinkingLevel: THINKING_LEVEL_BY_NAME[name] };
   }
   return getThinkingConfig(model, level);

@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 """
-Infographic Agent — portable skill (direct Gemini image generation)
+Infographic Agent: portable skill (direct Gemini image generation)
 
 Turns any topic, note, or file of text into a polished infographic PNG using the
-exact same two-agent pipeline as the web demo:
+same two-agent pipeline as the web demo:
 
-  1. Research orchestrator  (gemini-3.8-flash) — grounds the topic with Google
+  1. Research orchestrator  (gemini-4-hydrogen): grounds the topic with Google
       Search, then engineers a precise, text-accurate image-generation prompt.
-  2. Image generator        (gemini-3.1-flash-lite-image) — renders the prompt
-     directly into a PNG.
+  2. Image generator        (gemini-nano-banana-2.1): renders the prompt
+     directly into a PNG (with gemini-3.1-flash-lite-image for fast drafts).
 
 There are NO browser or Playwright dependencies. Install with:
 
     pip install google-genai pillow
 
-(google-genai is required; pillow is used to transcode the model's output to
-lossless PNG for crisp text — the script still runs without it, saving the
-model's native format instead.)
+(google-genai is required; pillow transcodes the model output to lossless PNG
+for crisp text. The script still runs without pillow and saves the native format.)
 
 Quick start:
 
@@ -63,14 +62,24 @@ def ensure_genai() -> None:
     types = imported_types
 
 # --------------------------------------------------------------------------- #
-# Constants — keep the default model IDs in lockstep with the web demo (src/types.ts)
+# Constants: keep default model IDs in lockstep with the web demo (src/types.ts)
 # --------------------------------------------------------------------------- #
 
-ORCHESTRATOR_MODEL = "gemini-3.8-flash"          # research + prompt engineering
-IMAGE_MODEL = "gemini-3.1-flash-image"           # direct infographic rendering
-QUALITY_IMAGE_MODEL = "gemini-3.1-flash-image"   # skill-only quality option
-SUPPORTED_IMAGE_MODELS = (IMAGE_MODEL, QUALITY_IMAGE_MODEL)
+ORCHESTRATOR_MODEL = "gemini-4-hydrogen"          # research + prompt engineering
+IMAGE_MODEL = "gemini-nano-banana-2.1"            # studio infographic rendering
+FAST_IMAGE_MODEL = "gemini-3.1-flash-lite-image"  # fast draft rendering
+LEGACY_IMAGE_MODEL = "gemini-3.1-flash-image"     # deprecated alias normalized to IMAGE_MODEL
+SUPPORTED_IMAGE_MODELS = (IMAGE_MODEL, FAST_IMAGE_MODEL)
+CLI_IMAGE_MODELS = (IMAGE_MODEL, FAST_IMAGE_MODEL, LEGACY_IMAGE_MODEL)
 IMAGE_PROMPT_PREFIX = "Generate a professional infographic image"
+
+
+def normalize_image_model(model: str) -> str:
+    """Normalize empty or deprecated image model IDs to IMAGE_MODEL."""
+    cleaned = (model or "").strip()
+    if not cleaned or cleaned == LEGACY_IMAGE_MODEL:
+        return IMAGE_MODEL
+    return cleaned
 
 AISTUDIO_KEY_URL = "https://aistudio.google.com/apikey"
 CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "infographic-agent"
@@ -117,12 +126,12 @@ professional, text-accurate infographic.
 <prompt_rules>
 The "prompt" field you output is sent directly to an image-generation model. It must:
 - Start with: "Generate a professional infographic image"
-- Use positive framing only — describe what TO include, never negations.
+- Use positive framing only: describe what TO include, never negations.
 - Give step-by-step spatial instructions: "At the top, place X. Below that, add Y..."
 - Quote ALL text strings exactly, wrapped in quotation marks.
 - Specify exact colors using #hex values and describe typography (weight, size, style).
 - Include accessibility notes: minimum contrast 4.5:1 for normal text, 3:1 for large text.
-- Stay under 800 words — dense and precise, not verbose.
+- Stay under 800 words: dense and precise, not verbose.
 - End with composition notes: spacing, alignment, professional polish.
 </prompt_rules>
 
@@ -141,14 +150,14 @@ The "prompt" field you output is sent directly to an image-generation model. It 
 Respond with valid JSON only. No markdown fences. No extra text. Schema:
 {
   "analysis": {
-    "title": "string — compelling infographic title",
-    "subtitle": "string — supporting subtitle",
+    "title": "string: compelling infographic title",
+    "subtitle": "string: supporting subtitle",
     "sectionsCount": number,
     "dataPointsCount": number,
     "brandColors": ["#hex", "#hex", "..."],
-    "sourceAttribution": "string — source credits"
+    "sourceAttribution": "string: source credits"
   },
-  "prompt": "string — the complete image-generation prompt following <prompt_rules>",
+  "prompt": "string: the complete image-generation prompt following <prompt_rules>",
   "allTextStrings": ["every", "text", "string", "in", "the", "infographic"]
 }
 </output_format>"""
@@ -158,8 +167,8 @@ You are a professional infographic image generator. Render a high-quality
 infographic from the provided prompt.
 </role>
 <constitution>
-1. Render ALL quoted text exactly as written — spelling, capitalization, and punctuation must match perfectly.
-2. Fill the entire canvas — use the full aspect ratio with no empty borders.
+1. Render ALL quoted text exactly as written. Spelling, capitalization, and punctuation must match perfectly.
+2. Fill the entire canvas. Use the full aspect ratio with no empty borders.
 3. Never fabricate text that was not explicitly provided in the prompt.
 </constitution>
 <requirements>
@@ -177,7 +186,7 @@ You are an infographic refinement specialist. You receive the current
 infographic image and a user's edit request.
 </role>
 <constitution>
-1. ONLY modify what the user explicitly requested — treat this as a diff-style edit.
+1. ONLY modify what the user explicitly requested. Treat this as a diff-style edit.
 2. Preserve all elements, text, colors, spacing, and styling not mentioned in the request.
 3. Render ALL text with perfect fidelity unless the user specifically changes it.
 4. Return the complete refined infographic with the same dimensions and aspect ratio.
@@ -451,7 +460,7 @@ def interactive_setup() -> str:
         " Let's get you a FREE Gemini API key (takes ~20 seconds)\n"
         "──────────────────────────────────────────────────────────────\n"
         f" 1. Open  {AISTUDIO_KEY_URL}\n"
-        " 2. Sign in with any Google account (free — no billing required)\n"
+        " 2. Sign in with any Google account (free, no billing required)\n"
         ' 3. Click "Create API key", then copy it\n'
     )
 
@@ -521,8 +530,22 @@ def build_client(api_key: str) -> "genai.Client":
 
 
 # --------------------------------------------------------------------------- #
-# Agent 1 — research orchestrator (gemini-3.8-flash + Google Search grounding)
+# Agent 1: research orchestrator (gemini-4-hydrogen + Google Search grounding)
 # --------------------------------------------------------------------------- #
+
+def _orchestrator_config(model: str = ORCHESTRATOR_MODEL, *, research: bool = True):
+    """Build orchestrator GenerateContentConfig, omitting temperature on gemini-4-*."""
+    kwargs = {
+        "system_instruction": RESEARCH_SYSTEM_PROMPT,
+        "thinking_config": _thinking_config(research=research, include_thoughts=False),
+        "http_options": types.HttpOptions(timeout=180_000),
+    }
+    if research:
+        kwargs["tools"] = [types.Tool(google_search=types.GoogleSearch())]
+    if not str(model).startswith("gemini-4-"):
+        kwargs["temperature"] = 0.7
+    return types.GenerateContentConfig(**kwargs)
+
 
 def research_prompt(client, content: str, mode: str, aspect: str, extra: str) -> dict:
     """Ground the topic and engineer a precise image-generation prompt."""
@@ -531,7 +554,7 @@ def research_prompt(client, content: str, mode: str, aspect: str, extra: str) ->
         p for p in [
             "<task>Analyze the content below and produce the JSON described in your instructions. "
             "Use Google Search to fill gaps or verify facts.</task>",
-            f"<preferences>Mode: {mode}{(' — ' + mode_hint) if mode_hint else ''}",
+            f"<preferences>Mode: {mode}{(': ' + mode_hint) if mode_hint else ''}",
             f"Aspect ratio: {aspect}",
             f"Additional instructions: {extra}" if extra else None,
             "</preferences>",
@@ -541,14 +564,9 @@ def research_prompt(client, content: str, mode: str, aspect: str, extra: str) ->
         ] if p is not None
     )
 
-    config = types.GenerateContentConfig(
-        system_instruction=RESEARCH_SYSTEM_PROMPT,
-        temperature=0.7,
-        tools=[types.Tool(google_search=types.GoogleSearch())],
-        http_options=types.HttpOptions(timeout=180_000),
-    )
+    config = _orchestrator_config(ORCHESTRATOR_MODEL, research=True)
 
-    info("🔎 Researching and planning the infographic (gemini-3.8-flash)...")
+    info(f"🔎 Researching and planning the infographic ({ORCHESTRATOR_MODEL})...")
     last_error = None
     for attempt in range(3):
         try:
@@ -596,7 +614,7 @@ def _parse_json(text: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# Agent 2 — image generator (gemini-3.1-flash-lite-image)
+# Agent 2: image generator (gemini-nano-banana-2.1 / gemini-3.1-flash-lite-image)
 # --------------------------------------------------------------------------- #
 
 def _extract_image(response):
@@ -631,7 +649,7 @@ def _normalize_to_png(data: bytes, mime: str):
         img.save(buf, format="PNG")
         return buf.getvalue(), "image/png"
     except ImportError:
-        warn("Pillow not installed — saving the model's native format. "
+        warn("Pillow not installed; saving the model's native format. "
              "Run 'pip install pillow' for guaranteed lossless PNG output.")
         return data, m
     except Exception as e:  # noqa: BLE001 — never let transcoding lose the image
@@ -655,35 +673,63 @@ def _image_config(aspect: str, resolution: str):
     return types.ImageConfig(**kwargs)
 
 
-def _thinking_config():
-    """Use high thinking on current SDKs and dynamic thinking on older SDKs."""
+def _thinking_config(level: str = "MEDIUM", *, research: bool | None = None, include_thoughts: bool = True):
+    """Use MEDIUM thinking when researching and LOW when --no-research, with SDK fallback."""
+    resolved_level = ("MEDIUM" if research else "LOW") if research is not None else (level or "MEDIUM").upper()
     fields = _config_fields(types.ThinkingConfig)
     if "thinking_level" in fields:
-        return types.ThinkingConfig(thinking_level="HIGH", include_thoughts=True)
-    return types.ThinkingConfig(thinking_budget=-1, include_thoughts=True)
+        kwargs = {"thinking_level": resolved_level}
+        if include_thoughts and "include_thoughts" in fields:
+            kwargs["include_thoughts"] = True
+        return types.ThinkingConfig(**kwargs)
+    budget = 0 if resolved_level == "LOW" else -1
+    kwargs = {"thinking_budget": budget}
+    if include_thoughts and "include_thoughts" in fields:
+        kwargs["include_thoughts"] = True
+    return types.ThinkingConfig(**kwargs)
 
 
-def generate_image(client, prompt: str, aspect: str, image_model: str, resolution: str):
+def generate_image(
+    client,
+    prompt: str,
+    aspect: str,
+    image_model: str,
+    resolution: str,
+    *,
+    research: bool = True,
+):
+    resolved_model = normalize_image_model(image_model)
     config = types.GenerateContentConfig(
         response_modalities=["TEXT", "IMAGE"],
         image_config=_image_config(aspect, resolution),
-        thinking_config=_thinking_config(),
+        thinking_config=_thinking_config(research=research),
         http_options=types.HttpOptions(timeout=180_000),
     )
-    info(f"🎨 Generating the infographic ({image_model}) at {resolution}...")
+    info(f"🎨 Generating the infographic ({resolved_model}) at {resolution}...")
     return _call_image_model(
         client,
         contents=[f"{prompt}\n\n{IMAGE_SYSTEM_PROMPT}"],
         config=config,
-        image_model=image_model,
+        image_model=resolved_model,
     )
 
 
-def refine_image(client, image_bytes: bytes, mime: str, instruction: str, aspect: str, image_model: str, resolution: str):
+def refine_image(
+    client,
+    image_bytes: bytes,
+    mime: str,
+    instruction: str,
+    aspect: str,
+    image_model: str,
+    resolution: str,
+    *,
+    research: bool = True,
+):
+    resolved_model = normalize_image_model(image_model)
     config = types.GenerateContentConfig(
         response_modalities=["TEXT", "IMAGE"],
         image_config=_image_config(aspect, resolution),
-        thinking_config=_thinking_config(),
+        thinking_config=_thinking_config(research=research),
         http_options=types.HttpOptions(timeout=180_000),
     )
     contents = [
@@ -695,7 +741,7 @@ def refine_image(client, image_bytes: bytes, mime: str, instruction: str, aspect
             )
         ),
     ]
-    return _call_image_model(client, contents=contents, config=config, image_model=image_model)
+    return _call_image_model(client, contents=contents, config=config, image_model=resolved_model)
 
 
 def _call_image_model(client, contents, config, image_model: str):
@@ -799,8 +845,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--resolution", "-r", default="1K", choices=["0.5K", "1K", "2K"],
                         help="Image resolution / size to request from the API (default: 1K)")
     parser.add_argument("--instructions", "-i", default="", help="Extra styling / content instructions")
-    parser.add_argument("--image-model", default=IMAGE_MODEL, choices=SUPPORTED_IMAGE_MODELS,
-                        help="Image model for the portable skill (default: gemini-3.1-flash-lite-image)")
+    parser.add_argument("--image-model", default=IMAGE_MODEL, choices=CLI_IMAGE_MODELS,
+                        help=f"Image model for the portable skill (default: {IMAGE_MODEL})")
     parser.add_argument("--no-research", action="store_true",
                         help="Skip the research agent and generate directly from your text")
     parser.add_argument("--no-open", action="store_true", help="Do not auto-open the result")
@@ -812,6 +858,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
+    args.image_model = normalize_image_model(args.image_model)
 
     if args.setup:
         interactive_setup()
@@ -839,7 +886,14 @@ def main() -> None:
             plan = direct_prompt(content, args.mode, args.instructions)
         else:
             plan = research_prompt(client, content, args.mode, args.aspect, args.instructions)
-        image_bytes, mime = generate_image(client, plan["prompt"], args.aspect, args.image_model, args.resolution)
+        image_bytes, mime = generate_image(
+            client,
+            plan["prompt"],
+            args.aspect,
+            args.image_model,
+            args.resolution,
+            research=not args.no_research,
+        )
     except Exception as e:  # noqa: BLE001
         error(_friendly_api_error(e))
         sys.exit(1)

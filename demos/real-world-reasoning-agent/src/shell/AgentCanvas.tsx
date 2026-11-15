@@ -31,6 +31,12 @@ import { rationaleForTool } from '@/ai/toolLabels';
 import { shareActiveRun } from '@/shell/shareRun';
 import { revealMissionIn3D } from '@/mission/controller';
 import { RECIPES_BY_ID } from '@/recipes/registry';
+import {
+  MAX_SHORTLIST_PLACES,
+  buildMapsShortlistUrl,
+  isValidPlaceId,
+  normalizePlaceId,
+} from '@/lib/mapsUrl';
 
 /** The follow-up chip that triggers the 3D reveal directly (not via the model),
  *  so the mission payoff stays a deliberate one-click action. Carries the shared
@@ -48,6 +54,7 @@ export function AgentCanvas() {
   const streaming = useAtlas((s) => s.running);
   const resumable = useAtlas((s) => s.resumable);
   const followups = useAtlas((s) => s.followups);
+  const markers = useAtlas((s) => s.markers);
   const adCreatives = useAdStudio((s) => s.creatives);
   const gatheringAdFacts = useAdStudio((s) => s.gatheringFacts);
   const [snap, setSnap] = useState<SheetSnap>('half');
@@ -150,6 +157,15 @@ export function AgentCanvas() {
   }, []);
 
   const hasResult = msgs.length > 0;
+  const shortlistPlaceIds = Array.from(
+    new Set(
+      markers
+        .map((m) => normalizePlaceId(m.placeId))
+        .filter((id) => isValidPlaceId(id)),
+    ),
+  ).slice(0, MAX_SHORTLIST_PLACES);
+  const shortlistUrl =
+    shortlistPlaceIds.length >= 2 ? buildMapsShortlistUrl(shortlistPlaceIds) : null;
 
   return (
     <aside
@@ -235,6 +251,18 @@ export function AgentCanvas() {
                 <RotateCcw size={13} aria-hidden="true" />
                 Resume
               </button>
+            )}
+            {shortlistUrl && (
+              <a
+                href={shortlistUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="agent-canvas__action agent-canvas__action--shortlist"
+                title="Open pinned places as a shareable Google Maps List"
+              >
+                <MapPin size={13} aria-hidden="true" />
+                Open as Maps List ({shortlistPlaceIds.length}) ↗
+              </a>
             )}
             <button
               onClick={() => void shareActiveRun()}

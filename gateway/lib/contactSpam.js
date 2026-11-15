@@ -96,7 +96,7 @@ export async function classifyContactSubmission({
   }
 
   try {
-    const upstream = await fetchImpl('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
+    const upstream = await fetchImpl('https://generativelanguage.googleapis.com/v1beta/models/gemini-4-hydrogen:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -109,12 +109,12 @@ export async function classifyContactSubmission({
           }],
         }],
         generationConfig: {
-          maxOutputTokens: 120,
-          temperature: 0,
+          thinkingConfig: { thinkingLevel: 'low' },
+          maxOutputTokens: 1024,
           responseMimeType: 'application/json',
         },
       }),
-      signal: AbortSignal.timeout(5_000),
+      signal: AbortSignal.timeout(3_500),
     });
     if (!upstream.ok) {
       if (geminiLimiter) geminiLimiter.refund(clientKey, { calls: 1, tokens: estimatedTokens, costMicros: estimatedCostMicros });

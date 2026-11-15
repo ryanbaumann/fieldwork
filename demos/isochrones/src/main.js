@@ -1,6 +1,6 @@
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { installAnalytics } from '../../shared/analytics.mjs';
-import { containsLocation, midpoint, nearbySearchRadius } from './geo.js';
+import { containsLocation, midpoint, nearbySearchRadius, buildMapsShortlistUrl } from './geo.js';
 import { createPlaceDetailsContent } from './place-details.js';
 import './styles.css';
 
@@ -274,7 +274,7 @@ function showPlace(place, index) {
     const link = document.createElement('a');
     link.href = place.googleMapsURI;
     link.target = '_blank';
-    link.rel = 'noopener';
+    link.rel = 'noopener noreferrer';
     link.textContent = 'Open in Maps';
     card.append(link);
   }
@@ -290,6 +290,23 @@ function renderPlaces(places) {
     elements.resultCount.textContent = 'No overlap';
     return;
   }
+
+  const shortlistUrl = buildMapsShortlistUrl(places.map((p) => p.id));
+  if (shortlistUrl) {
+    const bar = document.createElement('div');
+    bar.className = 'shortlist-bar';
+    const link = document.createElement('a');
+    link.className = 'shortlist-action';
+    link.href = shortlistUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = places.length > 1
+      ? `Open all ${places.length} in Google Maps List ↗`
+      : 'Open in Google Maps List ↗';
+    bar.append(link);
+    elements.results.append(bar);
+  }
+
   places.forEach(showPlace);
 }
 

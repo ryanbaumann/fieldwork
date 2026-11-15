@@ -1,49 +1,50 @@
 # Hairstyle AI Studio
 
-Try a haircut before committing at the salon. Upload a front photo, choose a style or describe one, then generate and refine a private, on-device history of looks.
+Preview hairstyles on your own photos before visiting the salon. Upload a front portrait, pick or write a style, and refine private on-device looks.
 
-The canonical source now lives in
-[ryanbaumann/fieldwork](https://github.com/ryanbaumann/fieldwork/tree/main/demos/hairstyle-ai-studio).
-It was imported from the former `ryanbaumann/hairstyle-ai-studio` repository at
-commit `9ea2c0f31e5e1d252220ede6731b655bf2fb8fba`.
+The canonical source lives in [ryanbaumann/fieldwork](https://github.com/ryanbaumann/fieldwork/tree/main/demos/hairstyle-ai-studio).
 
-## What changed for Fieldwork
+## Fieldwork Architecture
 
-- The React, Vite, Tailwind, local-history, result, refinement, and salon-brief flows remain app-local.
-- The standalone Express server and Docker image were removed. Fieldwork's zero-dependency gateway owns `/api/hairstyle-ai-studio/*`.
-- The shared server key provides five successful image generations per client IP per UTC day. Recommendation analysis does not consume that allowance.
-- Visitors can connect a personal Gemini API key after the shared allowance is exhausted or at any time. The proxy validates it without generating content; the browser keeps it only in React memory and sends it in a transient same-origin request header.
-- Personal-key calls bypass the shared spend cap but retain a generous per-IP abuse guard. The gateway never stores, logs, returns, or analyzes a visitor key.
-- The gateway validates image data, caps request size and prompt length, requires same-origin browser mutations, and separates shared allowance, visitor-key quota, and site-abuse errors.
-- Google Analytics uses Fieldwork's privacy-limited shared loader. Events contain only enumerated funnel states, never keys, photos, prompts, style URLs, filenames, IDs, or raw errors.
+- The React, Vite, Tailwind, IndexedDB history, refinement, and salon-brief flows run inside `demos/hairstyle-ai-studio/`.
+- Fieldwork's zero-dependency Node gateway owns `/api/hairstyle-ai-studio/*`.
+- The shared server key grants five successful image generations per client IP per UTC day. Style recommendations do not consume this allowance.
+- Visitors can connect a personal Gemini API key at any time. The gateway validates the key without generating content.
+- The browser keeps a personal key in React memory only and sends it in a transient same-origin header.
+- Personal-key requests bypass the shared spend cap and keep a per-IP abuse guard. The gateway never logs, stores, or returns visitor keys.
+- The gateway validates image payloads, caps prompt length, enforces same-origin browser mutations, and separates quota errors by source.
+- Analytics events include enumerated funnel states only and exclude keys, photos, prompts, URLs, filenames, and raw errors.
 
 ## Models
 
 | Task | Model |
-| --- | --- |
-| Optional, user-triggered style recommendation | `gemini-3.8-flash` (low thinking) |
-| Image generation and refinement | `gemini-3.1-flash-lite-image` |
+| :--- | :--- |
+| Opt-in style recommendation (`/analyze`) | `gemini-4-hydrogen` (`MEDIUM` thinking, zero `temperature`) |
+| Fast image generation and refinement (`generationMode: 'fast'`) | `gemini-3.1-flash-lite-image` |
+| Studio image generation and refinement (`generationMode: 'studio'`) | `gemini-nano-banana-2.1` |
 
-The newer Flash text models do not generate images, so image work stays on the current image-capable model. Titles are derived locally to keep a normal makeover to one model call.
+The client derives look titles locally so each makeover uses one image model call.
 
-## Local development
+## Local Development
 
-From the app directory:
+Install dependencies and start the Vite server from `demos/hairstyle-ai-studio/`:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Run the Fieldwork gateway from the repository root in a second terminal:
+Start the Fieldwork gateway from the repository root in a second terminal:
 
 ```bash
 node gateway/server.js
 ```
 
-Vite forwards `/api/*` to `http://localhost:8080` by default. Override that with `PROXY_TARGET` if needed.
+Vite forwards `/api/*` to `http://localhost:8080` by default. Set `PROXY_TARGET` to override the gateway origin.
 
-## Verify
+## Verification
+
+Run typechecks, unit tests, and the production build:
 
 ```bash
 npm run typecheck
@@ -51,11 +52,11 @@ npm test
 npm run build
 ```
 
-Gateway behavior and rate limits are tested from `gateway/test/hairstyleAi.test.js` and `gateway/test/rateLimit.test.js`.
+Run `NODE_ENV=test node --test gateway/test/hairstyleAi.test.js gateway/test/rateLimit.test.js` from the repository root to verify gateway routing and rate limits.
 
 ## Privacy
 
-Photos are sent to Google Gemini only after the visitor explicitly requests a recommendation, generation, or refinement. Fieldwork does not store those photos on the server. The shared allowance keeps an in-memory daily generation count keyed by client IP; a service restart can reset it early. Generated history is stored in the browser's IndexedDB and can be deleted from the app.
+The app sends photos to Google Gemini only when a visitor triggers a recommendation, generation, or refinement. Fieldwork never stores uploaded or generated photos on the server. The browser stores generated looks in IndexedDB, and visitors can delete items at any time.
 
 ## License
 

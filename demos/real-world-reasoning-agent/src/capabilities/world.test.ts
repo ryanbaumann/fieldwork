@@ -26,6 +26,24 @@ vi.mock('@/services/env', () => ({
     weather: { tempC: 14, condition: 'Cloudy' },
   })),
 }));
+vi.mock('@/services/mapsExperience', () => ({
+  resolveMapsUrlsMcp: vi.fn(async () => [
+    {
+      id: 'ChIJd8BlQ2BZwokRAFUEcm_qrcA',
+      name: 'Blue Bottle Coffee',
+      location: { lat: 37.7955, lng: -122.3937 },
+      formattedAddress: '1 Ferry Building, San Francisco, CA',
+    },
+  ]),
+  resolveNamesMcp: vi.fn(async () => [
+    {
+      id: 'ChIJIQBpAG2ahYAR_6128GcTUEo',
+      name: 'SFMOMA',
+      location: { lat: 37.7857, lng: -122.4011 },
+      formattedAddress: '151 3rd St, San Francisco, CA',
+    },
+  ]),
+}));
 
 const {
   searchPlacesCapability,
@@ -34,6 +52,7 @@ const {
   addMarkersCapability,
   drawRouteCapability,
   getEnvironmentCapability,
+  createMapsShortlistCapability,
   WORLD_PROFILE,
 } = await import('./world');
 
@@ -123,6 +142,36 @@ describe('world capabilities', () => {
     expect(execution.effects).toEqual([]);
   });
 
+  it('create_maps_shortlist resolves Maps URLs, Place IDs, and queries into a shortlist URL + markers', async () => {
+    const execution = await createMapsShortlistCapability.execute({
+      items: [
+        'places/ChIJN1t_tDeuEmsRUsoyG83frY4',
+        'https://maps.app.goo.gl/abc123xyz',
+        'SFMOMA San Francisco',
+      ],
+    });
+    expect(execution.data).toMatchObject({
+      ok: true,
+      count: 3,
+      placeIds: [
+        'ChIJN1t_tDeuEmsRUsoyG83frY4',
+        'ChIJd8BlQ2BZwokRAFUEcm_qrcA',
+        'ChIJIQBpAG2ahYAR_6128GcTUEo',
+      ],
+      shortlistUrl:
+        'https://www.google.com/maps/@?api=1&map_action=shortlist&place_ids=ChIJN1t_tDeuEmsRUsoyG83frY4,ChIJd8BlQ2BZwokRAFUEcm_qrcA,ChIJIQBpAG2ahYAR_6128GcTUEo&utm_source=atlas&utm_campaign=shortlist',
+    });
+    expect(execution.effects.map((e) => e.type)).toEqual(['map.add-markers', 'map.fit']);
+  });
+
+  it('create_maps_shortlist rejects synthetic Place IDs cleanly with zero effects', async () => {
+    const execution = await createMapsShortlistCapability.execute({
+      placeIds: ['grounded-place-1', 'sample-2', 'mock-3'],
+    });
+    expect(execution.data).toMatchObject({ ok: false, count: 0 });
+    expect(execution.effects).toEqual([]);
+  });
+
   it('declares a metered cost wherever a provider is actually called', () => {
     const metered = Object.fromEntries(
       WORLD_PROFILE.map((m) => [m.modelName, m.cost.class === 'metered-provider-call']),
@@ -132,6 +181,7 @@ describe('world capabilities', () => {
       get_place_details: true,
       draw_route: true,
       get_environment: true,
+      create_maps_shortlist: true,
       // Host-state only — no provider call, so no metered cost claim.
       focus_place: false,
       add_markers: false,
