@@ -7,7 +7,7 @@
   --border-focus: #38bdf8;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #8b9bb4;
   --accent-cyan: #38bdf8;
   --accent-indigo: #818cf8;
   --accent-emerald: #34d399;
@@ -21,6 +21,11 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+:where(a, button, select, textarea, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--border-focus, #38bdf8);
+  outline-offset: 2px;
 }
 
 body {

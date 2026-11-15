@@ -17,6 +17,7 @@ import { lib } from '@/services/maps';
 import { SCENARIOS } from '@/scenarios/registry';
 import type { MarkerSpec } from '@/lib/types';
 import { changeExplorerTravelMode } from '@/explorer/controller';
+import { normalizePlaceId } from '@/lib/mapsUrl';
 
 export type { ActionName as BuiltinActionName } from './actionRegistry';
 
@@ -56,6 +57,9 @@ function execute(action: ResolvedAction): void {
     case 'open_url':
       window.open(action.url, '_blank', 'noopener,noreferrer');
       return;
+    case 'open_maps_shortlist':
+      window.open(action.url, '_blank', 'noopener,noreferrer');
+      return;
     case 'download_image':
       try {
         downloadImage(action.dataUrl, action.filename);
@@ -71,8 +75,9 @@ function execute(action: ResolvedAction): void {
 
 async function selectPlace(placeId: string, animate = false): Promise<void> {
   try {
+    const cleanId = normalizePlaceId(placeId) || placeId;
     const { Place } = await lib('places');
-    const place = new Place({ id: placeId });
+    const place = new Place({ id: cleanId });
     await place.fetchFields({ fields: ['id', 'displayName', 'location', 'formattedAddress', 'rating', 'photos'] });
     if (!place.location) {
       atlas().pushToast('bad', "Couldn't load that place.");

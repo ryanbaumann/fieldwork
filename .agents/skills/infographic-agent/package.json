@@ -1,7 +1,7 @@
 {
   "name": "infographic-agent",
-  "version": "3.2.3",
-  "description": "Generate professional infographic PNGs from text with Gemini — a research agent (gemini-3.8-flash) prepares and validates the prompt, then gemini-3.1-flash-lite-image renders it. No browser/Playwright deps.",
+  "version": "3.3.0",
+  "description": "Generate professional infographic PNGs from text with Gemini: a research agent (gemini-4-hydrogen) prepares and validates the prompt, then gemini-nano-banana-2.1 renders it. No browser/Playwright deps.",
   "license": "MIT",
   "author": "Ryan Baumann",
   "repository": {
@@ -13,6 +13,8 @@
   "keywords": [
     "infographic",
     "gemini",
+    "gemini-4-hydrogen",
+    "gemini-nano-banana-2.1",
     "gemini-3.1-flash-lite-image",
     "ai",
     "image-generation",

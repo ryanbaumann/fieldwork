@@ -16,10 +16,18 @@ export const GEMINI_BYOK_HEADER = 'x-atlas-gemini-key';
 const isOmniModel = (m) => typeof m === 'string' && (/omni/i.test(m) || m.includes('gemini-omni'));
 
 const BASE_GEMINI_MODELS = Object.freeze([
+  'gemini-4-hydrogen',
+  'gemini-4-argon',
+  'gemini-4-carbon',
+  'gemini-nano-banana-2.1',
+  'gemini-omni-1.2-flash',
   'gemini-3.8-flash',
+  'gemini-3.8-flash-lite-tts',
+  'gemini-3.8-flash-tts',
   'gemini-3.7-flash',
   'gemini-3.7-pro',
   'gemini-3.6-flash',
+  'gemini-3.5-transcribe',
   'gemini-3.5-flash-lite',
   'gemini-3.5-flash',
   'gemini-3.1-flash-lite',
@@ -34,11 +42,11 @@ const BASE_GEMINI_MODELS = Object.freeze([
   'gemini-omni-flash-preview',
 ]);
 const REQUIRED_GEMINI_MODELS = Object.freeze([
-  'gemini-3.8-flash',
+  'gemini-4-hydrogen',
 ]);
 const METADATA_MAX_RECORDS = 500;
 const MAX_RATE_BUCKETS = 10_000;
-const PROXY_ENDPOINTS = new Set(['ai', 'gmp', 'gmp:tile', 'gmp:photo']);
+const PROXY_ENDPOINTS = new Set(['ai', 'gmp', 'gmp:tile', 'gmp:photo', 'mcp']);
 const HEARTBEAT_MS = 10 * 60 * 1000;
 const SOLUTION_HEADER_HOSTS = new Set([
   'maps.googleapis.com',
@@ -46,6 +54,16 @@ const SOLUTION_HEADER_HOSTS = new Set([
   'weather.googleapis.com',
   'pollen.googleapis.com',
   'solar.googleapis.com',
+  'mapstools.googleapis.com',
+]);
+const ALLOWED_MCP_METHODS = new Set(['initialize', 'tools/list', 'tools/call']);
+const ALLOWED_MCP_TOOLS = new Set([
+  'search_places',
+  'search_along_route',
+  'compute_routes',
+  'lookup_weather',
+  'resolve_names',
+  'resolve_maps_urls',
 ]);
 const FORBIDDEN_METADATA = [
   /https?:\/\//i,
@@ -70,6 +88,7 @@ const SAFE_UPSTREAM_RESPONSE_HEADERS = [
   'content-type',
   'etag',
   'last-modified',
+  'mcp-session-id',
   'x-accel-buffering',
 ];
 
@@ -234,7 +253,7 @@ const configFromEnv = (env) => ({
   dailyGmpTileCap: numberFromEnv(env, 'RWR_DAILY_GMP_TILE_CAP', 10_000, { min: 1, max: 1_000_000 }),
   dailyGmpPhotoCap: numberFromEnv(env, 'RWR_DAILY_GMP_PHOTO_CAP', 1_000, { min: 1, max: 100_000 }),
   dailyMcpCap: numberFromEnv(env, 'RWR_DAILY_MCP_CAP', 250, { min: 1, max: 100_000 }),
-  hostedAiMaxOutputTokens: numberFromEnv(env, 'RWR_HOSTED_AI_MAX_OUTPUT_TOKENS', 2_048, { min: 1, max: 65_536 }),
+  hostedAiMaxOutputTokens: numberFromEnv(env, 'RWR_HOSTED_AI_MAX_OUTPUT_TOKENS', 32_768, { min: 1, max: 65_536 }),
   dailyVideoCap: numberFromEnv(env, 'RWR_DAILY_VIDEO_CAP', 0, { max: 10_000 }),
   bodyCap: numberFromEnv(env, 'RWR_BODY_CAP_BYTES', 1024 * 1024, { min: 1_024, max: 16 * 1024 * 1024 }),
   timeoutMs: numberFromEnv(env, 'RWR_UPSTREAM_TIMEOUT_MS', 60_000, { min: 1_000, max: 10 * 60_000 }),
@@ -584,7 +603,7 @@ export function createRealWorldReasoningHandler({
       ? new URLSearchParams(searchParams)
       : new URLSearchParams(searchParams || '');
     const gmpKey = String(env.GMP_SERVER_API_KEY || '').trim();
-    const gmpMcpKey = String(env.GMP_MCP_KEY || '').trim() || gmpKey;
+    const gmpMcpKey = String(env.GMP_MCP_KEY || env.RWR_GMP_MCP_KEY || '').trim() || gmpKey;
     const hostedGeminiKey = String(env.GEMINI_API_KEY || '').trim();
 
     if (path === '/capabilities') {
@@ -649,6 +668,80 @@ export function createRealWorldReasoningHandler({
         // Telemetry must never affect the request path.
       }
       sendText(response, 204, '');
+      return true;
+    }
+
+    if (path === '/mcp') {
+      if (request.method !== 'POST') {
+        sendProxy(response, 'mcp', 405, 'MCP proxy only accepts POST', config);
+        return true;
+      }
+      if (!sameOrigin(request) || !rate(request, 'mcp', config.mcpLimit, config.windowMs)) {
+        sendProxy(response, 'mcp', 429, 'The demo is busy right now — try again in a few minutes', config);
+        return true;
+      }
+      if (!gmpMcpKey) {
+        sendProxy(response, 'mcp', 503, 'GMP MCP key is not configured', config);
+        return true;
+      }
+      let body;
+      try {
+        body = await readBody(request, config.bodyCap);
+      } catch (error) {
+        sendProxy(response, 'mcp', error?.statusCode === 413 ? 413 : 400, 'Invalid request body', config);
+        return true;
+      }
+      let rpc;
+      try {
+        rpc = JSON.parse(body.toString('utf8'));
+      } catch {
+        sendProxy(response, 'mcp', 400, 'Invalid JSON-RPC request body', config);
+        return true;
+      }
+      if (
+        !rpc
+        || typeof rpc !== 'object'
+        || Array.isArray(rpc)
+        || rpc.jsonrpc !== '2.0'
+        || typeof rpc.method !== 'string'
+      ) {
+        sendProxy(response, 'mcp', 400, 'Invalid JSON-RPC 2.0 request object', config);
+        return true;
+      }
+      if (!ALLOWED_MCP_METHODS.has(rpc.method)) {
+        sendProxy(response, 'mcp', 403, 'MCP method is not allowed', config);
+        return true;
+      }
+      if (rpc.method === 'tools/call') {
+        const toolName = rpc.params && typeof rpc.params === 'object' && !Array.isArray(rpc.params)
+          ? rpc.params.name
+          : undefined;
+        if (typeof toolName !== 'string' || !ALLOWED_MCP_TOOLS.has(toolName)) {
+          sendProxy(response, 'mcp', 403, 'MCP tool is not allowed', config);
+          return true;
+        }
+      }
+      if (!takeDaily('mcp', config.dailyMcpCap)) {
+        sendProxy(response, 'mcp', 429, 'The shared Maps MCP daily budget is exhausted', config);
+        return true;
+      }
+      const mcpSessionId = headerValue(request.headers, 'mcp-session-id');
+      await proxy({
+        request,
+        response,
+        target: new URL('https://mapstools.googleapis.com/mcp'),
+        fetchImpl,
+        config,
+        endpoint: 'mcp',
+        buffer: body,
+        rawHeaders: {
+          'content-type': 'application/json',
+          accept: headerValue(request.headers, 'accept') || 'application/json, text/event-stream',
+          'X-Goog-Api-Key': gmpMcpKey,
+          'X-Goog-Maps-Solution-ID': GMP_SOLUTION_ID,
+          ...(mcpSessionId ? { 'mcp-session-id': mcpSessionId } : {}),
+        },
+      });
       return true;
     }
 

@@ -47,7 +47,7 @@ export const App: React.FC = () => {
     setStep(2);
 
     try {
-      // Step 1: Research & Plan with Gemini 3.8 Flash
+      // Step 1: Research & Plan with Gemini 4 Hydrogen
       const planRes = await prepareInfographic({
         topic: topic.trim(),
         mode,
@@ -212,7 +212,7 @@ export const App: React.FC = () => {
           </div>
           <div className={`step-item ${step >= 2 ? (step === 2 ? 'active' : 'complete') : ''}`}>
             <span className="step-number">2</span>
-            <span>Gemini 3.8 Flash Research</span>
+            <span>Gemini 4 Hydrogen Research</span>
           </div>
           <div className={`step-item ${step === 3 ? 'complete' : ''}`}>
             <span className="step-number">3</span>
@@ -269,7 +269,7 @@ export const App: React.FC = () => {
                   Synthesizing Visual Knowledge
                 </h3>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.35rem', maxWidth: '380px' }}>
-                  Gemini 3.8 Flash is analyzing data points, structuring layout hierarchy, and crafting the exact spatial prompt...
+                  Gemini 4 Hydrogen is analyzing data points, structuring layout hierarchy, and crafting the exact spatial prompt...
                 </p>
               </div>
             )}
@@ -281,7 +281,7 @@ export const App: React.FC = () => {
                   Rendering Professional Infographic
                 </h3>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.35rem', maxWidth: '380px' }}>
-                  {imageModel === 'gemini-3.1-flash-lite-image' ? 'Gemini 3.1 Flash Lite Image' : 'Gemini 3.1 Flash Image'} is painting high-density typography, charts, and graphics...
+                  {imageModel === 'gemini-3.1-flash-lite-image' ? 'Nano Banana 2 Lite' : 'Nano Banana 2.1'} is painting high-density typography, charts, and graphics...
                 </p>
               </div>
             )}
@@ -313,7 +313,7 @@ export const App: React.FC = () => {
                   No infographic yet
                 </h3>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 auto' }}>
-                  Paste a topic or some raw text on the left. Gemini 3.8 Flash researches it and plans the layout, then Gemini 3.1 Flash Image draws it.
+                  Paste a topic or some raw text on the left. Gemini 4 Hydrogen researches it and plans the layout, then Nano Banana 2.1 or 2 Lite draws it.
                 </p>
               </div>
             )}

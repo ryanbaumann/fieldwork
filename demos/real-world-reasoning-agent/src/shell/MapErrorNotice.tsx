@@ -91,7 +91,7 @@ export function MapErrorNotice() {
         </h2>
         <p style={{ color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.6, marginBottom: 14 }}>
           Google Maps refused to initialize in this browser. Everything else in the demo still
-          works — this is almost always a local configuration issue, not a bug in the app.
+          works; this is almost always a local configuration issue, not a bug in the app.
         </p>
         <ul
           style={{

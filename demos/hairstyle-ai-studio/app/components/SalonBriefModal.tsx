@@ -81,9 +81,10 @@ export const SalonBriefModal: React.FC<SalonBriefModalProps> = ({
         <div className="relative p-5 sm:p-6">
           <button
             ref={closeRef}
+            type="button"
             onClick={onClose}
             aria-label="Close salon brief"
-            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors no-print"
+            className="absolute right-3 top-3 inline-flex min-w-[44px] min-h-[44px] items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors no-print"
           >
             <X size={20} />
           </button>
@@ -151,8 +152,9 @@ export const SalonBriefModal: React.FC<SalonBriefModalProps> = ({
           {/* Actions */}
           <div className="mt-5 flex flex-col sm:flex-row gap-2 no-print">
             <button
+              type="button"
               onClick={() => window.print()}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all shadow-lg"
+              className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all shadow-lg"
             >
               <Printer size={16} /> Print / Save as PDF
             </button>
@@ -160,7 +162,7 @@ export const SalonBriefModal: React.FC<SalonBriefModalProps> = ({
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold rounded-xl transition-all"
+              className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold rounded-xl transition-all"
             >
               <MapPin size={16} /> Find salons nearby
             </a>

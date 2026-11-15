@@ -148,6 +148,54 @@ const CASES: Case[] = [
     ],
     contains: ['Ferry Building Map', 'genui-placecard--horizontal'],
   },
+  {
+    name: 'maui-v0.1.10-routes-and-defaults (GoogleMap route props + PlaceDetailsCompact default horizontal + places/ prefix)',
+    scenario: 'concierge',
+    surfaceId: 'maui-routes-1',
+    messages: [
+      {
+        version: 'v1.0',
+        createSurface: {
+          surfaceId: 'maui-routes-1',
+          catalogId: 'a2ui://maps-agentic-ui-catalog.json',
+          components: [
+            { id: 'root', component: 'Column', children: ['routeMap', 'compactCard'] },
+            {
+              id: 'routeMap',
+              component: 'GoogleMap',
+              mode: 'routes',
+              origin: { lat: 37.7955, lng: -122.3937 },
+              destination: { lat: 37.7857, lng: -122.4011 },
+              routes: [
+                {
+                  path: [
+                    { lat: 37.7955, lng: -122.3937 },
+                    { lat: 37.7857, lng: -122.4011 },
+                  ],
+                },
+              ],
+              travelMode: 'WALK',
+              placePrimaryType: 'coffee_shop',
+              contentToken: 'token-maui-0110',
+              label: 'Ferry to SFMOMA Walk',
+            },
+            {
+              id: 'compactCard',
+              component: 'PlaceDetailsCompact',
+              placeId: 'places/ChIJd8BlQ2BZwokRAFUEcm_qrcA',
+            },
+          ],
+        },
+      },
+    ],
+    contains: [
+      'Ferry to SFMOMA Walk',
+      'data-mode="routes"',
+      'data-travel-mode="WALK"',
+      'data-place-primary-type="coffee_shop"',
+      'genui-placecard--horizontal',
+    ],
+  },
 ];
 
 describe('Atlas A2UI v0.9 subset — golden render fixtures', () => {

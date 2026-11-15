@@ -189,7 +189,7 @@ export const GeminiKeyDialog: React.FC<GeminiKeyDialogProps> = ({
               href="https://aistudio.google.com/apikey"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontSize: '0.8125rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+              style={{ fontSize: '0.8125rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', minHeight: '44px' }}
             >
               <span>Get a free Gemini API key in Google AI Studio</span>
               <ExternalLink size={13} aria-hidden="true" />

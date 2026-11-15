@@ -105,7 +105,9 @@ input[type="range"] { min-height: 44px; padding-inline: 0; accent-color: #34d399
   --gmp-mat-color-surface: rgba(2, 10, 20, 0.9);
   --gmp-mat-color-on-surface: #f8fafc;
   --gmp-mat-color-on-surface-variant: #94a3b8;
+  --gmp-mat-color-primary: #34d399;
   color-scheme: dark;
+  font-family: inherit;
 }
 #search-slot gmp-place-autocomplete::part(input) { min-height: 46px; }
 

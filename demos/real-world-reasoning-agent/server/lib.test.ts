@@ -20,6 +20,11 @@ import {
 describe('Gemini credential routing', () => {
   it('allowlists the orchestrator and worker defaults', () => {
     const models = allowedGeminiModels();
+    expect(models.has('gemini-4-hydrogen')).toBe(true);
+    expect(models.has('gemini-4-argon')).toBe(true);
+    expect(models.has('gemini-4-carbon')).toBe(true);
+    expect(models.has('gemini-nano-banana-2.1')).toBe(true);
+    expect(models.has('gemini-omni-1.2-flash')).toBe(true);
     expect(models.has('gemini-3.8-flash')).toBe(true);
     expect(models.has('gemini-3.7-flash')).toBe(true);
     expect(models.has('gemini-3.6-flash')).toBe(true);
@@ -174,7 +179,7 @@ describe('toProxyDiagRecord', () => {
   });
 
   it('only emits the fixed coarse endpoint labels', () => {
-    expect([...PROXY_ENDPOINTS]).toEqual(['ai', 'gmp', 'gmp:tile', 'gmp:photo']);
+    expect([...PROXY_ENDPOINTS]).toEqual(['ai', 'gmp', 'gmp:tile', 'gmp:photo', 'mcp']);
   });
 
   it('defaults a bad tsBucket to 0 rather than leaking a non-numeric value', () => {

@@ -50,4 +50,73 @@ describe('explorer presenter', () => {
       'weather-claim', 'weather-source', 'weather-inference',
     ]);
   });
+
+  it('includes open_maps_shortlist in NextActions when >= 2 live candidates carry canonical Place IDs', () => {
+    const view: ExplorerView = {
+      schemaVersion: '1',
+      surfaceId: 'explorer-live-shortlist',
+      revision: 1,
+      stage: 'ready',
+      query: 'walkable coffee shops',
+      dataMode: 'live',
+      narrative: 'Found two walkable coffee shops.',
+      travelMode: 'WALK',
+      currentWeatherRequested: false,
+      maxTravelMinutes: 15,
+      winnerId: 'ChIJN1t_tDeuEmsRUsoyG83frY4',
+      candidates: [
+        {
+          id: 'ChIJN1t_tDeuEmsRUsoyG83frY4',
+          label: 'Blue Bottle Ferry Building',
+          location: { lat: 37.7955, lng: -122.3937 },
+          rank: 1,
+          eligible: true,
+          routeStatus: 'verified',
+          route: {
+            distanceMeters: 400,
+            durationSeconds: 300,
+            attribution: { title: 'Google Maps Routes', url: 'https://maps.google.com' },
+          },
+          attribution: { title: 'Google Maps', url: 'https://maps.google.com' },
+          placeUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJN1t_tDeuEmsRUsoyG83frY4',
+        },
+        {
+          id: 'ChIJd8BlQ2BZwokRAFUEcm_qrcA',
+          label: 'Sightglass SoMa',
+          location: { lat: 37.7771, lng: -122.4084 },
+          rank: 2,
+          eligible: true,
+          routeStatus: 'verified',
+          route: {
+            distanceMeters: 900,
+            durationSeconds: 660,
+            attribution: { title: 'Google Maps Routes', url: 'https://maps.google.com' },
+          },
+          attribution: { title: 'Google Maps', url: 'https://maps.google.com' },
+          placeUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJd8BlQ2BZwokRAFUEcm_qrcA',
+        },
+      ],
+      limitations: [],
+      capabilityProfile: ['search_places', 'draw_route'],
+    };
+    const msgs = buildExplorerSurface(view, true);
+    const update = msgs.find((message) => 'updateComponents' in message)!;
+    const components = 'updateComponents' in update ? update.updateComponents.components : [];
+    const nextActions = components.find((component) => component.component === 'NextActions')!;
+    expect(nextActions.actions).toEqual(
+      expect.arrayContaining([
+        {
+          label: 'Open as Maps List (2) ↗',
+          action: {
+            event: {
+              name: 'open_maps_shortlist',
+              context: {
+                placeIds: ['ChIJN1t_tDeuEmsRUsoyG83frY4', 'ChIJd8BlQ2BZwokRAFUEcm_qrcA'],
+              },
+            },
+          },
+        },
+      ]),
+    );
+  });
 });

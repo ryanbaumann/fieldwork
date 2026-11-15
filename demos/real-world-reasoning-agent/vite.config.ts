@@ -13,6 +13,7 @@ const REPO_ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '../..')
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, REPO_ROOT, ''), ...loadEnv(mode, process.cwd(), '') };
   const gmpKey = env.GMP_SERVER_KEY ?? env.GMP_SERVER_API_KEY ?? '';
+  const gmpMcpKey = env.GMP_MCP_KEY ?? env.RWR_GMP_MCP_KEY ?? gmpKey;
   const geminiKey = env.GEMINI_KEY ?? env.GEMINI_API_KEY ?? '';
 
   const appendKey = (path: string, key: string): string => {
@@ -135,6 +136,16 @@ export default defineConfig(({ mode }) => {
         '/api/real-world-reasoning-agent/gmp/solar': gmpProxy('https://solar.googleapis.com', /^\/api\/real-world-reasoning-agent\/gmp\/solar/),
         '/api/real-world-reasoning-agent/gmp/streetview': gmpProxy('https://maps.googleapis.com', /^\/api\/real-world-reasoning-agent\/gmp\/streetview/),
         '/api/real-world-reasoning-agent/gmp/staticmap': gmpProxy('https://maps.googleapis.com', /^\/api\/real-world-reasoning-agent\/gmp\/staticmap/),
+        '/api/real-world-reasoning-agent/mcp': {
+          target: 'https://mapstools.googleapis.com',
+          changeOrigin: true,
+          secure: true,
+          rewrite: () => '/mcp',
+          headers: {
+            'X-Goog-Api-Key': gmpMcpKey,
+            'X-Goog-Maps-Solution-ID': GMP_SOLUTION_ID,
+          },
+        },
         '/api/real-world-reasoning-agent/ai': {
           target: 'https://generativelanguage.googleapis.com',
           changeOrigin: true,

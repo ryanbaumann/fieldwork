@@ -142,10 +142,14 @@ function revealArena() {
   const verdictBox = document.getElementById('arena-verdict-box');
   if (verdictBox) {
     verdictBox.style.display = 'block';
-    verdictBox.innerHTML = `
-      <strong>Saved reference example:</strong><br>
-      <span style="color: #cbd5e1;">"${item.groundTruth}"</span>
-    `;
+    verdictBox.replaceChildren();
+    const strong = document.createElement('strong');
+    strong.textContent = 'Saved reference example:';
+    const br = document.createElement('br');
+    const span = document.createElement('span');
+    span.style.color = '#cbd5e1';
+    span.textContent = `"${item.groundTruth}"`;
+    verdictBox.append(strong, br, span);
   }
 }
 
@@ -260,16 +264,35 @@ function setupAnalytics() {
   const tbody = document.getElementById('training-runs-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = '';
+  tbody.replaceChildren();
   TRAINING_RUNS.forEach(run => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="font-weight: 700; color: #38bdf8;">${run.round}</td>
-      <td>${run.model}</td>
-      <td>${run.lossStart} → <span style="color: #34d399; font-weight: 700;">${run.lossEnd}</span></td>
-      <td>${run.peakMemory}</td>
-      <td style="color: #94a3b8; font-family: inherit; font-size: 0.85rem;">${run.notes}</td>
-    `;
+    const tdRound = document.createElement('td');
+    tdRound.style.fontWeight = '700';
+    tdRound.style.color = '#38bdf8';
+    tdRound.textContent = run.round;
+
+    const tdModel = document.createElement('td');
+    tdModel.textContent = run.model;
+
+    const tdLoss = document.createElement('td');
+    tdLoss.append(document.createTextNode(`${run.lossStart} → `));
+    const spanLoss = document.createElement('span');
+    spanLoss.style.color = '#34d399';
+    spanLoss.style.fontWeight = '700';
+    spanLoss.textContent = run.lossEnd;
+    tdLoss.append(spanLoss);
+
+    const tdMem = document.createElement('td');
+    tdMem.textContent = run.peakMemory;
+
+    const tdNotes = document.createElement('td');
+    tdNotes.style.color = '#94a3b8';
+    tdNotes.style.fontFamily = 'inherit';
+    tdNotes.style.fontSize = '0.85rem';
+    tdNotes.textContent = run.notes;
+
+    tr.append(tdRound, tdModel, tdLoss, tdMem, tdNotes);
     tbody.appendChild(tr);
   });
 }

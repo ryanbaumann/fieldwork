@@ -73,15 +73,26 @@ export function HowItsBuilt({ open, onClose }: { open: boolean; onClose: () => v
               This journey is one prompt and {toolCount} tools.
             </div>
             <div style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 6, lineHeight: 1.5 }}>
-              One reusable agent loop coordinates purpose-built tools, policies, typed state, and
-              generated surfaces. The model interprets and replans; deterministic actions stay local.
+              One reusable <code>gemini-4-hydrogen</code> agent loop coordinates purpose-built Google Maps tools,
+              policies, typed state, and generated A2UI surfaces. The model interprets and replans; deterministic
+              actions stay local.
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
             className="glass"
-            style={{ width: 34, height: 34, borderRadius: 10, display: 'grid', placeItems: 'center', flexShrink: 0 }}
+            style={{
+              minWidth: 44,
+              minHeight: 44,
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              display: 'grid',
+              placeItems: 'center',
+              flexShrink: 0,
+            }}
           >
             <X size={17} />
           </button>

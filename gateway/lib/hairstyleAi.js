@@ -2,8 +2,9 @@ import { recordHostedGeminiFailure, recordHostedGeminiSuccess } from './rateLimi
 
 const INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 const MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const VISION_MODEL = 'gemini-3.8-flash';
+const VISION_MODEL = 'gemini-4-hydrogen';
 const IMAGE_MODEL = 'gemini-3.1-flash-lite-image';
+const STUDIO_IMAGE_MODEL = 'gemini-nano-banana-2.1';
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_IMAGE_DATA_CHARS = 8 * 1024 * 1024;
 
@@ -169,7 +170,7 @@ export async function handleHairstyleAiApi({
             text: `Recommend one suitable hairstyle from this exact catalog: ${JSON.stringify(availableStyles)}. Return only JSON with "recommendedStyleId" (an exact catalog id or null). Do not infer or classify gender.`,
           },
         ],
-        thinkingConfig: { thinking_level: 'LOW' },
+        thinkingConfig: { thinking_level: 'MEDIUM' },
         fetchImpl,
         signal,
       });
@@ -190,9 +191,10 @@ export async function handleHairstyleAiApi({
       if (!subjectImages.length || !styleDescription) {
         return result(400, { error: 'A front photo and hairstyle description are required.' });
       }
+      const selectedImageModel = body?.generationMode === 'studio' ? STUDIO_IMAGE_MODEL : IMAGE_MODEL;
       const interaction = await createInteraction({
         apiKey,
-        model: IMAGE_MODEL,
+        model: selectedImageModel,
         input: [
           ...subjectImages,
           ...(referenceImage ? [referenceImage] : []),
@@ -229,9 +231,10 @@ export async function handleHairstyleAiApi({
       if (!currentImage || !refinementInstruction) {
         return result(400, { error: 'A generated image and refinement instruction are required.' });
       }
+      const selectedImageModel = body?.generationMode === 'studio' ? STUDIO_IMAGE_MODEL : IMAGE_MODEL;
       const interaction = await createInteraction({
         apiKey,
-        model: IMAGE_MODEL,
+        model: selectedImageModel,
         input: [
           currentImage,
           ...(referenceImage ? [referenceImage] : []),
@@ -293,4 +296,5 @@ export async function handleHairstyleAiApi({
 export const HAIRSTYLE_MODELS = Object.freeze({
   vision: VISION_MODEL,
   image: IMAGE_MODEL,
+  studioImage: STUDIO_IMAGE_MODEL,
 });

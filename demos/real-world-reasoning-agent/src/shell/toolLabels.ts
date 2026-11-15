@@ -15,6 +15,7 @@ export const TOOL_LABELS: Record<string, string> = {
   clear_map: 'Clearing the map',
   draw_route: 'Drawing the route',
   get_environment: 'Reading environmental signals',
+  create_maps_shortlist: 'Building a Google Maps shortlist',
   ask_maps: 'Asking Google Maps',
   show_notice: 'Posting a note',
   render_surface: 'Rendering the response',
