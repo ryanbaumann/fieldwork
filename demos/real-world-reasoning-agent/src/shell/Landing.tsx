@@ -5,7 +5,7 @@ import { getGeminiCredentialSnapshot, subscribeGeminiCredential } from '@/ai/cli
 import type { LatLng } from '@/lib/types';
 import { useAtlas } from '@/state/store';
 import { startExplorerJourney } from '@/explorer/controller';
-import { preflightCapabilities, type CapabilityStatus } from './capabilityPreflight';
+import { preflightCapabilities, resolveMissionMode, type CapabilityStatus } from './capabilityPreflight';
 import { useGenui } from '@/genui/store';
 
 const DEFAULT_GOAL = 'Coffee within a 10-minute walk';
@@ -46,6 +46,18 @@ export function Landing() {
       controller.signal,
     ).then((status) => {
       if (active) setCapabilities(status);
+    }).catch(() => {
+      if (!active) return;
+      const fallbackBase = {
+        browserMaps: Boolean(GMP_BROWSER_KEY),
+        serverMaps: false,
+        gemini: credential.source === 'byok',
+        mapsGrounding: credential.source === 'byok',
+        groundingLite: credential.source === 'byok',
+        online: typeof navigator === 'undefined' || navigator.onLine !== false,
+        apiHealth,
+      };
+      setCapabilities({ ...fallbackBase, mode: resolveMissionMode(fallbackBase) });
     });
     return () => {
       active = false;

@@ -2,6 +2,19 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-14 - Desktop escape-pill statusbar padding on mobile, fire-and-forget UI promise recovery, and URL port/userinfo allowlists
+
+Context: Cross-viewport (`320x568`, `375x667`, `390x844`), security, and reliability audit across Labs (`real-world-reasoning-agent`, `voice-studio`, `isochrones`, `strava-explorer`, `aqi-map`) and `gateway/lib/realWorldReasoning.js`.
+
+Learning:
+1. Reserving `padding-right: max(160px, ...)` unconditionally on `.atlas-statusbar` for a desktop-only top-right escape pill steals nearly half of a `375px` mobile header even when the pill moves or hides at `<=760px`. Scope fixed-pill header padding to the matching desktop `@media (min-width: 761px)` breakpoint, and wrap multi-column data tables (`.loss-table`) in `overflow-x: auto; max-width: 100%` containers so `375px` viewports never scroll horizontally.
+2. Fire-and-forget UI controller promises (`void runExplorer(...).then(...)`) without `.catch` and `.finally` leave `state.running === true` permanently if an unexpected runtime error escapes before `.then` completes, and `preflightCapabilities(...).then(...)` without `.catch` leaves `capabilities === null` (`checking`) when offline or blocked. Always attach generation-guarded `.catch` + `.finally` handlers on UI state machines.
+3. Checking only `url.protocol === 'https:' && hosts.has(url.hostname)` in an upstream image proxy (`isAllowedPhotoUrl`) still accepts embedded URL credentials (`https://user:pass@host/...`) and non-standard ports (`:8443`). Enforce `!url.username && !url.password && (!url.port || url.port === '443')` consistently across both gateway and standalone dev brokers, and return `{ error }` JSON on `405`/`503` API proxy paths.
+
+Evidence: Mobile viewport audits (`375x667`, `390x844`) caught `66px` horizontal overflow in `demos/voice-studio` (`scrollWidth: 441px` vs `375px`), compressed `.atlas-statusbar` / `.copilot-dock__input` widths in `demos/real-world-reasoning-agent`, and `<44px` `.panel-toggle` height in `demos/isochrones`; unit, build, and gateway smoke suites verified all fixes.
+
+Use next time: Pair every fixed-overlay clearance padding with the exact `@media` breakpoint where that overlay sits in the same band, wrap wide tables in horizontal scroll containers, guard fire-and-forget controller promises with `.catch` + `.finally`, and reject URL `username`, `password`, and non-`443` ports in SSRF host allowlists.
+
 ## 2026-11-14 - Maps JS `Route.computeRoutes` waypoint contract, Gemini `groundingChunks` review noise, and Turn-1 starter state independence
 
 Context: Diagnosing slow (~12 to 32s) and empty (`"No candidate has a verified walk route"`) responses on `https://ryanbaumann.dev/real-world-reasoning-agent/` across Explorer prompts and recipe starters.

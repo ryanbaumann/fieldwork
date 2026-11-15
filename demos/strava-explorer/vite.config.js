@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => {
     // BASE_PATH lets the gateway container mount this app at /strava-explorer/
     // while local `npm run build`/`npm run preview` still default to '/'.
     base: process.env.BASE_PATH || '/',
+    test: {
+      include: ['test/**/*.test.js'],
+    },
     build: {
       // Output directory is 'dist' by default, which is fine
       // outDir: 'dist',
