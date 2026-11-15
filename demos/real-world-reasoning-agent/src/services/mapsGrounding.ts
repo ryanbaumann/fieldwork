@@ -11,6 +11,7 @@ import { mapsReady } from './maps';
 import { placesProvider } from './places';
 import { routesProvider } from './routes';
 import { weather } from './env';
+import { isValidPlaceId, normalizePlaceId } from '@/lib/mapsUrl';
 
 function finite(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
@@ -211,13 +212,14 @@ export const mapsGroundingProvider: MapsGroundingProvider = {
   async computeRoute(input, signal) {
     if (signal?.aborted) return { status: 'cancelled' };
     try {
-      const hasRealPlaceId = typeof input.destinationPlaceId === 'string' && (
-        input.destinationPlaceId.startsWith('ChIJ') ||
-        input.destinationPlaceId.startsWith('placeId:') ||
-        input.destinationPlaceId.startsWith('places/')
+      const normalizedPlaceId = normalizePlaceId(input.destinationPlaceId);
+      const hasRealPlaceId = Boolean(normalizedPlaceId) && (
+        isValidPlaceId(normalizedPlaceId) ||
+        normalizedPlaceId.startsWith('ChIJ') ||
+        /^(?:ChIJ|Eh[A-Za-z0-9]|Ei[A-Za-z0-9])[A-Za-z0-9_-]{4,}$/.test(normalizedPlaceId)
       );
       const destination = hasRealPlaceId
-        ? input.destinationPlaceId
+        ? normalizedPlaceId
         : (input.destinationLocation ?? input.destinationPlaceId);
       const cancellation = cancellationFromSignal(signal);
 

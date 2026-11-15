@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Labs mobile layout, proxy security, and Explorer error-recovery hardening (`.gitignore`, `gateway/lib/realWorldReasoning.js`, `demos/{real-world-reasoning-agent,voice-studio,isochrones,strava-explorer,aqi-map}`)**:
+  - **Mobile Viewport & Touch Targets**:
+    - Wrapped `.loss-table` in `<div class="table-container">` (`overflow-x: auto; max-width: 100%`) in `demos/voice-studio/index.html` and `src/styles.css` to eliminate horizontal overflow on `375px` and `390px` viewports.
+    - Scoped `.atlas-statusbar` desktop `160px` right padding inside `@media (min-width: 761px)`, set `.copilot-dock__input { min-width: 140px }`, tightened `.copilot-dock__composer` on mobile, and collapsed `.recipe-picker__name` below `480px` (`min-width: 44px`) in `demos/real-world-reasoning-agent/src/styles/global.css`.
+    - Expanded `.panel-toggle` on mobile sheets to `min-height: 44px; min-width: 44px` in `demos/isochrones/src/styles.css`.
+  - **Proxy Security & Place ID Canonicalization**:
+    - Hardened `.gitignore` with `.env*` and `*.env*` patterns while preserving `!.env.template` and `!**/.env.template`.
+    - Added credential (`!url.username && !url.password`) and HTTPS port (`!url.port || url.port === '443'`) checks to `isAllowedPhotoUrl` in `demos/strava-explorer/server/broker.js`.
+    - Standardized `gateway/lib/realWorldReasoning.js` `/capabilities` (`405`), `/mcp` (`503`), `/gmp/*` (`503`), and `/ai/*` (`503`) keyless/allowance responses to emit structured JSON `{ error }` payloads via `sendJson`.
+    - Normalized destination Place IDs in `demos/real-world-reasoning-agent/src/services/mapsGrounding.ts` (`computeRoute`) with `normalizePlaceId` and `isValidPlaceId` from `@/lib/mapsUrl`.
+  - **Runtime Error Recovery & Subpath Build Defaults**:
+    - Added `.catch` toast notifications and `.finally` `state.setRunning(false)` cleanup (guarded by `runGeneration === generation`) to `startExplorerJourney` and `changeExplorerTravelMode` in `demos/real-world-reasoning-agent/src/explorer/controller.ts`.
+    - Added `.catch` fallback capability resolution via `resolveMissionMode` in `demos/real-world-reasoning-agent/src/shell/Landing.tsx` so network failures never leave preflight stuck in `checking`.
+    - Defaulted `base` to `process.env.BASE_PATH || './'` in `demos/{aqi-map,isochrones,voice-studio}/vite.config.js` and scoped Vitest `test.include` to `['test/**/*.test.js']` in `demos/strava-explorer/vite.config.js`.
+
 - **Labs-wide `LOW` thinking latency defaults, reliable Atlas getting-started queries, `Route.computeRoutes` waypoint fix, and Turn-1 recipe starter hardening (`demos/real-world-reasoning-agent/`, `gateway/lib/{hairstyleAi,infographicAgent}.js`, `gateway/test/*.test.js`, `.agents/skills/google-maps-a2ui/SKILL.md`)**:
   - **Low-Latency `gemini-4-hydrogen` (`LOW` Thinking) Defaults Across Labs**:
     - Switched `demos/real-world-reasoning-agent/src/lib/config.ts` (`THINKING_CONFIGS`, `AGENT_PROFILES`, `getThinkingConfig`) to `ThinkingLevel.LOW` by default for interactive copilot orchestration, vision checks, and fast UI workers while preserving explicit `medium` and `high` overrides in `AdminPanel.tsx` and `VITE_GEMINI_CHAT_THINKING`.

@@ -179,18 +179,20 @@
       <div class="analytics-card">
         <h2 class="card-heading">Saved training summaries</h2>
         <p class="app-subtitle">These values are checked-in examples, not measurements collected by this page. Verify them against retained run logs before using them as benchmark evidence.</p>
-        <table class="loss-table">
-          <thead>
-            <tr>
-              <th>Iteration Round</th>
-              <th>Base Architecture</th>
-              <th>Loss Convergence</th>
-              <th>Peak Unified Memory</th>
-              <th>Key Implementation Learning</th>
-            </tr>
-          </thead>
-          <tbody id="training-runs-tbody"></tbody>
-        </table>
+        <div class="table-container">
+          <table class="loss-table">
+            <thead>
+              <tr>
+                <th>Iteration Round</th>
+                <th>Base Architecture</th>
+                <th>Loss Convergence</th>
+                <th>Peak Unified Memory</th>
+                <th>Key Implementation Learning</th>
+              </tr>
+            </thead>
+            <tbody id="training-runs-tbody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="analytics-card">
