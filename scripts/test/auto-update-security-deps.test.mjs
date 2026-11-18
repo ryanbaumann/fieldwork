@@ -415,3 +415,123 @@ test('runSecurityAuditAndFix prunes stale exceptions when lockfiles already have
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('parseAuditReport rejects error payloads and missing/non-object vulnerabilities (fail-closed)', () => {
+  assert.throws(
+    () => parseAuditReport(JSON.stringify({ error: { summary: 'registry down' }, vulnerabilities: {} })),
+    /registry down/,
+  );
+  assert.throws(
+    () => parseAuditReport(JSON.stringify({ metadata: { vulnerabilities: { total: 0 } } })),
+    /Unexpected JSON format/,
+  );
+  assert.throws(
+    () => parseAuditReport(JSON.stringify({ vulnerabilities: [] })),
+    /Unexpected JSON format/,
+  );
+});
+
+test('check mode never mutates audit-exceptions.json, partial multi-demo fixes keep exceptions, and failed audit-fix verification rolls back', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sec-deps-invariants-'));
+  try {
+    const demoA = join(root, 'demos/demo-a');
+    const demoB = join(root, 'demos/demo-b');
+    mkdirSync(demoA, { recursive: true });
+    mkdirSync(demoB, { recursive: true });
+    mkdirSync(join(root, '.github'), { recursive: true });
+
+    const pkgA = JSON.stringify({ name: 'demo-a', version: '1.0.0' }, null, 2) + '\n';
+    const pkgB = JSON.stringify({ name: 'demo-b', version: '1.0.0' }, null, 2) + '\n';
+    const lockInitial = '{"lockfileVersion":3,"picomatch":"4.0.7"}\n';
+    writeFileSync(join(demoA, 'package.json'), pkgA);
+    writeFileSync(join(demoA, 'package-lock.json'), lockInitial);
+    writeFileSync(join(demoB, 'package.json'), pkgB);
+    writeFileSync(join(demoB, 'package-lock.json'), lockInitial);
+
+    const exceptionsPath = join(root, '.github/audit-exceptions.json');
+    const initialExceptions = JSON.stringify({
+      exceptions: [
+        {
+          id: 'GHSA-fc5q-39xc-vjpf',
+          package: 'picomatch',
+          vulnerableRange: '<=4.0.7',
+          expires: '2099-01-01',
+          reason: 'Unpatched build-time transitive dependency.',
+        },
+      ],
+    }, null, 2) + '\n';
+    writeFileSync(exceptionsPath, initialExceptions);
+
+    // 1. mode: 'check' never prunes exceptions even when 0 advisories remain.
+    const checkSummary = runSecurityAuditAndFix({
+      repoRoot: root,
+      mode: 'check',
+      githubOutput: null,
+      runner() {
+        return { status: 0, stdout: makeAuditJson({}), stderr: '' };
+      },
+    });
+    assert.equal(checkSummary.changed, false);
+    assert.deepEqual(checkSummary.prunedExceptions, []);
+    assert.equal(readFileSync(exceptionsPath, 'utf8'), initialExceptions);
+
+    // 2. Partial fix: demo-a upgrades to 4.0.8, demo-b stays on 4.0.7 because demo-b tests fail after audit fix.
+    // Exception must NOT be pruned, demo-b lockfile must roll back, and unexcusedAfter > 0 because 4.0.8 exists.
+    let demoAFixed = false;
+    let demoBFixed = false;
+    const partialSummary = runSecurityAuditAndFix({
+      repoRoot: root,
+      mode: 'fix',
+      githubOutput: null,
+      runner(_cmd, args, { cwd }) {
+        const isA = cwd.endsWith('demo-a');
+        if (args[0] === 'audit' && args[1] === '--json') {
+          if ((isA && demoAFixed) || (!isA && demoBFixed)) {
+            return { status: 0, stdout: makeAuditJson({}), stderr: '' };
+          }
+          return {
+            status: 1,
+            stdout: makeAuditJson({
+              picomatch: {
+                name: 'picomatch',
+                severity: 'high',
+                via: [{
+                  source: 1,
+                  name: 'picomatch',
+                  title: 'picomatch ReDoS',
+                  url: 'https://github.com/advisories/GHSA-fc5q-39xc-vjpf',
+                  severity: 'high',
+                  range: '<=4.0.7',
+                }],
+              },
+            }),
+            stderr: '',
+          };
+        }
+        if (args[0] === 'audit' && args[1] === 'fix') {
+          writeFileSync(join(cwd, 'package-lock.json'), '{"lockfileVersion":3,"picomatch":"4.0.8"}\n');
+          if (isA) demoAFixed = true;
+          else demoBFixed = true;
+          return { status: 0, stdout: '', stderr: '' };
+        }
+        if (!isA && args[0] === 'test') {
+          demoBFixed = false;
+          return { status: 1, stdout: '', stderr: 'demo-b test failed' };
+        }
+        if (args[0] === 'view' && args[1] === 'picomatch') {
+          return { status: 0, stdout: '"4.0.8"\n', stderr: '' };
+        }
+        return { status: 0, stdout: '', stderr: '' };
+      },
+    });
+
+    assert.equal(partialSummary.changed, true);
+    assert.equal(partialSummary.totalFixed, 1);
+    assert.equal(partialSummary.unexcusedAfter, 1);
+    assert.deepEqual(partialSummary.prunedExceptions, []);
+    assert.equal(readFileSync(exceptionsPath, 'utf8'), initialExceptions);
+    assert.equal(readFileSync(join(demoB, 'package-lock.json'), 'utf8'), lockInitial);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

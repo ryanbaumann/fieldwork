@@ -28,6 +28,21 @@ const SAFE_SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 
 export function discoverLockfileTargets(repoRoot = REPO_ROOT) {
   const candidates = ['.', 'portfolio', 'gateway'];
+  const appsJsonPath = join(repoRoot, 'apps.json');
+  if (existsSync(appsJsonPath)) {
+    try {
+      const apps = JSON.parse(readFileSync(appsJsonPath, 'utf8'));
+      if (Array.isArray(apps)) {
+        for (const app of apps) {
+          if (app?.source?.type === 'workspace' && typeof app.source.package === 'string') {
+            candidates.push(app.source.package);
+          }
+        }
+      }
+    } catch {
+      // Malformed apps.json is caught by validate-apps.mjs; keep static candidates.
+    }
+  }
   const demosDir = join(repoRoot, 'demos');
   if (existsSync(demosDir)) {
     for (const entry of readdirSync(demosDir, { withFileTypes: true })) {
@@ -51,7 +66,15 @@ export function parseAuditReport(rawStdout) {
     throw new Error('Empty output from npm audit --json');
   }
   const parsed = JSON.parse(rawStdout);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || (!parsed.metadata && !parsed.vulnerabilities)) {
+  if (
+    !parsed
+    || typeof parsed !== 'object'
+    || Array.isArray(parsed)
+    || parsed.error
+    || typeof parsed.vulnerabilities !== 'object'
+    || parsed.vulnerabilities === null
+    || Array.isArray(parsed.vulnerabilities)
+  ) {
     throw new Error(parsed?.error?.summary || 'Unexpected JSON format from npm audit');
   }
   const rawCounts = parsed.metadata?.vulnerabilities || {};
@@ -66,9 +89,7 @@ export function parseAuditReport(rawStdout) {
     ? Number(rawCounts.total)
     : counts.info + counts.low + counts.moderate + counts.high + counts.critical;
 
-  const vulnerabilities = parsed.vulnerabilities && typeof parsed.vulnerabilities === 'object' && !Array.isArray(parsed.vulnerabilities)
-    ? parsed.vulnerabilities
-    : {};
+  const vulnerabilities = parsed.vulnerabilities;
 
   const packages = Object.entries(vulnerabilities)
     .map(([name, info]) => {
@@ -113,7 +134,11 @@ function defaultRunner(command, args, { cwd, env }) {
 
 function runAudit(targetDir, registry, env, runner) {
   const res = runner('npm', ['audit', '--json', `--registry=${registry}`], { cwd: targetDir, env });
-  return parseAuditReport(res.stdout);
+  const report = parseAuditReport(res.stdout);
+  if (res.status !== 0 && report.counts.total === 0 && Object.keys(report.rawReport.vulnerabilities).length === 0) {
+    throw new Error(res.stderr.trim() || 'npm audit exited non-zero with an empty vulnerability report');
+  }
+  return report;
 }
 
 function queryLatestVersion(pkgName, targetDir, registry, env, runner) {
@@ -133,9 +158,9 @@ function queryLatestVersion(pkgName, targetDir, registry, env, runner) {
   }
 }
 
-function verifyTargetPackage(targetDir, env, runner) {
+function verifyTargetPackage(targetDir, registry, env, runner) {
   const steps = [
-    ['ci', '--no-audit', '--no-fund'],
+    ['ci', `--registry=${registry}`, '--no-audit', '--no-fund'],
     ['run', 'lint', '--if-present'],
     ['test', '--if-present'],
     ['run', 'build', '--if-present'],
@@ -232,7 +257,7 @@ export function runSecurityAuditAndFix({
         const auditFixCandidate = runAudit(absTarget, registry, childEnv, runner);
         if (
           auditFixCandidate.counts.total < before.counts.total
-          && verifyTargetPackage(absTarget, childEnv, runner)
+          && verifyTargetPackage(absTarget, registry, childEnv, runner)
         ) {
           after = auditFixCandidate;
         } else {
@@ -275,7 +300,7 @@ export function runSecurityAuditAndFix({
             const candidateAudit = runAudit(absTarget, registry, childEnv, runner);
             if (
               candidateAudit.counts.total < after.counts.total
-              && verifyTargetPackage(absTarget, childEnv, runner)
+              && verifyTargetPackage(absTarget, registry, childEnv, runner)
             ) {
               after = candidateAudit;
               overridesApplied.push(`${vulnPkg.name}@${nextRange}`);
@@ -328,6 +353,8 @@ export function runSecurityAuditAndFix({
     }
   }
 
+  const exceptionTupleKey = (entry) => `${entry.id}\0${entry.package}\0${String(entry.vulnerableRange || '').trim()}`;
+
   if (mode === 'fix' && rawExceptionsDoc && errors.length === 0 && results.length > 0 && activeExceptions.length > 0) {
     const matchesAnyRemainingTarget = (exception) => results.some((item) =>
       item.after.packages.some((pkg) =>
@@ -339,23 +366,26 @@ export function runSecurityAuditAndFix({
       ),
     );
 
-    const keptIds = new Set();
+    const keptKeys = new Set();
     for (const exception of activeExceptions) {
       if (matchesAnyRemainingTarget(exception)) {
-        keptIds.add(exception.id);
+        keptKeys.add(exceptionTupleKey(exception));
       } else {
         prunedExceptions.push(exception.id);
       }
     }
 
     if (prunedExceptions.length > 0) {
-      const updatedDoc = {
-        ...rawExceptionsDoc,
-        exceptions: rawExceptionsDoc.exceptions.filter((entry) => keptIds.has(entry.id)),
-      };
-      writeFileSync(exceptionsPath, `${JSON.stringify(updatedDoc, null, 2)}\n`);
-      activeExceptions = validateExceptions(updatedDoc);
-      exceptionsChanged = true;
+      const updatedExceptions = rawExceptionsDoc.exceptions.filter((entry) => keptKeys.has(exceptionTupleKey(entry)));
+      if (updatedExceptions.length !== rawExceptionsDoc.exceptions.length) {
+        const updatedDoc = {
+          ...rawExceptionsDoc,
+          exceptions: updatedExceptions,
+        };
+        writeFileSync(exceptionsPath, `${JSON.stringify(updatedDoc, null, 2)}\n`);
+        activeExceptions = validateExceptions(updatedDoc);
+        exceptionsChanged = true;
+      }
     }
   }
 
@@ -427,6 +457,15 @@ function parseCliArgs(argv) {
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
+  }
+  let registryUrl;
+  try {
+    registryUrl = new URL(registry);
+  } catch {
+    throw new Error('--registry must be a valid https URL');
+  }
+  if (registryUrl.protocol !== 'https:' || !registryUrl.hostname || registryUrl.username || registryUrl.password) {
+    throw new Error('--registry must be an https URL without credentials');
   }
   return { mode, summaryFile, registry };
 }
