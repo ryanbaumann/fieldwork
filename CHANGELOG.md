@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Strava 64-bit Activity & Athlete identifier (`id_str` / `id`) migration (`demos/strava-explorer/`, `gateway/lib/strava.js`, `gateway/test/strava.test.js`)**:
+  - Added lossless `parseStravaJson` parsing (`JSON.parse` reviver `context.source`) in `demos/strava-explorer/src/strava.js`, `demos/strava-explorer/server/broker.js`, and `gateway/lib/strava.js`, using `JSON.rawJSON` in both OAuth token brokers so unsafe 64-bit `id` integers serialize intact alongside populated `id_str` strings.
+  - Added `normalizeEntityId` / `getActivityId` / `getAthleteId` helpers preferring `id_str` in `demos/strava-explorer/src/strava.js`, URL-encoded `/activities/:id` API calls, normalized legacy `localStorage` integer `athlete.id` entries, and preserved `athlete.id_str` across token refreshes.
+  - Updated `demos/strava-explorer/src/index.js`, `urlState.js` (`normalizeActivityIdParam` regex validation), `demoData.js`, and `activityIcons.js` to store and compare canonical string IDs with strict `===` / `!==` equality instead of coercive `==` / `!=`.
+  - Documented the June 1, 2027 64-bit identifier migration in `demos/strava-explorer/HOSTING.md` and added unit regression tests across `demos/strava-explorer/test/{client,broker}.test.js` and `gateway/test/strava.test.js`.
+
 - **Self-expiring CI audit exception for unpatched advisories (`scripts/ci-audit.mjs`, `.github/audit-exceptions.json`, `.github/workflows/ci.yml`, `scripts/test/ci-audit.test.mjs`)**:
   - Replaced the raw `npm audit --audit-level=moderate` step with `scripts/ci-audit.mjs`, which keeps the same moderate threshold but excuses an advisory listed in `.github/audit-exceptions.json` only while its GHSA ID, package, and vulnerable range match exactly, the exception has not expired, and the latest npm release is still inside the vulnerable range.
   - Added a single exception for `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS, `<=4.0.7`, no patched release, expires 2027-02-17). picomatch reaches the demos only through vite, vitest, and tinyglobby at build and test time. The gate fails again automatically once a patched picomatch ships or the exception expires; any lookup or parse error fails closed.

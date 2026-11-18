@@ -194,6 +194,20 @@ describe('src/urlState.js', () => {
         expect(params.get('camera_height')).toBe('150');
         expect(params.get('activity_id')).toBe('demo-123');
     });
+
+    test('readUrlState and buildUrlParams preserve 64-bit string activity IDs and reject invalid IDs', () => {
+        const bigId = '9007199254740993';
+        const parsed = urlState.readUrlState(`?activity_id=${bigId}`);
+        expect(parsed.activityId).toBe(bigId);
+
+        const rebuilt = new URLSearchParams(urlState.buildUrlParams({ activityId: bigId }));
+        expect(rebuilt.get('activity_id')).toBe(bigId);
+
+        expect(urlState.readUrlState('?activity_id=demo-alpine-ride').activityId).toBe('demo-alpine-ride');
+        expect(urlState.readUrlState('?activity_id=../athlete').activityId).toBeNull();
+        expect(urlState.readUrlState('?activity_id=abc123').activityId).toBeNull();
+        expect(urlState.buildUrlParams({ activityId: '../athlete' })).toBe('');
+    });
 });
 
 describe('src/photos.js', () => {
@@ -284,6 +298,8 @@ describe('src/activityIcons.js', () => {
     test('falls back to demo activities and then to default', () => {
         expect(icons.normalizeSportType({ id: 'demo-alpine-ride' })).toBe('ride');
         expect(icons.normalizeSportType({ id: 'demo-coastal-run' })).toBe('run');
+        expect(icons.normalizeSportType({ id_str: 'demo-alpine-ride' })).toBe('ride');
+        expect(icons.normalizeSportType({ id_str: 'demo-coastal-run' })).toBe('run');
         expect(icons.normalizeSportType({ sport_type: 'Curling' })).toBe('default');
         expect(icons.normalizeSportType(null)).toBe('default');
     });
@@ -310,5 +326,149 @@ describe('src/activityIcons.js', () => {
         expect(icons.sportEmoji({ sport_type: 'Ride' })).toBe('🚴');
         expect(icons.sportEmoji({ sport_type: 'TrailRun' })).toBe('🏃🌲');
         expect(icons.sportEmoji({ sport_type: 'Hike' })).toBe('🥾');
+    });
+});
+
+describe('64-bit Strava Activity and Athlete IDs (src/strava.js)', () => {
+    const originalFetch = global.fetch;
+
+    beforeEach(() => {
+        localStorage.clear();
+        strava.clearStravaToken();
+    });
+
+    afterEach(() => {
+        global.fetch = originalFetch;
+        vi.unstubAllEnvs();
+        vi.resetModules();
+    });
+
+    test('normalizeEntityId, getActivityId, and getAthleteId prefer id_str over id', () => {
+        expect(strava.normalizeEntityId({ id: 9007199254740992, id_str: '9007199254740993' })).toBe('9007199254740993');
+        expect(strava.getActivityId({ id: 9007199254740992, id_str: '9007199254740993' })).toBe('9007199254740993');
+        expect(strava.getAthleteId({ id: 12345 })).toBe('12345');
+        expect(strava.normalizeEntityId({ id: 'demo-alpine-ride' })).toBe('demo-alpine-ride');
+        expect(strava.normalizeEntityId(9007199254740993n)).toBe('9007199254740993');
+        expect(strava.normalizeEntityId('  9007199254740993  ')).toBe('9007199254740993');
+        expect(strava.normalizeEntityId(null)).toBeNull();
+        expect(strava.normalizeEntityId(undefined)).toBeNull();
+        expect(strava.normalizeEntityId('')).toBeNull();
+        expect(strava.normalizeEntityId(Number.NaN)).toBeNull();
+    });
+
+    test('parseStravaJson recovers exact 64-bit IDs into id_str without overwriting valid id_str', () => {
+        const raw = [
+            '[',
+            '  {',
+            '    "id": 9007199254740993,',
+            '    "athlete": { "id": 9223372036854775807, "id_str": null },',
+            '    "map": { "id": "a9007199254740993", "summary_polyline": "abc" }',
+            '  },',
+            '  {',
+            '    "id": 18446744073709551615,',
+            '    "id_str": "18446744073709551615"',
+            '  }',
+            ']'
+        ].join('\n');
+
+        const parsed = strava.parseStravaJson(raw);
+        expect(parsed[0].id_str).toBe('9007199254740993');
+        expect(parsed[0].athlete.id_str).toBe('9223372036854775807');
+        expect(parsed[0].map.id_str).toBeUndefined();
+        expect(parsed[1].id_str).toBe('18446744073709551615');
+    });
+
+    test('getCachedAuthData and getUserId handle 64-bit athlete IDs, legacy numeric IDs, and token refresh', async () => {
+        const futureExp = Math.floor(Date.now() / 1000) + 3600;
+        localStorage.setItem('trailsNinja.stravaAuth.v1', JSON.stringify({
+            access_token: 'tok-1',
+            refresh_token: 'ref-1',
+            expires_at: futureExp,
+            athlete: { id: 9007199254740992, id_str: '9007199254740993', firstname: 'Ryan' }
+        }));
+
+        const cached = strava.getCachedAuthData();
+        expect(cached.athlete.id_str).toBe('9007199254740993');
+        expect(strava.getUserId()).toBe('9007199254740993');
+
+        // Legacy integer ID in localStorage normalizes to string
+        strava.clearStravaToken();
+        localStorage.setItem('trailsNinja.stravaAuth.v1', JSON.stringify({
+            access_token: 'tok-legacy',
+            refresh_token: 'ref-legacy',
+            expires_at: futureExp,
+            athlete: { id: 12345 }
+        }));
+        strava.getCachedAuthData();
+        expect(strava.getUserId()).toBe('12345');
+
+        // exchangeToken + refresh preserves 64-bit athlete.id_str even when refresh omits athlete
+        vi.stubEnv('VITE_STRAVA_CLIENT_ID', '12345');
+        vi.resetModules();
+        const freshStrava = await import('../src/strava.js');
+        freshStrava.setHelpers({ showLoading: vi.fn(), showError: vi.fn() });
+
+        const expiredSoon = Math.floor(Date.now() / 1000) + 60;
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce(new Response(
+                `{"access_token":"tok-new","refresh_token":"ref-new","expires_at":${expiredSoon},"athlete":{"id":9007199254740993,"firstname":"Ryan"}}`,
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            ))
+            .mockResolvedValueOnce(new Response(
+                `{"access_token":"tok-refreshed","refresh_token":"ref-2","expires_at":${futureExp}}`,
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            ));
+
+        const auth = await freshStrava.exchangeToken('auth-code');
+        expect(auth.athlete.id_str).toBe('9007199254740993');
+        expect(freshStrava.getUserId()).toBe('9007199254740993');
+
+        const refreshedToken = await freshStrava.ensureValidToken();
+        expect(refreshedToken).toBe('tok-refreshed');
+        expect(freshStrava.getUserId()).toBe('9007199254740993');
+        expect(freshStrava.getCachedAuthData().athlete.id_str).toBe('9007199254740993');
+    });
+
+    test('fetchActivities, fetchDetailedActivityData, fetchActivityStreams, and fetchPhotoData preserve and route 64-bit IDs', async () => {
+        const bigId = '9007199254740993';
+        const activityStub = { id: 9007199254740992, id_str: bigId };
+
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce(new Response(
+                `[{"id":9007199254740993,"name":"Big Ride","athlete":{"id":9007199254740995}}]`,
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            ))
+            .mockResolvedValueOnce(new Response(
+                `{"id":9007199254740993,"name":"Big Ride","athlete":{"id":9007199254740995}}`,
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            ))
+            .mockResolvedValueOnce(new Response(
+                '{"altitude":{"data":[10,20]}}',
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            ))
+            .mockResolvedValueOnce(new Response(
+                '[{"unique_id":"p1"}]',
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            ));
+
+        const list = await strava.fetchActivities('tok');
+        expect(list[0].id_str).toBe(bigId);
+        expect(list[0].athlete.id_str).toBe('9007199254740995');
+
+        const detail = await strava.fetchDetailedActivityData(activityStub, 'tok');
+        expect(detail.id_str).toBe(bigId);
+        expect(global.fetch.mock.calls[1][0]).toContain(`/activities/${bigId}`);
+        expect(global.fetch.mock.calls[1][0]).not.toContain('9007199254740992');
+
+        await strava.fetchActivityStreams(bigId, 'tok', ['altitude']);
+        expect(global.fetch.mock.calls[2][0]).toContain(`/activities/${bigId}/streams`);
+
+        await strava.fetchPhotoData(activityStub, 'tok');
+        expect(global.fetch.mock.calls[3][0]).toContain(`/activities/${bigId}/photos`);
+
+        await expect(strava.fetchDetailedActivityData('../athlete', 'tok')).rejects.toThrow('No Activity ID provided.');
+        await expect(strava.fetchActivityStreams('..', 'tok', ['altitude'])).rejects.toThrow('Missing parameters for fetchActivityStreams');
+        await expect(strava.fetchPhotoData('..', 'tok')).rejects.toThrow('Activity ID is required.');
+        expect(global.fetch).toHaveBeenCalledTimes(4);
     });
 });

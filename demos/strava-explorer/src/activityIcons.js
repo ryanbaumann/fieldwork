@@ -171,7 +171,7 @@ export function normalizeSportType(activity) {
     if (/ski/i.test(name)) return 'alpineski';
     if (/swim/i.test(name)) return 'swim';
 
-    const id = typeof activity === 'object' ? String(activity.id ?? '') : '';
+    const id = typeof activity === 'object' ? String(activity.id_str ?? activity.id ?? '') : '';
     if (id === 'demo-alpine-ride') return 'ride';
     if (id === 'demo-coastal-run') return 'run';
 

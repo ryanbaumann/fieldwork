@@ -4,6 +4,8 @@
 
 Strava announced a revised Developer Program on June 1, 2026. The parts that matter for this app are: Standard tier is self-service but limited to up to 10 athletes unless you qualify for higher capacity; Standard tier developers need a Strava subscription after the June 2026 transition; some club and segment endpoints are deprecated or restricted on September 1, 2026; and on June 1, 2027 Strava requires bearer tokens in request headers and moves the API base URL from `https://www.strava.com/api/v3` to the new `api-v3.strava.com` host. The current app already sends bearer tokens in headers and does not depend on club or segment-explore endpoints.
 
+After June 1, 2027, Strava returns 64-bit identifiers (`id` and `id_str`) for Activities and Athletes. The app uses `id_str` as the primary identifier for Activities and Athletes. The client and OAuth brokers parse raw JSON text to keep full 64-bit `id` precision.
+
 ### Recommended deployment model
 
 For sharing with many people, use a two-tier deployment:
@@ -77,4 +79,5 @@ Choose **App Engine** only if you prefer its operational model. It is simple, bu
 
 - Before September 1, 2026, verify the app still avoids the deprecated Club Activities, Club Administrators, Club Members, and restricted Explore Segments endpoints.
 - Before January 4, 2027 / June 1, 2027, test `VITE_STRAVA_API_BASE_URL` against Strava's new API host as it becomes available, then update production config without changing source code.
+- Verify that the client and OAuth brokers process 64-bit `id` and `id_str` fields before June 1, 2027.
 - Before scaling beyond 10 athletes, request or qualify for the appropriate Strava access tier in the API Settings Dashboard.

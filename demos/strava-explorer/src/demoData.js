@@ -50,6 +50,7 @@ for (let i = 0; i < 18; i++) {
 export const demoActivities = [
     {
         id: "demo-alpine-ride",
+        id_str: "demo-alpine-ride",
         name: "Alpine Ride 🚴",
         distance: currentDistAlpine,
         moving_time: 4200,
@@ -89,6 +90,7 @@ export const demoActivities = [
     },
     {
         id: "demo-coastal-run",
+        id_str: "demo-coastal-run",
         name: "Coastal Run 🏃",
         distance: currentDistCoastal,
         moving_time: 2100,

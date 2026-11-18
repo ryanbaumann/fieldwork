@@ -71,6 +71,30 @@ describe('server/broker.js (Strava API Handlers)', () => {
       tokenUrl: 'https://test.strava.com/oauth/token',
     })).rejects.toThrowError('Missing refresh token.');
   });
+
+  test('exchangeCode: preserves 64-bit athlete id and id_str without precision loss', async () => {
+    const rawWithIdStr = '{"access_token":"abc","refresh_token":"def","athlete":{"id":9007199254740993,"id_str":"9007199254740993","firstname":"Ryan"}}';
+    const rawWithoutIdStr = '{"access_token":"abc","refresh_token":"def","athlete":{"id":9007199254740993,"firstname":"Ryan"}}';
+
+    for (const rawBody of [rawWithIdStr, rawWithoutIdStr]) {
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(rawBody, { status: 200, headers: { 'Content-Type': 'application/json' } }),
+      );
+
+      const result = await exchangeCode({ code: 'test-code' }, {
+        clientId: '123',
+        clientSecret: 'secret',
+        fetch: mockFetch,
+        tokenUrl: 'https://test.strava.com/oauth/token',
+      });
+
+      expect(result.athlete.id_str).toBe('9007199254740993');
+      const serialized = JSON.stringify(result);
+      expect(serialized).toContain('"id":9007199254740993');
+      expect(serialized).not.toContain('9007199254740992');
+      expect(serialized).toContain('"id_str":"9007199254740993"');
+    }
+  });
 });
 
 describe('server/broker.js (Photo Proxy Rules)', () => {
