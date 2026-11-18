@@ -197,3 +197,221 @@ test('runSecurityAuditAndFix rolls back an override if package verification fail
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('runSecurityAuditAndFix rolls back no-op npm audit fix lockfile churn and honors active unpatched exceptions', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sec-deps-noop-excused-'));
+  try {
+    const demoDir = join(root, 'demos/demo-c');
+    mkdirSync(demoDir, { recursive: true });
+    mkdirSync(join(root, '.github'), { recursive: true });
+
+    const initialPkg = JSON.stringify({ name: 'demo-c', version: '1.0.0' }, null, 2) + '\n';
+    const initialLock = '{"lockfileVersion":3,"step":"clean"}\n';
+    writeFileSync(join(demoDir, 'package.json'), initialPkg);
+    writeFileSync(join(demoDir, 'package-lock.json'), initialLock);
+
+    const initialExceptions = JSON.stringify({
+      $comment: 'test exceptions',
+      exceptions: [
+        {
+          id: 'GHSA-fc5q-39xc-vjpf',
+          package: 'picomatch',
+          vulnerableRange: '<=4.0.7',
+          expires: '2099-01-01',
+          reason: 'Unpatched build-time transitive dependency.',
+        },
+      ],
+    }, null, 2) + '\n';
+    writeFileSync(join(root, '.github/audit-exceptions.json'), initialExceptions);
+
+    const picomatchAudit = JSON.stringify({
+      auditReportVersion: 2,
+      vulnerabilities: {
+        picomatch: {
+          name: 'picomatch',
+          severity: 'high',
+          via: [{
+            source: 1,
+            name: 'picomatch',
+            title: 'picomatch ReDoS',
+            url: 'https://github.com/advisories/GHSA-fc5q-39xc-vjpf',
+            severity: 'high',
+            range: '<=4.0.7',
+          }],
+        },
+        vite: {
+          name: 'vite',
+          severity: 'high',
+          via: ['picomatch'],
+        },
+      },
+      metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high: 2, critical: 0, total: 2 } },
+    });
+
+    const summary = runSecurityAuditAndFix({
+      repoRoot: root,
+      mode: 'fix',
+      githubOutput: null,
+      runner(_cmd, args, { cwd }) {
+        if (args[0] === 'audit' && args[1] === '--json') {
+          return { status: 1, stdout: picomatchAudit, stderr: '' };
+        }
+        if (args[0] === 'audit' && args[1] === 'fix') {
+          // Simulate npm audit fix rewriting lockfile metadata without fixing anything.
+          writeFileSync(join(cwd, 'package-lock.json'), '{"lockfileVersion":3,"step":"churned-metadata"}\n');
+          return { status: 0, stdout: '', stderr: '' };
+        }
+        if (args[0] === 'view' && args[1] === 'picomatch') {
+          return { status: 0, stdout: '"4.0.7"\n', stderr: '' };
+        }
+        return { status: 0, stdout: '', stderr: '' };
+      },
+    });
+
+    assert.equal(summary.changed, false);
+    assert.equal(summary.totalFixed, 0);
+    assert.equal(summary.unexcusedAfter, 0);
+    assert.equal(summary.excusedAfter, 2);
+    assert.deepEqual(summary.prunedExceptions, []);
+    assert.equal(readFileSync(join(demoDir, 'package-lock.json'), 'utf8'), initialLock);
+    assert.equal(readFileSync(join(root, '.github/audit-exceptions.json'), 'utf8'), initialExceptions);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runSecurityAuditAndFix upgrades lockfiles and prunes resolved exceptions in one pass when upstream ships a patch', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sec-deps-prune-on-fix-'));
+  try {
+    const demoDir = join(root, 'demos/demo-d');
+    mkdirSync(demoDir, { recursive: true });
+    mkdirSync(join(root, '.github'), { recursive: true });
+
+    writeFileSync(join(demoDir, 'package.json'), JSON.stringify({ name: 'demo-d', version: '1.0.0' }, null, 2) + '\n');
+    writeFileSync(join(demoDir, 'package-lock.json'), '{"lockfileVersion":3,"picomatch":"4.0.7"}\n');
+    writeFileSync(join(root, '.github/audit-exceptions.json'), JSON.stringify({
+      $comment: 'keep comment',
+      exceptions: [
+        {
+          id: 'GHSA-fc5q-39xc-vjpf',
+          package: 'picomatch',
+          vulnerableRange: '<=4.0.7',
+          expires: '2099-01-01',
+          reason: 'Unpatched build-time transitive dependency.',
+        },
+      ],
+    }, null, 2) + '\n');
+
+    let fixed = false;
+    const outputPath = join(root, 'gh-out.txt');
+    const summaryPath = join(root, 'summary.md');
+
+    const summary = runSecurityAuditAndFix({
+      repoRoot: root,
+      mode: 'fix',
+      summaryFile: summaryPath,
+      githubOutput: outputPath,
+      runner(_cmd, args, { cwd }) {
+        if (args[0] === 'audit' && args[1] === '--json') {
+          if (!fixed) {
+            return {
+              status: 1,
+              stdout: makeAuditJson({
+                picomatch: {
+                  name: 'picomatch',
+                  severity: 'high',
+                  via: [{
+                    source: 1,
+                    name: 'picomatch',
+                    title: 'picomatch ReDoS',
+                    url: 'https://github.com/advisories/GHSA-fc5q-39xc-vjpf',
+                    severity: 'high',
+                    range: '<=4.0.7',
+                  }],
+                },
+              }),
+              stderr: '',
+            };
+          }
+          return { status: 0, stdout: makeAuditJson({}), stderr: '' };
+        }
+        if (args[0] === 'audit' && args[1] === 'fix') {
+          fixed = true;
+          writeFileSync(join(cwd, 'package-lock.json'), '{"lockfileVersion":3,"picomatch":"4.0.8"}\n');
+          return { status: 0, stdout: '', stderr: '' };
+        }
+        return { status: 0, stdout: '', stderr: '' };
+      },
+    });
+
+    assert.equal(summary.changed, true);
+    assert.equal(summary.totalFixed, 1);
+    assert.equal(summary.totalAfter, 0);
+    assert.equal(summary.unexcusedAfter, 0);
+    assert.deepEqual(summary.prunedExceptions, ['GHSA-fc5q-39xc-vjpf']);
+
+    const updatedExceptions = JSON.parse(readFileSync(join(root, '.github/audit-exceptions.json'), 'utf8'));
+    assert.equal(updatedExceptions.$comment, 'keep comment');
+    assert.deepEqual(updatedExceptions.exceptions, []);
+    assert.match(readFileSync(summaryPath, 'utf8'), /GHSA-fc5q-39xc-vjpf/);
+    assert.match(readFileSync(outputPath, 'utf8'), /pruned_count=1/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runSecurityAuditAndFix prunes stale exceptions when lockfiles already have zero advisories, but never when an audit errors', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sec-deps-prune-stale-'));
+  try {
+    const demoDir = join(root, 'demos/demo-e');
+    mkdirSync(demoDir, { recursive: true });
+    mkdirSync(join(root, '.github'), { recursive: true });
+
+    writeFileSync(join(demoDir, 'package.json'), JSON.stringify({ name: 'demo-e', version: '1.0.0' }, null, 2) + '\n');
+    writeFileSync(join(demoDir, 'package-lock.json'), '{"lockfileVersion":3,"picomatch":"4.0.8"}\n');
+    const exceptionsFile = join(root, '.github/audit-exceptions.json');
+    const rawExceptions = JSON.stringify({
+      exceptions: [
+        {
+          id: 'GHSA-fc5q-39xc-vjpf',
+          package: 'picomatch',
+          vulnerableRange: '<=4.0.7',
+          expires: '2099-01-01',
+          reason: 'Already upgraded manually.',
+        },
+      ],
+    }, null, 2) + '\n';
+    writeFileSync(exceptionsFile, rawExceptions);
+
+    // 1. If audit throws on a target, do NOT prune exceptions.
+    const failedSummary = runSecurityAuditAndFix({
+      repoRoot: root,
+      mode: 'fix',
+      githubOutput: null,
+      runner() {
+        return { status: 1, stdout: 'not-json', stderr: 'network failure' };
+      },
+    });
+    assert.equal(failedSummary.errors.length, 1);
+    assert.deepEqual(failedSummary.prunedExceptions, []);
+    assert.equal(readFileSync(exceptionsFile, 'utf8'), rawExceptions);
+
+    // 2. When all targets audit cleanly with 0 matching advisories, prune stale exception.
+    const cleanSummary = runSecurityAuditAndFix({
+      repoRoot: root,
+      mode: 'fix',
+      githubOutput: null,
+      runner(_cmd, args) {
+        if (args[0] === 'audit' && args[1] === '--json') {
+          return { status: 0, stdout: makeAuditJson({}), stderr: '' };
+        }
+        return { status: 0, stdout: '', stderr: '' };
+      },
+    });
+    assert.equal(cleanSummary.changed, true);
+    assert.deepEqual(cleanSummary.prunedExceptions, ['GHSA-fc5q-39xc-vjpf']);
+    assert.deepEqual(JSON.parse(readFileSync(exceptionsFile, 'utf8')).exceptions, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

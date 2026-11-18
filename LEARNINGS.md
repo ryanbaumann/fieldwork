@@ -2,6 +2,19 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-18 - `npm audit fix` no-op lockfile churn, automatic audit-exception pruning, and `GITHUB_TOKEN` PR limits
+
+Context: Auditing `.github/workflows/security-updates.yml` and `scripts/auto-update-security-deps.mjs` after adding `.github/audit-exceptions.json` for `GHSA-fc5q-39xc-vjpf`.
+
+Learning:
+1. Running `npm audit fix` against an unpatched advisory (`fixed_count: 0`) can still rewrite `package-lock.json` metadata (`changed: true`), causing a scheduled security workflow to commit and push empty "remediate 0 advisory item(s)" branches. Always snapshot `package.json` and `package-lock.json` before `npm audit fix` and restore them unless `after.counts.total < before.counts.total` and `verifyTargetPackage` passes.
+2. Per-folder Dependabot PRs deadlock when a transitive advisory affects multiple workspace lockfiles and CI audits every workspace package on every PR. Having the monorepo-wide `auto-update-security-deps.mjs --fix` sweep upgrade all lockfile targets AND prune resolved entries from `.github/audit-exceptions.json` in one atomic PR avoids cross-package CI deadlocks and prevents stale exceptions from lingering.
+3. With repository Actions workflow permissions set to `read` and `can_approve_pull_request_reviews: false`, `GITHUB_TOKEN` fails `gh pr create` with `GitHub Actions is not permitted to create or approve pull requests` (and even if permitted, `GITHUB_TOKEN`-created PRs do not trigger `pull_request` CI workflows required for auto-merge). Scheduled PR-opening workflows require a fine-grained PAT secret (`SECURITY_UPDATES_TOKEN`) with `Contents: Read and write` and `Pull requests: Read and write`.
+
+Evidence: Workflow run `security-updates.yml` (`2026-11-17T18:39:20Z`) committed `-90` lines across 3 lockfiles with `FIXED_COUNT=0` and failed `createPullRequest`; unit tests in `scripts/test/auto-update-security-deps.test.mjs` and live `--check` / `--fix` runs verified `changed: false` (`unexcusedAfter: 0`) while `picomatch` remains unpatched and atomic pruning once resolved.
+
+Use next time: Roll back `npm audit fix` edits whenever vulnerability counts do not decrease, pair monorepo-wide advisory remediation with automatic `.github/audit-exceptions.json` pruning, and wire scheduled PR workflows to a repo-scoped fine-grained PAT secret so CI status checks trigger automatically.
+
 ## 2026-11-17 - Strava 64-bit IDs, IEEE-754 coercion in `==` guards, and lossless `JSON.parse` `context.source` + `JSON.rawJSON`
 
 Context: Updating `demos/strava-explorer` and `gateway/lib/strava.js` ahead of Strava's June 1, 2027 transition to 64-bit integer Activity and Athlete identifiers (`id` alongside string `id_str`).

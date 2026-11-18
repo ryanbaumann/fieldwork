@@ -13,11 +13,17 @@ import { appendFileSync, existsSync, readdirSync, readFileSync, writeFileSync } 
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  evaluateAudit,
+  ghsaIdFromUrl,
+  isVersionInUpperBoundRange,
+  validateExceptions,
+} from './ci-audit.mjs';
 import { ensureNpmInEnv } from './lib/npm-bin.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
-const SAFE_PKG_NAME = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+const SAFE_PKG_NAME = /^(?:@[a-z0-9~][a-z0-9-._~]*\/)?[a-z0-9~][a-z0-9-._~]*$/;
 const SAFE_SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 
 export function discoverLockfileTargets(repoRoot = REPO_ROOT) {
@@ -45,7 +51,7 @@ export function parseAuditReport(rawStdout) {
     throw new Error('Empty output from npm audit --json');
   }
   const parsed = JSON.parse(rawStdout);
-  if (!parsed || typeof parsed !== 'object' || (!parsed.metadata && !parsed.vulnerabilities)) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || (!parsed.metadata && !parsed.vulnerabilities)) {
     throw new Error(parsed?.error?.summary || 'Unexpected JSON format from npm audit');
   }
   const rawCounts = parsed.metadata?.vulnerabilities || {};
@@ -60,7 +66,11 @@ export function parseAuditReport(rawStdout) {
     ? Number(rawCounts.total)
     : counts.info + counts.low + counts.moderate + counts.high + counts.critical;
 
-  const packages = Object.entries(parsed.vulnerabilities || {})
+  const vulnerabilities = parsed.vulnerabilities && typeof parsed.vulnerabilities === 'object' && !Array.isArray(parsed.vulnerabilities)
+    ? parsed.vulnerabilities
+    : {};
+
+  const packages = Object.entries(vulnerabilities)
     .map(([name, info]) => {
       const viaList = Array.isArray(info?.via) ? info.via : [];
       const advisories = viaList
@@ -83,7 +93,7 @@ export function parseAuditReport(rawStdout) {
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return { counts, packages };
+  return { counts, packages, rawReport: { vulnerabilities } };
 }
 
 function defaultRunner(command, args, { cwd, env }) {
@@ -144,6 +154,7 @@ export function formatSecuritySummaryMarkdown(summary) {
     `- **Vulnerabilities before**: ${summary.totalBefore}`,
     `- **Vulnerabilities fixed**: ${summary.totalFixed}`,
     `- **Vulnerabilities remaining**: ${summary.totalAfter}`,
+    `- **Excused (unpatched) / unexcused**: ${summary.excusedAfter ?? 0} excused, ${summary.unexcusedAfter ?? summary.totalAfter} unexcused`,
     '',
     '| Package | Before | After | Overrides Applied | Changed |',
     '| :--- | :---: | :---: | :--- | :---: |',
@@ -151,6 +162,14 @@ export function formatSecuritySummaryMarkdown(summary) {
   for (const item of summary.targets) {
     const overrides = item.overridesApplied.length > 0 ? item.overridesApplied.map((v) => `\`${v}\``).join(', ') : '—';
     lines.push(`| \`${item.target}\` | ${item.before.counts.total} | ${item.after.counts.total} | ${overrides} | ${item.changed ? 'Yes' : 'No'} |`);
+  }
+  if (Array.isArray(summary.prunedExceptions) && summary.prunedExceptions.length > 0) {
+    lines.push(
+      '',
+      '### Pruned Resolved Audit Exceptions',
+      '',
+      ...summary.prunedExceptions.map((id) => `- \`${id}\` (no matching lockfile advisories remain)`),
+    );
   }
   const remainingItems = summary.targets.flatMap((t) =>
     t.after.packages.flatMap((p) =>
@@ -172,6 +191,7 @@ export function runSecurityAuditAndFix({
   githubOutput = process.env.GITHUB_OUTPUT || null,
   baseEnv = process.env,
   runner = defaultRunner,
+  now = Date.now(),
 } = {}) {
   if (mode !== 'check' && mode !== 'fix') {
     throw new Error(`Unsupported mode: ${mode}`);
@@ -183,6 +203,14 @@ export function runSecurityAuditAndFix({
   const targets = discoverLockfileTargets(repoRoot);
   const results = [];
   const errors = [];
+  const latestVersionCache = Object.create(null);
+
+  const getCachedLatestVersion = (pkgName, cwd) => {
+    if (Object.hasOwn(latestVersionCache, pkgName)) return latestVersionCache[pkgName];
+    const version = queryLatestVersion(pkgName, cwd, registry, childEnv, runner);
+    latestVersionCache[pkgName] = version;
+    return version;
+  };
 
   for (const relTarget of targets) {
     const absTarget = resolve(repoRoot, relTarget);
@@ -201,16 +229,32 @@ export function runSecurityAuditAndFix({
           cwd: absTarget,
           env: childEnv,
         });
-        after = runAudit(absTarget, registry, childEnv, runner);
+        const auditFixCandidate = runAudit(absTarget, registry, childEnv, runner);
+        if (
+          auditFixCandidate.counts.total < before.counts.total
+          && verifyTargetPackage(absTarget, childEnv, runner)
+        ) {
+          after = auditFixCandidate;
+        } else {
+          // Discard no-op lockfile churn or unverified edits.
+          writeFileSync(pkgJsonPath, initialPkgJson);
+          writeFileSync(lockPath, initialLock);
+        }
 
         if (after.counts.total > 0) {
           const directAdvisoryPackages = after.packages.filter((pkg) => pkg.advisories.length > 0);
           for (const vulnPkg of directAdvisoryPackages) {
+            const latestVersion = getCachedLatestVersion(vulnPkg.name, absTarget);
+            if (!latestVersion) continue;
+            if (
+              vulnPkg.advisories.length > 0
+              && vulnPkg.advisories.every((adv) => isVersionInUpperBoundRange(latestVersion, adv.range))
+            ) {
+              continue;
+            }
+
             const snapPkg = readFileSync(pkgJsonPath, 'utf8');
             const snapLock = readFileSync(lockPath, 'utf8');
-            const latestVersion = queryLatestVersion(vulnPkg.name, absTarget, registry, childEnv, runner);
-            if (!latestVersion) continue;
-
             const parsedPkg = JSON.parse(snapPkg);
             const nextRange = `^${latestVersion}`;
             if (parsedPkg.overrides?.[vulnPkg.name] === nextRange) continue;
@@ -241,6 +285,13 @@ export function runSecurityAuditAndFix({
             }
           }
         }
+
+        if (after.counts.total >= before.counts.total) {
+          writeFileSync(pkgJsonPath, initialPkgJson);
+          writeFileSync(lockPath, initialLock);
+          after = before;
+          overridesApplied.length = 0;
+        }
       }
 
       const finalPkgJson = readFileSync(pkgJsonPath, 'utf8');
@@ -262,10 +313,78 @@ export function runSecurityAuditAndFix({
     }
   }
 
+  const exceptionsPath = join(repoRoot, '.github', 'audit-exceptions.json');
+  let rawExceptionsDoc = null;
+  let activeExceptions = [];
+  const prunedExceptions = [];
+  let exceptionsChanged = false;
+
+  if (existsSync(exceptionsPath)) {
+    try {
+      rawExceptionsDoc = JSON.parse(readFileSync(exceptionsPath, 'utf8'));
+      activeExceptions = validateExceptions(rawExceptionsDoc);
+    } catch (error) {
+      errors.push({ target: '.github/audit-exceptions.json', message: error.message });
+    }
+  }
+
+  if (mode === 'fix' && rawExceptionsDoc && errors.length === 0 && results.length > 0 && activeExceptions.length > 0) {
+    const matchesAnyRemainingTarget = (exception) => results.some((item) =>
+      item.after.packages.some((pkg) =>
+        pkg.advisories.some((adv) =>
+          ghsaIdFromUrl(adv.url) === exception.id
+          && adv.name === exception.package
+          && String(adv.range || '').trim() === exception.vulnerableRange,
+        ),
+      ),
+    );
+
+    const keptIds = new Set();
+    for (const exception of activeExceptions) {
+      if (matchesAnyRemainingTarget(exception)) {
+        keptIds.add(exception.id);
+      } else {
+        prunedExceptions.push(exception.id);
+      }
+    }
+
+    if (prunedExceptions.length > 0) {
+      const updatedDoc = {
+        ...rawExceptionsDoc,
+        exceptions: rawExceptionsDoc.exceptions.filter((entry) => keptIds.has(entry.id)),
+      };
+      writeFileSync(exceptionsPath, `${JSON.stringify(updatedDoc, null, 2)}\n`);
+      activeExceptions = validateExceptions(updatedDoc);
+      exceptionsChanged = true;
+    }
+  }
+
+  const latestVersions = Object.create(null);
+  for (const exception of activeExceptions) {
+    const appearsInRepo = results.some((item) => Object.hasOwn(item.after.rawReport.vulnerabilities, exception.package));
+    if (!appearsInRepo || latestVersions[exception.package]) continue;
+    const version = getCachedLatestVersion(exception.package, repoRoot);
+    if (version) latestVersions[exception.package] = version;
+  }
+
+  let excusedAfter = 0;
+  let unexcusedAfter = 0;
+  for (const item of results) {
+    const evaluated = evaluateAudit(item.after.rawReport, activeExceptions, {
+      now,
+      latestVersions,
+      auditLevel: 'info',
+    });
+    item.excusedCount = evaluated.excused.length;
+    item.unexcusedCount = evaluated.blocking.length;
+    excusedAfter += item.excusedCount;
+    unexcusedAfter += item.unexcusedCount;
+  }
+
   const totalBefore = results.reduce((sum, item) => sum + item.before.counts.total, 0);
   const totalAfter = results.reduce((sum, item) => sum + item.after.counts.total, 0);
   const totalFixed = results.reduce((sum, item) => sum + item.fixedCount, 0);
-  const changed = results.some((item) => item.changed);
+  const changed = results.some((item) => item.changed) || exceptionsChanged;
 
   const summary = {
     mode,
@@ -273,6 +392,9 @@ export function runSecurityAuditAndFix({
     totalBefore,
     totalAfter,
     totalFixed,
+    excusedAfter,
+    unexcusedAfter,
+    prunedExceptions,
     targets: results,
     errors,
   };
@@ -283,7 +405,7 @@ export function runSecurityAuditAndFix({
   if (githubOutput) {
     appendFileSync(
       githubOutput,
-      `changed=${changed}\nfixed_count=${totalFixed}\nremaining_count=${totalAfter}\n`,
+      `changed=${changed}\nfixed_count=${totalFixed}\npruned_count=${prunedExceptions.length}\nremaining_count=${totalAfter}\nunexcused_count=${unexcusedAfter}\n`,
     );
   }
 
@@ -318,10 +440,15 @@ function main() {
     totalBefore: summary.totalBefore,
     totalFixed: summary.totalFixed,
     totalAfter: summary.totalAfter,
+    excusedAfter: summary.excusedAfter,
+    unexcusedAfter: summary.unexcusedAfter,
+    prunedExceptions: summary.prunedExceptions,
     targets: summary.targets.map((t) => ({
       target: t.target,
       before: t.before.counts.total,
       after: t.after.counts.total,
+      excused: t.excusedCount,
+      unexcused: t.unexcusedCount,
       changed: t.changed,
       overridesApplied: t.overridesApplied,
     })),
@@ -331,10 +458,10 @@ function main() {
   if (summary.errors.length > 0) {
     process.exit(1);
   }
-  if (mode === 'check' && summary.totalAfter > 0) {
+  if (mode === 'check' && summary.unexcusedAfter > 0) {
     process.exit(1);
   }
-  if (mode === 'fix' && summary.totalBefore > 0 && !summary.changed && summary.totalAfter > 0) {
+  if (mode === 'fix' && summary.unexcusedAfter > 0 && !summary.changed) {
     process.exit(1);
   }
 }
