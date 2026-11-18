@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Daily security job no-op rollback, automatic audit-exception pruning, and PAT guidance (`scripts/auto-update-security-deps.mjs`, `scripts/test/auto-update-security-deps.test.mjs`, `.github/workflows/security-updates.yml`)**:
+  - Updated `scripts/auto-update-security-deps.mjs` to roll back `npm audit fix` lockfile metadata churn whenever zero vulnerabilities are resolved or package verification fails, honor active unpatched exceptions from `.github/audit-exceptions.json` when computing `excusedAfter` / `unexcusedAfter` exit codes, and automatically prune `.github/audit-exceptions.json` entries in `--fix` mode once no lockfile target matches them.
+  - Updated `.github/workflows/security-updates.yml` to run `scripts/ci-audit.mjs` on modified packages during pre-PR verification, format commit messages for pruned exceptions, emit an explicit `SECURITY_UPDATES_TOKEN` error when `gh pr create` lacks PAT permissions, and deleted the stale `origin/chore/auto-security-updates` no-op branch.
+
 - **Strava 64-bit Activity & Athlete identifier (`id_str` / `id`) migration (`demos/strava-explorer/`, `gateway/lib/strava.js`, `gateway/test/strava.test.js`)**:
   - Added lossless `parseStravaJson` parsing (`JSON.parse` reviver `context.source`) in `demos/strava-explorer/src/strava.js`, `demos/strava-explorer/server/broker.js`, and `gateway/lib/strava.js`, using `JSON.rawJSON` in both OAuth token brokers so unsafe 64-bit `id` integers serialize intact alongside populated `id_str` strings.
   - Added `normalizeEntityId` / `getActivityId` / `getAthleteId` helpers preferring `id_str` in `demos/strava-explorer/src/strava.js`, URL-encoded `/activities/:id` API calls, normalized legacy `localStorage` integer `athlete.id` entries, and preserved `athlete.id_str` across token refreshes.
