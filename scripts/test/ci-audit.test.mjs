@@ -95,16 +95,39 @@ test('ghsaIdFromUrl extracts IDs only from advisory URLs', () => {
   assert.equal(ghsaIdFromUrl('https://example.com/GHSA-fc5q-39xc-vjpf'), null);
 });
 
+test('cycles, empty via lists, missing URLs, and unknown severities never get excused', () => {
+  const report = {
+    vulnerabilities: {
+      a: { severity: 'high', via: ['b'] },
+      b: { severity: 'high', via: ['a'] },
+      empty: { severity: 'moderate', via: [] },
+      nourl: { severity: 'high', via: [{ name: 'picomatch', range: '<=4.0.7' }] },
+      weird: { severity: 'severe', via: [{ name: 'weird', url: 'https://github.com/advisories/GHSA-wwww-wwww-wwww', range: '*' }] },
+      spoofed: { severity: 'high', via: [{ name: 'picomatch', url: 'https://evil.example/advisories/GHSA-fc5q-39xc-vjpf', range: '<=4.0.7' }] },
+    },
+  };
+  const result = evaluateAudit(report, [PICOMATCH_EXCEPTION], { now: NOW, latestVersions: { picomatch: '4.0.7' } });
+  assert.deepEqual(result.blocking.map((item) => item.name).sort(), ['a', 'b', 'empty', 'nourl', 'spoofed', 'weird']);
+  assert.deepEqual(result.excused, []);
+});
+
+test('malformed or error audit reports fail closed', () => {
+  assert.throws(() => evaluateAudit([], []), /Unexpected/);
+  assert.throws(() => evaluateAudit({ vulnerabilities: [] }, []), /Unexpected/);
+  assert.throws(() => evaluateAudit({ error: { summary: 'registry down' }, vulnerabilities: {} }, []), /registry down/);
+});
+
 test('validateExceptions rejects malformed entries and accepts the committed file', () => {
   assert.throws(() => validateExceptions({}), /exceptions/);
   assert.throws(() => validateExceptions({ exceptions: [{ ...PICOMATCH_EXCEPTION, vulnerableRange: '*' }] }), /vulnerableRange/);
   assert.throws(() => validateExceptions({ exceptions: [{ ...PICOMATCH_EXCEPTION, expires: 'soon' }] }), /expires/);
   assert.throws(() => validateExceptions({ exceptions: [{ ...PICOMATCH_EXCEPTION, reason: 'ok' }] }), /reason/);
+  assert.throws(() => validateExceptions({ exceptions: [{ ...PICOMATCH_EXCEPTION, package: '--version' }] }), /package/);
 
   const committed = JSON.parse(readFileSync(new URL('../../.github/audit-exceptions.json', import.meta.url), 'utf8'));
   const validated = validateExceptions(committed);
   for (const entry of validated) {
-    const days = (Date.parse(`${entry.expires}T00:00:00Z`) - NOW) / 86_400_000;
+    const days = (Date.parse(`${entry.expires}T00:00:00Z`) - Date.now()) / 86_400_000;
     assert.ok(days <= 120, `${entry.id} expires more than 120 days out; re-review instead of extending silently`);
   }
 });

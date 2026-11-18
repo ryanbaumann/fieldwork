@@ -27,7 +27,7 @@ const DEFAULT_EXCEPTIONS_PATH = join(REPO_ROOT, '.github', 'audit-exceptions.jso
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 const SEVERITY_RANK = { info: 0, low: 1, moderate: 2, high: 3, critical: 4 };
 const GHSA_ID = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/;
-const SAFE_PKG_NAME = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+const SAFE_PKG_NAME = /^(?:@[a-z0-9~][a-z0-9-._~]*\/)?[a-z0-9~][a-z0-9-._~]*$/;
 const UPPER_BOUND_RANGE = /^(<=?)\s*(\d+)\.(\d+)\.(\d+)$/;
 const RELEASE_VERSION = /^(\d+)\.(\d+)\.(\d+)$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -72,7 +72,7 @@ export function isVersionInUpperBoundRange(version, range) {
 }
 
 export function ghsaIdFromUrl(url) {
-  const match = /\/advisories\/(GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})\b/.exec(String(url || ''));
+  const match = /^https:\/\/github\.com\/advisories\/(GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})(?:$|[/?#])/.exec(String(url || ''));
   return match ? match[1] : null;
 }
 
@@ -89,7 +89,8 @@ function exceptionStatus(exception, { now, latestVersions }) {
  * @returns {{ blocking: Array, excused: Array, inactiveExceptions: Array }}
  */
 export function evaluateAudit(report, exceptions, { now = Date.now(), latestVersions = {}, auditLevel = 'moderate' } = {}) {
-  if (!report || typeof report !== 'object' || typeof report.vulnerabilities !== 'object' || report.vulnerabilities === null) {
+  if (!report || typeof report !== 'object' || Array.isArray(report) || report.error
+    || typeof report.vulnerabilities !== 'object' || report.vulnerabilities === null || Array.isArray(report.vulnerabilities)) {
     throw new Error(report?.error?.summary || 'Unexpected npm audit JSON format');
   }
   const threshold = SEVERITY_RANK[auditLevel];
@@ -160,7 +161,15 @@ function parseArgs(argv) {
     else if (flag === '--registry') options.registry = value();
     else throw new Error(`Unknown argument: ${argv[i]}`);
   }
-  if (!/^https:\/\//.test(options.registry)) throw new Error('--registry must be an https URL');
+  let registryUrl;
+  try {
+    registryUrl = new URL(options.registry);
+  } catch {
+    throw new Error('--registry must be a valid https URL');
+  }
+  if (registryUrl.protocol !== 'https:' || !registryUrl.hostname || registryUrl.username || registryUrl.password) {
+    throw new Error('--registry must be an https URL without credentials');
+  }
   return options;
 }
 
