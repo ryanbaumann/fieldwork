@@ -2,6 +2,19 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-17 - Strava 64-bit IDs, IEEE-754 coercion in `==` guards, and lossless `JSON.parse` `context.source` + `JSON.rawJSON`
+
+Context: Updating `demos/strava-explorer` and `gateway/lib/strava.js` ahead of Strava's June 1, 2027 transition to 64-bit integer Activity and Athlete identifiers (`id` alongside string `id_str`).
+
+Learning:
+1. JavaScript `JSON.parse()` rounds integers above `Number.MAX_SAFE_INTEGER` (`9007199254740991`) to 53-bit IEEE-754 doubles (for example, `9007199254740993` becomes `9007199254740992`). If a Node OAuth broker parses Strava's `/oauth/token` response with `await response.json()` and re-emits it with `JSON.stringify(data)`, it silently corrupts `athlete.id` on the wire before the browser sees it.
+2. Node 22+ / modern V8 supports ES2025 `JSON.parse(rawText, function (key, value, context) { ... })` and `JSON.rawJSON(exact)`. Using a regular `function` reviver (not an arrow function, so `this` binds to the holder object) lets both client and server recover the raw integer token `context.source` into `this.id_str`, and returning `JSON.rawJSON(exact)` on the server preserves exact 64-bit integer literals when `JSON.stringify()` re-serializes the payload.
+3. Stale-response checks using loose equality (`activityData.id != currentActivityId` or `option.value == urlState.activityId`) coerce string IDs (`"9007199254740993"`) to IEEE-754 numbers, making distinct adjacent 64-bit IDs (`9007199254740993` and `9007199254740992`) compare equal (`true`). Normalizing every ID via `id_str ?? id` into a canonical string and enforcing strict `===` / `!==` prevents both URL routing errors and silent race-condition collisions.
+
+Evidence: Unit tests in `demos/strava-explorer/test/client.test.js`, `demos/strava-explorer/test/broker.test.js`, and `gateway/test/strava.test.js` verified lossless round-tripping for `9007199254740993`, `9223372036854775807`, and `18446744073709551615`, rejection of traversal values in `urlState.js`, and preservation of `athlete.id_str` across OAuth token exchanges and refreshes.
+
+Use next time: Never pass third-party 64-bit JSON payloads through plain `response.json()` -> `JSON.stringify()` proxies or compare external string/numeric IDs with `==`/`!=`; parse raw text with a `function` reviver reading `context.source` (and `JSON.rawJSON` when re-serializing) and normalize entity IDs to `id_str` strings at module boundaries.
+
 ## 2026-11-17 - `npm audit` has no ignore list, and an advisory with no patch blocks every PR
 
 Context: GitHub updated `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS, `<=4.0.7`) on 2026-11-17. picomatch 4.0.7 is the latest npm release, so `first_patched_version` is `null`. The `npm audit --audit-level=moderate` step in `.github/workflows/ci.yml` then failed in all 7 demo packages and blocked unrelated PRs (for example #379).

@@ -22,6 +22,39 @@ export function isAllowedPhotoUrl(rawUrl, hosts = allowedPhotoHosts) {
   }
 }
 
+export function parseStravaJson(rawText) {
+  return JSON.parse(rawText, function reviver(key, value, context) {
+    if (key === 'id' && typeof value === 'number' && Number.isFinite(value)) {
+      const exact = typeof context?.source === 'string' && /^-?\d+$/.test(context.source)
+        ? context.source
+        : String(value);
+      if (this && typeof this === 'object' && !Array.isArray(this)
+        && (typeof this.id_str !== 'string' || this.id_str.trim() === '')) {
+        this.id_str = exact;
+      }
+      if (!Number.isSafeInteger(value) && typeof JSON.rawJSON === 'function' && /^-?\d+$/.test(exact)) {
+        return JSON.rawJSON(exact);
+      }
+    }
+    return value;
+  });
+}
+
+async function readStravaResponseJson(response) {
+  try {
+    if (typeof response.text === 'function') {
+      const rawText = await response.text();
+      return rawText ? (parseStravaJson(rawText) ?? {}) : {};
+    }
+    if (typeof response.json === 'function') {
+      return (await response.json()) ?? {};
+    }
+  } catch {
+    return {};
+  }
+  return {};
+}
+
 async function postForm(url, params, token, { fetch }) {
   const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -41,7 +74,7 @@ async function postForm(url, params, token, { fetch }) {
     throw error;
   }
 
-  const data = await response.json().catch(() => ({}));
+  const data = await readStravaResponseJson(response);
   if (!response.ok) {
     console.error(`Strava request failed: ${response.status} ${response.statusText}`, data);
     const error = new Error('Strava request failed.');

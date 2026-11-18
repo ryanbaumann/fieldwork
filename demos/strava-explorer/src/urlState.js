@@ -1,6 +1,22 @@
 // strava-explorer/src/urlState.js
 
 /**
+ * Validate and normalize an activity_id query parameter as a canonical string.
+ * Preserves 64-bit unsigned decimal IDs and bundled demo-* IDs; rejects invalid input.
+ * @param {unknown} value
+ * @returns {string|null}
+ */
+export function normalizeActivityIdParam(value) {
+    if (value === null || value === undefined) return null;
+    const candidate = typeof value === 'object'
+        ? (typeof value.id_str === 'string' && value.id_str.trim() !== '' ? value.id_str : value.id)
+        : value;
+    if (candidate === null || candidate === undefined) return null;
+    const trimmed = String(candidate).trim();
+    return /^(?:\d{1,20}|demo-[A-Za-z0-9_-]+)$/.test(trimmed) ? trimmed : null;
+}
+
+/**
  * Pure function to read URL state from a query string.
  * @param {string} searchQueryString - e.g. "?start_date=2026-01-01&activity_id=123"
  * @returns {object} Parsed URL state
@@ -16,7 +32,7 @@ export function readUrlState(searchQueryString) {
         startDate: params.get('start_date'),
         endDate: params.get('end_date'),
         count: parseNum(params.get('count'), parseInt),
-        activityId: params.get('activity_id'),
+        activityId: normalizeActivityIdParam(params.get('activity_id')),
         cameraHeight: parseNum(params.get('camera_height'), parseInt),
         cameraRange: parseNum(params.get('camera_range'), parseInt),
         cameraTilt: parseNum(params.get('camera_tilt'), parseInt),
@@ -47,7 +63,7 @@ export function buildUrlParams(state, currentSearchString = '') {
     setOrDelete('start_date', state.startDate);
     setOrDelete('end_date', state.endDate);
     setOrDelete('count', state.count);
-    setOrDelete('activity_id', state.activityId);
+    setOrDelete('activity_id', normalizeActivityIdParam(state.activityId));
     setOrDelete('camera_height', state.cameraHeight);
     setOrDelete('camera_range', state.cameraRange);
     setOrDelete('camera_tilt', state.cameraTilt);

@@ -680,8 +680,9 @@ function renderActivityDropdown() {
     // Helpers for demo data lacking standard properties
     const getActivityDate = (activity) => {
         if (activity.start_date) return new Date(activity.start_date);
-        if (activity.id === 'demo-alpine-ride') return new Date('2026-07-03T10:00:00Z');
-        if (activity.id === 'demo-coastal-run') return new Date('2026-07-02T08:00:00Z');
+        const activityId = strava.getActivityId(activity);
+        if (activityId === 'demo-alpine-ride') return new Date('2026-07-03T10:00:00Z');
+        if (activityId === 'demo-coastal-run') return new Date('2026-07-02T08:00:00Z');
         return new Date();
     };
 
@@ -746,8 +747,10 @@ function renderActivityDropdown() {
         optgroup.label = groupName;
 
         groups[groupName].forEach(activity => {
+            const activityId = strava.getActivityId(activity);
+            if (!activityId) return;
             const option = document.createElement('option');
-            option.value = activity.id;
+            option.value = activityId;
             
             // Format labels with Emojis & Dynamic formats (D4)
             const emoji = sportEmoji(activity);
@@ -763,7 +766,7 @@ function renderActivityDropdown() {
 
             option.textContent = `${emoji} ${cleanName} - ${dateStr} - ${distStr} (${elevStr})`;
             
-            if (activity.id.toString() === prevSelectedId?.toString()) {
+            if (activityId === prevSelectedId) {
                 option.selected = true;
             }
             optgroup.appendChild(option);
@@ -1214,7 +1217,7 @@ function handleActivitiesResponse(activities) {
 
     if (urlState.activityId) {
         for (let i = 0; i < selectList.options.length; i++) {
-            if (selectList.options[i].value == urlState.activityId) {
+            if (selectList.options[i].value === urlState.activityId) {
                 selectList.selectedIndex = i;
                 handleActivitySelectionChange({ target: selectList });
                 foundUrlActivity = true;
@@ -1302,11 +1305,12 @@ function clearActivityDisplay() {
     toggleTheaterMode(false);
 }
 
-async function fetchAndDisplayDetailedActivity(activityId) {
+async function fetchAndDisplayDetailedActivity(rawActivityId) {
+    const activityId = strava.getActivityId(rawActivityId);
     if (demoMode || (typeof activityId === 'string' && activityId.startsWith('demo-'))) {
         gmp.stopDefaultOrbit();
         demoMode = true;
-        const demoActivity = demoActivities.find(a => a.id === activityId);
+        const demoActivity = demoActivities.find(a => strava.getActivityId(a) === activityId);
         if (demoActivity) {
             currentActivityId = activityId;
             updateUrlState();
@@ -1349,7 +1353,8 @@ async function fetchAndDisplayDetailedActivity(activityId) {
 
 async function displayDetailedActivity(activityData, streams) {
     const { altitudeStream, latlngStream } = streams || {};
-    debug(`[displayDetailedActivity] Called for activity ID: ${activityData?.id}`);
+    const resolvedActivityId = strava.getActivityId(activityData);
+    debug(`[displayDetailedActivity] Called for activity ID: ${resolvedActivityId}`);
     
     if (!activityData?.map?.polyline) {
         showError("Detailed activity data is missing map polyline.");
@@ -1357,8 +1362,8 @@ async function displayDetailedActivity(activityData, streams) {
         return;
     }
     
-    if (activityData.id != currentActivityId) {
-        warn(`[displayDetailedActivity] Stale data received for ${activityData.id}, expected ${currentActivityId}. Ignoring.`);
+    if (!resolvedActivityId || resolvedActivityId !== currentActivityId) {
+        warn(`[displayDetailedActivity] Stale data received for ${resolvedActivityId}, expected ${currentActivityId}. Ignoring.`);
         return;
     }
 
@@ -1444,11 +1449,11 @@ async function displayDetailedActivity(activityData, streams) {
         const token = await strava.ensureValidToken();
         if (token) {
             try {
-                const photosData = await strava.fetchPhotoData(activityData.id, token);
-                if (activityData.id == currentActivityId) {
+                const photosData = await strava.fetchPhotoData(resolvedActivityId, token);
+                if (resolvedActivityId === currentActivityId) {
                      await gmp.displayPhotoMarkers(photosData);
                 } else {
-                     warn(`[displayDetailedActivity] Stale photo data received for ${activityData.id}, expected ${currentActivityId}. Ignoring.`);
+                     warn(`[displayDetailedActivity] Stale photo data received for ${resolvedActivityId}, expected ${currentActivityId}. Ignoring.`);
                 }
             } catch (photoError) {
                 error("Failed to fetch or display photos:", photoError);

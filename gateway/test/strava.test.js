@@ -97,3 +97,42 @@ test('handleStravaApi returns 400 for unsupported photo URL', async () => {
   assert.equal(result.statusCode, 400);
   assert.equal(result.json.error, 'Invalid or unsupported photo URL.');
 });
+
+test('handleStravaApi /api/strava/token preserves 64-bit athlete id and id_str without precision loss', async () => {
+  const rawWithIdStr = '{"access_token":"abc","refresh_token":"def","athlete":{"id":9007199254740993,"id_str":"9007199254740993","firstname":"Ryan"}}';
+  const rawWithoutIdStr = '{"access_token":"abc","refresh_token":"def","athlete":{"id":9007199254740993,"firstname":"Ryan"}}';
+
+  for (const rawBody of [rawWithIdStr, rawWithoutIdStr]) {
+    const fetch = async () => new Response(rawBody, {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const result = await handleStravaApi(
+      { pathname: '/api/strava/token', method: 'POST', body: { code: 'abc123' } },
+      { fetch, env: { STRAVA_CLIENT_ID: '123', STRAVA_CLIENT_SECRET: 'secret' } },
+    );
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.json.athlete.id_str, '9007199254740993');
+    const serialized = JSON.stringify(result.json);
+    assert.match(serialized, /"id":9007199254740993/);
+    assert.doesNotMatch(serialized, /9007199254740992/);
+    assert.match(serialized, /"id_str":"9007199254740993"/);
+  }
+});
+
+test('handleStravaApi /api/strava/token stays compatible with synthetic response.json() mocks', async () => {
+  const fetch = async () => ({
+    ok: true,
+    json: async () => ({ access_token: 'abc', athlete: { id: 12345, id_str: '12345' } }),
+  });
+
+  const result = await handleStravaApi(
+    { pathname: '/api/strava/token', method: 'POST', body: { code: 'abc123' } },
+    { fetch, env: { STRAVA_CLIENT_ID: '123', STRAVA_CLIENT_SECRET: 'secret' } },
+  );
+
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.json.athlete.id_str, '12345');
+});
