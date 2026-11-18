@@ -33,6 +33,90 @@ export function setHelpers(helpers) {
     showError = helpers.showError;
 }
 
+// --- Strava 64-bit Identifier & JSON Helpers ---
+
+export function normalizeEntityId(entity) {
+    if (entity === null || entity === undefined) return null;
+    if (typeof entity === 'string') {
+        const trimmed = entity.trim();
+        return trimmed !== '' ? trimmed : null;
+    }
+    if (typeof entity === 'bigint') {
+        return entity.toString();
+    }
+    if (typeof entity === 'number') {
+        return Number.isFinite(entity) ? String(entity) : null;
+    }
+    if (typeof entity === 'object') {
+        if (typeof entity.id_str === 'string' && entity.id_str.trim() !== '') {
+            return entity.id_str.trim();
+        }
+        if (entity.id !== undefined && entity.id !== null && typeof entity.id !== 'object') {
+            return normalizeEntityId(entity.id);
+        }
+    }
+    return null;
+}
+
+export const getActivityId = normalizeEntityId;
+export const getAthleteId = normalizeEntityId;
+
+function resolveSafeActivityId(activityId) {
+    const resolved = getActivityId(activityId);
+    return resolved && /^[A-Za-z0-9_-]+$/.test(resolved) ? resolved : null;
+}
+
+export function parseStravaJson(rawText) {
+    return JSON.parse(rawText, function reviver(key, value, context) {
+        if (key === 'id' && typeof value === 'number' && Number.isFinite(value)) {
+            const exact = typeof context?.source === 'string' && /^-?\d+$/.test(context.source)
+                ? context.source
+                : String(value);
+            if (this && typeof this === 'object' && !Array.isArray(this)
+                && (typeof this.id_str !== 'string' || this.id_str.trim() === '')) {
+                this.id_str = exact;
+            }
+        }
+        return value;
+    });
+}
+
+function normalizeAthlete(athlete) {
+    if (!athlete || typeof athlete !== 'object') return athlete;
+    const idStr = getAthleteId(athlete);
+    if (!idStr) return athlete;
+    return athlete.id_str === idStr ? athlete : { ...athlete, id_str: idStr };
+}
+
+function normalizeActivity(activity) {
+    if (!activity || typeof activity !== 'object') return activity;
+    const idStr = getActivityId(activity);
+    const normalizedAthlete = activity.athlete ? normalizeAthlete(activity.athlete) : activity.athlete;
+    return {
+        ...activity,
+        ...(idStr ? { id_str: idStr } : {}),
+        ...(activity.athlete ? { athlete: normalizedAthlete } : {}),
+    };
+}
+
+async function readStravaJson(response, fallback = {}) {
+    try {
+        if (typeof response.text === 'function') {
+            const rawText = await response.text();
+            if (!rawText) return fallback;
+            const parsed = parseStravaJson(rawText);
+            return parsed ?? fallback;
+        }
+        if (typeof response.json === 'function') {
+            const parsed = await response.json();
+            return parsed ?? fallback;
+        }
+    } catch {
+        return fallback;
+    }
+    return fallback;
+}
+
 // --- Strava Auth ---
 export async function exchangeToken(code) {
     if (!STRAVA_CLIENT_ID) {
@@ -50,11 +134,14 @@ export async function exchangeToken(code) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = await readStravaJson(response, {});
             throw new Error(`Strava token exchange failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
         }
 
-        const data = await response.json().catch(() => ({}));
+        const rawData = await readStravaJson(response, {});
+        const data = rawData?.athlete
+            ? { ...rawData, athlete: normalizeAthlete(rawData.athlete) }
+            : rawData;
         debug("Strava authentication succeeded; token cached in this browser.");
         if (data.access_token) {
             storeAuthData(data);
@@ -72,7 +159,8 @@ export async function exchangeToken(code) {
 }
 
 export async function fetchActivityStreams(activityId, token, streamTypes) {
-    if (!activityId || !token || !streamTypes || !streamTypes.length) {
+    const resolvedActivityId = resolveSafeActivityId(activityId);
+    if (!resolvedActivityId || !token || !streamTypes || !streamTypes.length) {
         error("Missing parameters for fetchActivityStreams");
         // helpers are globally available in this module after setHelpers is called
         showError("Cannot fetch activity streams: Missing required info.");
@@ -81,18 +169,18 @@ export async function fetchActivityStreams(activityId, token, streamTypes) {
     showLoading(true, "Fetching activity streams...");
     try {
         const keys = streamTypes.join(',');
-        const response = await fetch(`${STRAVA_API_BASE_URL}/activities/${activityId}/streams?keys=${keys}&key_by_type=true`, {
+        const response = await fetch(`${STRAVA_API_BASE_URL}/activities/${encodeURIComponent(resolvedActivityId)}/streams?keys=${keys}&key_by_type=true`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await readStravaJson(response, {});
             error("Strava API error (streams):", errorData);
             throw new Error(`Strava API Error: ${response.status} ${response.statusText}`);
         }
-        const streamsData = await response.json();
+        const streamsData = await readStravaJson(response, {});
         showLoading(false);
         return streamsData;
     } catch (err) {
@@ -112,7 +200,7 @@ export function getCachedAuthData() {
     stravatoken = authData.access_token;
     refreshToken = authData.refresh_token || refreshToken;
     tokenExpiresAt = authData.expires_at || 0;
-    userid = authData.athlete?.id || userid;
+    userid = getAthleteId(authData.athlete) || userid;
     return authData;
 }
 
@@ -163,16 +251,17 @@ export function clearStravaToken() {
 
 function storeAuthData(data) {
     if (!data?.access_token) return;
+    const existing = readStoredAuthData() || {};
+    const athlete = normalizeAthlete(data.athlete || existing.athlete);
     stravatoken = data.access_token;
     refreshToken = data.refresh_token || refreshToken;
     tokenExpiresAt = data.expires_at || 0;
-    userid = data.athlete?.id || userid;
+    userid = getAthleteId(athlete) || userid;
 
-    const existing = readStoredAuthData() || {};
     const authData = {
         ...existing,
         ...data,
-        athlete: data.athlete || existing.athlete,
+        athlete,
         cached_at: Math.floor(Date.now() / 1000)
     };
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
@@ -182,8 +271,11 @@ function readStoredAuthData() {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return null;
     try {
-        const authData = JSON.parse(raw);
+        const authData = parseStravaJson(raw);
         if (!authData?.access_token) return null;
+        if (authData.athlete) {
+            authData.athlete = normalizeAthlete(authData.athlete);
+        }
         return authData;
     } catch {
         localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -209,7 +301,7 @@ async function refreshAccessToken() {
             clearStravaToken();
             throw new Error(`Strava token refresh failed: ${response.status} ${response.statusText}`);
         }
-        const data = await response.json().catch(() => ({}));
+        const data = await readStravaJson(response, {});
         storeAuthData(data);
         return getCachedAuthData();
     } finally {
@@ -249,11 +341,12 @@ export async function fetchActivities(accessToken, beforeTimestamp = null, after
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = await readStravaJson(response, {});
             throw new Error(`Strava activities fetch failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
         }
 
-        const activities = await response.json().catch(() => ({}));
+        const parsed = await readStravaJson(response, []);
+        const activities = Array.isArray(parsed) ? parsed.map(normalizeActivity) : [];
         debug(`Parsed ${activities.length} activities.`);
         return activities;
 
@@ -271,27 +364,28 @@ export async function fetchDetailedActivityData(activityId, accessToken) {
         showError("Not authenticated with Strava.");
         throw new Error("Not authenticated with Strava.");
     }
-    if (!activityId) {
+    const resolvedActivityId = resolveSafeActivityId(activityId);
+    if (!resolvedActivityId) {
         showError("No Activity ID provided.");
         throw new Error("No Activity ID provided.");
     }
 
-    debug(`Fetching detailed data for activity ID: ${activityId}`);
-    const detailedActivityUrl = `${STRAVA_API_BASE_URL}/activities/${activityId}`;
+    debug(`Fetching detailed data for activity ID: ${resolvedActivityId}`);
+    const detailedActivityUrl = `${STRAVA_API_BASE_URL}/activities/${encodeURIComponent(resolvedActivityId)}`;
 
     showLoading(true, "Fetching activity details...");
     try {
         const response = await fetch(detailedActivityUrl, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
-        debug(`[fetchDetailedActivityData] Called for activity ID: ${activityId}`);
+        debug(`[fetchDetailedActivityData] Called for activity ID: ${resolvedActivityId}`);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = await readStravaJson(response, {});
             throw new Error(`Strava detailed activity fetch failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
         }
 
-        const detailedActivityData = await response.json().catch(() => ({}));
+        const detailedActivityData = normalizeActivity(await readStravaJson(response, {}));
         debug("Detailed activity data received.");
         return detailedActivityData;
 
@@ -301,23 +395,25 @@ export async function fetchDetailedActivityData(activityId, accessToken) {
         throw err;
     } finally {
         showLoading(false);
-        debug(`[fetchDetailedActivityData] Successfully fetched data for ${activityId}.`);
+        debug(`[fetchDetailedActivityData] Successfully fetched data for ${resolvedActivityId}.`);
     }
 }
 
 export async function fetchPhotoData(activityId, accessToken) {
-    debug(`[fetchPhotoData] Called for activity ID: ${activityId}`);
+    const resolvedActivityId = resolveSafeActivityId(activityId);
+    debug(`[fetchPhotoData] Called for activity ID: ${resolvedActivityId}`);
     if (!accessToken) throw new Error("Strava access token is required.");
-    if (!activityId) throw new Error("Activity ID is required.");
+    if (!resolvedActivityId) throw new Error("Activity ID is required.");
 
-    const photoURL = `${STRAVA_API_BASE_URL}/activities/${activityId}/photos?photo_sources=true&size=1000`;
+    const photoURL = `${STRAVA_API_BASE_URL}/activities/${encodeURIComponent(resolvedActivityId)}/photos?photo_sources=true&size=1000`;
     showLoading(true, "Fetching activity photos...");
     try {
         const response = await fetch(photoURL, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const photos = await response.json().catch(() => ({}));
+        const parsed = await readStravaJson(response, []);
+        const photos = Array.isArray(parsed) ? parsed : [];
         debug(`[fetchPhotoData] Received ${photos.length} photos from Strava.`);
         return photos;
     } catch (err) {
