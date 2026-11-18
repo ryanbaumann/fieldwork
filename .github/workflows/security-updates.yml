@@ -33,7 +33,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.SECURITY_UPDATES_TOKEN || secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -67,6 +67,7 @@ jobs:
               cd "$pkg"
               if [ -f "package-lock.json" ]; then
                 npm ci --no-audit --no-fund
+                node "$GITHUB_WORKSPACE/scripts/ci-audit.mjs" --registry=https://registry.npmjs.org
               fi
               npm run lint --if-present
               npm test --if-present
@@ -92,23 +93,34 @@ jobs:
         if: steps.audit_fix.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.SECURITY_UPDATES_TOKEN || secrets.GITHUB_TOKEN }}
+          HAS_SECURITY_TOKEN: ${{ secrets.SECURITY_UPDATES_TOKEN != '' }}
           FIXED_COUNT: ${{ steps.audit_fix.outputs.fixed_count }}
-          REMAINING_COUNT: ${{ steps.audit_fix.outputs.remaining_count }}
+          PRUNED_COUNT: ${{ steps.audit_fix.outputs.pruned_count }}
+          UNEXCUSED_COUNT: ${{ steps.audit_fix.outputs.unexcused_count }}
           BRANCH_NAME: chore/auto-security-updates
         run: |
           set -euo pipefail
           # Remove staged build artifacts before committing only source/lockfile edits.
           rm -rf apps
           if [ -z "$(git status --porcelain)" ]; then
-            echo "No lockfile or package.json changes remain after cleanup."
+            echo "No lockfile, package.json, or audit-exceptions changes remain after cleanup."
             exit 0
+          fi
+
+          if [ "${FIXED_COUNT}" != "0" ] && [ "${PRUNED_COUNT}" != "0" ]; then
+            COMMIT_MSG="chore(security): remediate ${FIXED_COUNT} advisory item(s) and prune ${PRUNED_COUNT} resolved exception(s)"
+          elif [ "${FIXED_COUNT}" != "0" ]; then
+            COMMIT_MSG="chore(security): remediate ${FIXED_COUNT} npm security advisory item(s)"
+          else
+            COMMIT_MSG="chore(security): prune ${PRUNED_COUNT} resolved audit exception(s)"
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          gh auth setup-git --hostname github.com --force
           git checkout -B "$BRANCH_NAME"
           git add -A
-          git commit -m "chore(security): remediate ${FIXED_COUNT} npm security advisory item(s)"
+          git commit -m "$COMMIT_MSG"
           git push --force-with-lease origin "HEAD:refs/heads/${BRANCH_NAME}"
 
           PR_TITLE="chore(security): automated dependency vulnerability remediation"
@@ -117,11 +129,16 @@ jobs:
             gh pr edit "$EXISTING_PR" --title "$PR_TITLE" --body-file "$SUMMARY_FILE"
             PR_URL="$EXISTING_PR"
           else
-            PR_URL="$(gh pr create --base main --head "$BRANCH_NAME" --title "$PR_TITLE" --body-file "$SUMMARY_FILE")"
+            if ! PR_URL="$(gh pr create --base main --head "$BRANCH_NAME" --title "$PR_TITLE" --body-file "$SUMMARY_FILE")"; then
+              if [ "$HAS_SECURITY_TOKEN" != "true" ]; then
+                echo "::error::SECURITY_UPDATES_TOKEN secret is not configured. Add a fine-grained PAT for ${GITHUB_REPOSITORY} (Contents: Read & write, Pull requests: Read & write) as SECURITY_UPDATES_TOKEN so this job can open PRs and trigger CI checks, or open https://github.com/${GITHUB_REPOSITORY}/pull/new/${BRANCH_NAME} manually."
+              fi
+              exit 1
+            fi
           fi
 
           gh pr merge --auto --squash "$PR_URL"
 
-          if [ "$REMAINING_COUNT" != "0" ]; then
-            echo "::warning::Opened ${PR_URL}, but ${REMAINING_COUNT} advisory item(s) still require manual review."
+          if [ "$UNEXCUSED_COUNT" != "0" ]; then
+            echo "::warning::Opened ${PR_URL}, but ${UNEXCUSED_COUNT} unexcused advisory item(s) still require manual review."
           fi
