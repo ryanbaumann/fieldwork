@@ -2,6 +2,19 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-17 - `npm audit` has no ignore list, and an advisory with no patch blocks every PR
+
+Context: GitHub updated `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS, `<=4.0.7`) on 2026-11-17. picomatch 4.0.7 is the latest npm release, so `first_patched_version` is `null`. The `npm audit --audit-level=moderate` step in `.github/workflows/ci.yml` then failed in all 7 demo packages and blocked unrelated PRs (for example #379).
+
+Learning:
+1. `npm audit` cannot ignore one advisory. `npm audit fix` and `scripts/auto-update-security-deps.mjs --fix` cannot help when no patched version exists, and npm's only suggestion was a breaking downgrade (vite 6.2.7, vitest 3.1.4).
+2. A GHSA vulnerable range does not change when upstream ships a fix. `<=4.0.7` stays accurate after 4.0.8 ships. An exception that keys only on the range never expires. Compare the range with the latest published version (`npm view <pkg> version`) to detect a patched release.
+3. Transitive packages in `npm audit --json` list `via` entries as strings (package names). Excuse a dependent package only when every `via` entry resolves to an excused advisory, so a second advisory on the same path still blocks.
+
+Evidence: `scripts/test/ci-audit.test.mjs` covers excused, patched, expired, unknown-latest, second-advisory, and changed-range cases. A live run of `scripts/ci-audit.mjs` passed in all 7 demos and `portfolio`, and failed with exit 1 in `demos/strava-explorer` when run with an empty exception list.
+
+Use next time: Add an entry to `.github/audit-exceptions.json` only for advisories with no patched release that are not reachable at runtime. Set `expires` no more than 120 days out. Remove the entry when the gate reports `patched-release-available`, then upgrade.
+
 ## 2026-11-14 - Desktop escape-pill statusbar padding on mobile, fire-and-forget UI promise recovery, and URL port/userinfo allowlists
 
 Context: Cross-viewport (`320x568`, `375x667`, `390x844`), security, and reliability audit across Labs (`real-world-reasoning-agent`, `voice-studio`, `isochrones`, `strava-explorer`, `aqi-map`) and `gateway/lib/realWorldReasoning.js`.

@@ -69,9 +69,12 @@ jobs:
 
       - name: Security Audit (npm audit)
         working-directory: ${{ matrix.package }}
+        # scripts/ci-audit.mjs matches `npm audit --audit-level=moderate`, but
+        # it excuses advisories in .github/audit-exceptions.json only while no
+        # patched release exists and before each exception expires.
         run: |
           if [ -f "package-lock.json" ]; then
-            npm audit --audit-level=moderate --registry=https://registry.npmjs.org
+            node "$GITHUB_WORKSPACE/scripts/ci-audit.mjs" --registry=https://registry.npmjs.org
           fi
 
       - name: Run Linter
