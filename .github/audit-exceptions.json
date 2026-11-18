@@ -1,0 +1,12 @@
+{
+  "$comment": "Read by scripts/ci-audit.mjs. An exception applies only while the latest npm release of the package is still inside vulnerableRange (no patched release exists) and before the expires date. Keep this list empty whenever possible.",
+  "exceptions": [
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "vulnerableRange": "<=4.0.7",
+      "expires": "2027-02-17",
+      "reason": "picomatch ReDoS through single-branch repeated extglobs. No patched release exists on npm (first_patched_version: null). Demos reach picomatch only through vite, vitest, and tinyglobby at build and test time, with developer-authored globs. It never ships in static bundles or in the zero-dependency gateway."
+    }
+  ]
+}

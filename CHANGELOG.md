@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- **Self-expiring CI audit exception for unpatched advisories (`scripts/ci-audit.mjs`, `.github/audit-exceptions.json`, `.github/workflows/ci.yml`, `scripts/test/ci-audit.test.mjs`)**:
+  - Replaced the raw `npm audit --audit-level=moderate` step with `scripts/ci-audit.mjs`, which keeps the same moderate threshold but excuses an advisory listed in `.github/audit-exceptions.json` only while its GHSA ID, package, and vulnerable range match exactly, the exception has not expired, and the latest npm release is still inside the vulnerable range.
+  - Added a single exception for `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS, `<=4.0.7`, no patched release, expires 2027-02-17). picomatch reaches the demos only through vite, vitest, and tinyglobby at build and test time. The gate fails again automatically once a patched picomatch ships or the exception expires; any lookup or parse error fails closed.
+
 - **Labs mobile layout, proxy security, and Explorer error-recovery hardening (`.gitignore`, `gateway/lib/realWorldReasoning.js`, `demos/{real-world-reasoning-agent,voice-studio,isochrones,strava-explorer,aqi-map}`)**:
   - **Mobile Viewport & Touch Targets**:
     - Wrapped `.loss-table` in `<div class="table-container">` (`overflow-x: auto; max-width: 100%`) in `demos/voice-studio/index.html` and `src/styles.css` to eliminate horizontal overflow on `375px` and `390px` viewports.
