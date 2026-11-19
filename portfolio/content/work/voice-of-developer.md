@@ -12,7 +12,7 @@ shareTitle: Voice of Developer
 shareSummary: Repeated developer friction turned into evidence-backed roadmap priorities.
 shareImageAlt: Developer signal sources flowing into ranked roadmap priorities.
 featured: true
-order: 4
+order: 6
 ---
 
 ## The goal

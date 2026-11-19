@@ -12,7 +12,7 @@ shareTitle: Agentic Eval Suite
 shareSummary: Task-based comparisons that turn AI developer-tool quality into a launch decision.
 shareImageAlt: Agentic Eval Suite beside a task-to-launch evaluation loop.
 featured: true
-order: 5
+order: 2
 ---
 
 ## The goal
@@ -25,4 +25,4 @@ My team and I built task-based evals for Google Maps Platform. We benchmark code
 
 ## What I learned
 
-Measurement turns developer experience investments into decisions. Once an evaluated change has a baseline and a delta, the team can put the effort where the result moves. The operating method starts with real tasks, not polished demos.
+Measurement turns AI and platform investments into engineering decisions. Once an evaluated change has a baseline and a delta, the team can put the effort where the result moves. The operating method starts with real tasks, not polished demos.

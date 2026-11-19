@@ -164,7 +164,7 @@ def review_copy(content_or_path: str, **kwargs) -> str:
         "Assess:\n"
         "1. Voice & Cadence: Active first-person, direct, growth-backwards framing (Result -> Shipped -> Lesson).\n"
         "2. Cliché & AI-Tell Check: Scan for em-dashes, passive voice for own work, corporate buzzwords, and vague claims.\n"
-        "3. Opening Hook: Does it land on real developer friction or a quoted objection?\n"
+        "3. Opening Hook: Does it land on real operational or developer friction, a concrete workflow failure, or a quoted objection?\n"
         "4. Concrete Line-by-Line Rewrites: Provide specific rewrites for the weakest sections.\n\n"
         f"--- COPY TO REVIEW ---\n{text}"
     )

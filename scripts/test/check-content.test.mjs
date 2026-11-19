@@ -131,6 +131,13 @@ test('avoid words are caught in prose unless matching formal titles or domain ta
   const titleProse = `I was a Senior Solutions Architect and led the solutions architecture team.\n\n![Alt.](/img/a.png)`;
   assert.deepEqual(checkDocument(doc(ESSAY_FRONT, titleProse)), []);
 
+  const leadershipProse = `My background spans solutions leadership, solutions engineering, and industry solutions as a solutions leader.\n\n![Alt.](/img/a.png)`;
+  assert.deepEqual(checkDocument(doc(ESSAY_FRONT, leadershipProse)), []);
+
+  const badAiSolutions = rules(checkDocument(doc(ESSAY_FRONT, `We shipped innovative AI solutions.\n\n![Alt.](/img/a.png)`)));
+  assert.ok(badAiSolutions.includes('W-HYPE'));
+  assert.ok(badAiSolutions.includes('W-AVOID-WORD'));
+
   const tagFront = ESSAY_FRONT.replace('tags: ["ai"]', 'tags: ["industry solutions"]');
   assert.deepEqual(checkDocument(doc(tagFront, ESSAY_BODY)), []);
 });
