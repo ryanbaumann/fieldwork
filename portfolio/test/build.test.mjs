@@ -622,3 +622,27 @@ test('navigation, colophon, and contact privacy disclosures stay unified and non
   const privacy = readFileSync(join(paths.dist, 'privacy', 'index.html'), 'utf8');
   assert.doesNotMatch(privacy, /<p class="eyebrow">Privacy<\/p>/);
 });
+
+test('dateless work entries sort by ascending order on home and work index while dated writing keeps reverse-chronological order', () => {
+  const paths = fixture();
+  write(join(paths.content, 'work', 'z-first.md'), `---\ntitle: Z First\nsummary: Order one\norder: 1\n---\nFirst.`);
+  write(join(paths.content, 'work', 'a-third.md'), `---\ntitle: A Third\nsummary: Order three\norder: 3\n---\nThird.`);
+  write(join(paths.content, 'work', 'm-second.md'), `---\ntitle: M Second\nsummary: Order two\norder: 2\n---\nSecond.`);
+  write(join(paths.content, 'writing', 'older.md'), `---\ntitle: Older Note\nsummary: Older\ndate: 2026-06-01\norder: 1\n---\nOlder.`);
+  write(join(paths.content, 'writing', 'newer.md'), `---\ntitle: Newer Note\nsummary: Newer\ndate: 2026-07-01\norder: 2\n---\nNewer.`);
+  const result = build(paths);
+  assert.equal(result.status, 0, result.stderr);
+
+  const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
+  const workGrid = home.match(/Selected work[\s\S]*?<div class="grid home-work-grid">([\s\S]*?)<\/div>\s*<\/section>/)?.[1] || '';
+  assert.ok(workGrid.indexOf('Z First') !== -1 && workGrid.indexOf('M Second') !== -1 && workGrid.indexOf('A Third') !== -1);
+  assert.ok(workGrid.indexOf('Z First') < workGrid.indexOf('M Second'));
+  assert.ok(workGrid.indexOf('M Second') < workGrid.indexOf('A Third'));
+
+  const workIndex = readFileSync(join(paths.dist, 'work', 'index.html'), 'utf8');
+  assert.ok(workIndex.indexOf('Z First') < workIndex.indexOf('M Second'));
+  assert.ok(workIndex.indexOf('M Second') < workIndex.indexOf('A Third'));
+
+  const writingIndex = readFileSync(join(paths.dist, 'writing', 'index.html'), 'utf8');
+  assert.ok(writingIndex.indexOf('Newer Note') < writingIndex.indexOf('Older Note'));
+});

@@ -49,10 +49,10 @@ const brandShort = site.brandShort || brand.slice(0, 1);
 // social cards only; nothing here renders as a visible subtitle. Each must stay
 // unique: the metadata validator rejects duplicate descriptions.
 const SECTION_DESCRIPTIONS = {
-  work: 'Work I shipped at Google Maps Platform, Google Cloud, and Mapbox, and what I learned from each.',
-  writing: 'Field notes on developer experience, evals, maps, and AI coding agents.',
-  talks: 'Recorded talks and fireside chats on developer tools, maps, and AI coding agents.',
-  demos: 'Live map and AI demos I built. Some are reference apps; some are experiments.',
+  work: 'Products, applied AI systems, and industry workflows I helped ship across Google, Instabase, Mapbox, and Caterpillar.',
+  writing: 'Field notes on applied AI, agent workflows, evals, and engineering leadership.',
+  talks: 'Recorded talks and fireside chats on AI agents, grounded context, and shipping reliable software.',
+  demos: 'Runnable AI agents and spatial apps I built to test new workflows in public.',
   ...(site.sectionDescriptions || {}),
 };
 function sectionDescription(name) {
@@ -507,7 +507,11 @@ function loadCollection(name) {
       return { slug, sourceSlug: fileSlug, meta, body, raw, collection: name };
     })
     .sort((a, b) => {
-      return String(b.meta.date || '').localeCompare(String(a.meta.date || ''));
+      const byDate = String(b.meta.date || '').localeCompare(String(a.meta.date || ''));
+      if (byDate !== 0) return byDate;
+      const orderA = a.meta.order ?? Infinity;
+      const orderB = b.meta.order ?? Infinity;
+      return orderA === orderB ? 0 : orderA - orderB;
     });
 }
 
@@ -1067,16 +1071,16 @@ function jsonLdPerson() {
     url: absoluteUrl('/'),
     description: site.answerEngineSummary || site.description,
     knowsAbout: [
-      'developer platforms',
-      'developer experience',
-      'developer experience engineering',
-      'developer product leadership',
-      'agent-ready documentation',
-      'model context protocol',
+      'applied AI engineering',
+      'agentic workflows',
       'agentic evals',
-      'AI-native developer tools',
+      'industry solutions',
+      'solutions engineering',
+      'software engineering leadership',
+      'model context protocol',
+      'developer platforms',
       'Google Maps Platform',
-      'geospatial applications',
+      'geospatial systems',
     ],
     sameAs: [
       site.links.github,
@@ -1432,7 +1436,7 @@ ${demosSection}
 <section class="build-section home-close">
   <div>
     <p class="eyebrow">Contact</p>
-    <h2>Working on a developer platform, map tool, or agent workflow?</h2>
+    <h2>Working on an applied AI workflow, agent system, or engineering problem?</h2>
     <p>Reach out to compare approaches, talk through a problem, or discuss a speaking event.</p>
   </div>
   <div>
@@ -1547,7 +1551,7 @@ function contactPageContent(meta, body) {
   <div class="prose">${markdownToHtml(body)}</div>
   <form id="contact-form" class="contact-form" action="${BASE}api/contact" method="post">
     <fieldset class="intent-options"><legend>What is this about?</legend>
-      ${['Developer platform discussion', 'Content collaboration', 'Speaking opportunity', 'Other'].map((intent) => `<label><input type="radio" name="intent" value="${intent}" required /> <span>${intent}</span></label>`).join('')}
+      ${['Applied AI or engineering discussion', 'Content collaboration', 'Speaking opportunity', 'Other'].map((intent) => `<label><input type="radio" name="intent" value="${intent}" required /> <span>${intent}</span></label>`).join('')}
     </fieldset>
     <label for="contact-message">What would you like to discuss?
       <textarea id="contact-message" name="message" rows="6" required minlength="20" maxlength="5000" placeholder="A few sentences about the idea, audience, timing, and useful next step."></textarea>
@@ -1562,7 +1566,7 @@ function contactPageContent(meta, body) {
     <button class="button" type="submit">Send note</button>
   </form>
   <p class="section-note">Used only to reply. Messages are screened for spam without your name or email; please don't include secrets or sensitive data. <a href="${BASE}privacy/#contact">Privacy</a>.</p>
-  <script>(()=>{const form=document.getElementById('contact-form');const start=performance.now();form.addEventListener('submit',()=>{form.elements.fill_ms.value=String(Math.round(performance.now()-start))});const value=new URLSearchParams(location.search).get('intent');const intents={platform:'Developer platform discussion',content:'Content collaboration',speaking:'Speaking opportunity',other:'Other'};const selected=intents[value];if(!selected)return;const input=[...form.querySelectorAll('input[name="intent"]')].find((item)=>item.value===selected);if(input)input.checked=true})();</script>
+  <script>(()=>{const form=document.getElementById('contact-form');const start=performance.now();form.addEventListener('submit',()=>{form.elements.fill_ms.value=String(Math.round(performance.now()-start))});const value=new URLSearchParams(location.search).get('intent');const intents={ai:'Applied AI or engineering discussion',platform:'Applied AI or engineering discussion',content:'Content collaboration',speaking:'Speaking opportunity',other:'Other'};const selected=intents[value];if(!selected)return;const input=[...form.querySelectorAll('input[name="intent"]')].find((item)=>item.value===selected);if(input)input.checked=true})();</script>
 </section>`;
 }
 

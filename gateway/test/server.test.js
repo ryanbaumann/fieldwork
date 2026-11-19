@@ -582,6 +582,16 @@ test('contact delivery validates intent and marks only provider-confirmed succes
     assert.match(delivered[4].subject, /^\[Check\] \[Other\]/);
     assert.match(delivered[4].text, /Flags: sent without JavaScript; email domain has no mail server/);
 
+    const appliedAiSuccess = await postForm(port, '/api/contact', {
+      ...valid,
+      intent: 'Applied AI or engineering discussion',
+    }, { ...browser, 'x-forwarded-for': '203.0.113.10, proxy', 'User-Agent': 'TestBrowser/1.0' });
+    assert.equal(appliedAiSuccess.res.statusCode, 303);
+    assert.equal(appliedAiSuccess.res.headers.location, '/contact-success/?delivered=1');
+    assert.equal(delivered.length, 6);
+    assert.equal(delivered[5].subject, '[Applied AI or engineering discussion] Portfolio contact from Ada Lovelace');
+    assert.match(delivered[5].text, /^Intent: Applied AI or engineering discussion\nName: Ada Lovelace/);
+
     globalThis.fetch = async () => ({ ok: false, status: 500 });
     const rejected = await postForm(port, '/api/contact', {
       ...valid,

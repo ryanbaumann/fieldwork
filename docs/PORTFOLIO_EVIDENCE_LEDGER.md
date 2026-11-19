@@ -1,6 +1,6 @@
 # Fieldwork Evidence Ledger
 
-Last reviewed: 2026-07-16
+Last reviewed: 2026-11-19
 
 Use this ledger before publishing a material claim or adding a product artifact.
 The approved copy is the widest claim currently supported. Team work must credit
@@ -59,6 +59,8 @@ Statuses:
 | Talks and videos | `public-source` | Talk titles, venues, dates, decks, and videos may be described as their public pages show. | Links in `portfolio/content/talks/` | 2026-07-13 | Treat `next million makers` and similar language as a talk thesis, not a measured outcome. |
 | Writing entries | `public-source` | Titles and summaries may reflect the linked canonical posts. | Canonical links in `portfolio/content/writing/` | 2026-07-13 | Use `series`, not `weekly series`, unless the archive demonstrates weekly cadence. |
 | Fifteen-plus years of experience | `observable` | 15+ years building platforms at Google, Mapbox, Instabase, and Caterpillar. | Public chronology on the About page | 2026-07-13 | Apply one consistent career-start definition. |
+| Current Google Maps Platform title shorthand | `approved-internal` | Head of DevRel, Google Maps Platform | Ryan approval | 2026-11-19 | Approved title shorthand across Fieldwork profile, resume, about, and metadata. |
+| Cross-industry solutions scope | `approved-internal` | Built 0-to-1 products and customer-facing engineering teams across manufacturing, financial services and insurance, logistics, and public sector. | Ryan approval | 2026-11-19 | Maps directly to Caterpillar/Google Cloud (manufacturing), Instabase (financial services, insurance, public sector), and Mapbox (`Boundaries`, on-prem/air-gapped `Atlas` for logistics, enterprise, and public sector). |
 
 ## Approved public asset candidates
 

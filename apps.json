@@ -43,30 +43,29 @@
     "preview": null
   },
   {
-    "name": "strava-explorer",
-    "title": "Strava 3D Explorer",
-    "description": "Fly your Strava routes in Photorealistic 3D with follow-camera animation, an elevation profile, and your ride photos on the path.",
-    "path": "/strava-explorer/",
-    "dev_build_dir": "demos/strava-explorer/dist",
+    "name": "real-world-reasoning-agent",
+    "title": "Atlas: Real-World Reasoning Agent",
+    "description": "An interactive map agent that handles real-world spatial reasoning, live routes, and shared Google Maps Lists.",
+    "path": "/real-world-reasoning-agent/",
+    "dev_build_dir": "demos/real-world-reasoning-agent/dist",
     "source": {
       "type": "workspace",
-      "package": "demos/strava-explorer",
+      "package": "demos/real-world-reasoning-agent",
       "output": "dist"
     },
     "api": {
       "type": "gateway",
-      "prefix": "/api/strava/"
+      "prefix": "/api/real-world-reasoning-agent/"
     },
-    "providers": [
-      "strava"
-    ],
-    "csp": "maps-strava",
+    "csp": "maps",
     "tags": [
-      "strava",
-      "3d-maps",
+      "gemini-api",
+      "agents",
       "google-maps-platform"
     ],
-    "preview": "/previews/strava-explorer.webp"
+    "source_url": "https://github.com/ryanbaumann/fieldwork/tree/main/demos/real-world-reasoning-agent",
+    "source_ref": "68e8c34547066a984ccb97f5b587caeb97561ec1",
+    "preview": "/previews/real-world-reasoning-agent.webp"
   },
   {
     "name": "infographic-agent",
@@ -124,29 +123,30 @@
     "preview": "/previews/hairstyle-ai-studio.jpg"
   },
   {
-    "name": "real-world-reasoning-agent",
-    "title": "Atlas: Real-World Reasoning Agent",
-    "description": "An interactive map agent that handles real-world spatial reasoning, live routes, and shared Google Maps Lists.",
-    "path": "/real-world-reasoning-agent/",
-    "dev_build_dir": "demos/real-world-reasoning-agent/dist",
+    "name": "strava-explorer",
+    "title": "Strava 3D Explorer",
+    "description": "Fly your Strava routes in Photorealistic 3D with follow-camera animation, an elevation profile, and your ride photos on the path.",
+    "path": "/strava-explorer/",
+    "dev_build_dir": "demos/strava-explorer/dist",
     "source": {
       "type": "workspace",
-      "package": "demos/real-world-reasoning-agent",
+      "package": "demos/strava-explorer",
       "output": "dist"
     },
     "api": {
       "type": "gateway",
-      "prefix": "/api/real-world-reasoning-agent/"
+      "prefix": "/api/strava/"
     },
-    "csp": "maps",
+    "providers": [
+      "strava"
+    ],
+    "csp": "maps-strava",
     "tags": [
-      "gemini-api",
-      "agents",
+      "strava",
+      "3d-maps",
       "google-maps-platform"
     ],
-    "source_url": "https://github.com/ryanbaumann/fieldwork/tree/main/demos/real-world-reasoning-agent",
-    "source_ref": "68e8c34547066a984ccb97f5b587caeb97561ec1",
-    "preview": "/previews/real-world-reasoning-agent.webp"
+    "preview": "/previews/strava-explorer.webp"
   },
   {
     "name": "aqi-map",

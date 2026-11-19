@@ -12,7 +12,7 @@ socialImage: /social/work-geo-architecture-center.jpg
 shareTitle: Geo Architecture Center
 shareSummary: Reusable system patterns for repeated Google Maps Platform architecture questions.
 shareImageAlt: Geo Architecture Center beside its system-architecture artifact card.
-order: 6
+order: 7
 ---
 
 ## The goal

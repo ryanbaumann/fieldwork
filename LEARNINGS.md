@@ -2,6 +2,16 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-19 - `loadCollection()` needed a `meta.order` tie-breaker for dateless `work` entries
+
+Context: Rebalancing homepage `Selected work` cards by editing `order` in `portfolio/content/work/*.md` while preserving reverse-chronological sorting for `writing` and `talks`.
+
+Learning: `loadCollection()` in `portfolio/build.mjs` previously sorted only by `String(b.meta.date || '').localeCompare(String(a.meta.date || ''))`, while `buildHome()` extracted only the single lowest-`order` `pinnedWork` item and filled the remaining two homepage slots from `loadCollection('work')` order. Because `work/*.md` entries carry `period` instead of `date`, `localeCompare` returned `0` for every pair, falling back to alphabetical filename order (`agent-skills.md`, `agentic-evals.md`, `agentic-growth.md`) and leaving `order` ignored on both `/work/` and homepage slots 2 and 3. Breaking equal/`""` `date` ties by `(a.meta.order ?? Infinity) - (b.meta.order ?? Infinity)` fixes dateless `work` ordering across both `/` and `/work/` without changing reverse-chronological `writing` or `talks` order.
+
+Evidence: Added regression test `'dateless work entries sort by ascending order on home and work index while dated writing keeps reverse-chronological order'` in `portfolio/test/build.test.mjs`, and verified homepage `Selected work` renders `Code Assist MCP`, `Agentic Eval Suite`, and `Intelligent Product Essentials`.
+
+Use next time: Whenever a collection sorts by `date` and supports `order`, include `meta.order` as a tie-breaker inside `loadCollection()` rather than sorting only a single pinned item at the call site.
+
 ## 2026-11-18 - `npm audit fix` no-op lockfile churn, automatic audit-exception pruning, and `GITHUB_TOKEN` PR limits
 
 Context: Auditing `.github/workflows/security-updates.yml` and `scripts/auto-update-security-deps.mjs` after adding `.github/audit-exceptions.json` for `GHSA-fc5q-39xc-vjpf`.

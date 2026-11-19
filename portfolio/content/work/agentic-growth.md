@@ -12,7 +12,7 @@ shareTitle: OSS Client-Library Growth
 shareSummary: Between early 2025 and 2026, our open-source ecosystem more than doubled its unique active users.
 shareImageAlt: Open-source client-library growth beside the public react-google-maps download artifact.
 featured: true
-order: 2
+order: 5
 ---
 
 ## The goal
