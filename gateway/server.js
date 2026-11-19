@@ -63,6 +63,7 @@ const REDIRECT_SITE_HOSTS = new Set([
   'www.ryanbaumann-portfolio.com',
 ]);
 const CONTACT_INTENTS = Object.freeze([
+  'Applied AI or engineering discussion',
   'Developer platform discussion',
   'Content collaboration',
   'Speaking opportunity',

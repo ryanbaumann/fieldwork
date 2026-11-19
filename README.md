@@ -2,7 +2,7 @@
 
 ![Fieldwork homepage](portfolio/static/previews/fieldwork.jpg)
 
-Fieldwork is Ryan Baumann’s public developer notebook, with essays, shipped work, and runnable apps for building with maps and AI.
+Fieldwork is Ryan Baumann’s public engineering notebook, with essays, shipped work, and runnable apps on applied AI, agent workflows, and real-world software.
 
 The live site is https://ryanbaumann.dev/.
 

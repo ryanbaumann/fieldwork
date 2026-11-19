@@ -179,7 +179,7 @@ def review_copy(model, tokenizer, target_path_or_text: str, max_tokens: int = 40
         "Assess:\n"
         "1. Voice & Cadence: Active first-person, direct, growth-backwards framing (Result -> Shipped -> Lesson).\n"
         "2. Cliché & AI-Tell Check: Scan for em-dashes, passive voice for own work, corporate buzzwords, and vague claims.\n"
-        "3. Opening Hook: Does it land on real developer friction or a quoted objection?\n"
+        "3. Opening Hook: Does it land on real operational or developer friction, a concrete workflow failure, or a quoted objection?\n"
         "4. Concrete Line-by-Line Rewrites: Provide specific, tightened rewrites for the weakest sections.\n\n"
         f"--- COPY TO REVIEW ---\n{text}"
     )
@@ -204,10 +204,10 @@ def generate_headlines(model, tokenizer, topic_or_summary: str, max_tokens: int 
     return generate_text(model, tokenizer, prompt, max_tokens=max_tokens)
 
 def generate_social(model, tokenizer, target_path_or_text: str, max_tokens: int = 1024) -> str:
-    """Generate concise, developer-focused social copy (< 120 words)."""
+    """Generate concise, practitioner-focused social copy (< 120 words)."""
     text = resolve_target_text(target_path_or_text)
     prompt = (
-        f"Write a concise developer social post (< 120 words) summarizing this work. "
+        f"Write a concise practitioner social post (< 120 words) summarizing this work. "
         f"Lead with the binding constraint or metric shipped, avoid hashtags and launch hype:\n\n{text}"
     )
     return generate_text(model, tokenizer, prompt, max_tokens=max_tokens)

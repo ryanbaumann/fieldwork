@@ -13,7 +13,7 @@ shareTitle: Google Maps Platform Agent Skills
 shareSummary: Portable, tested workflows for AI coding agents.
 shareImageAlt: Google Maps Platform Agent Skills beside the public one-command installation artifact.
 featured: true
-order: 3
+order: 4
 ---
 
 ## The goal

@@ -120,7 +120,7 @@ export function checkDocument({ path, collection, raw }) {
     if (AVOID.test(unit.text)) {
       const sanitized = unit.text
         .replace(/\b(?:industry\s+solutions)\b/gi, '')
-        .replace(/\b(?:technical\s+|senior\s+)?solutions\s+(?:architect(?:ure)?|engineer(?:ing)?|manager)(?:\s+team)?\b/gi, '');
+        .replace(/\b(?:technical\s+|senior\s+)?solutions\s+(?:architect(?:ure)?|engineer(?:ing)?|manager|leader(?:ship)?)(?:\s+team)?\b/gi, '');
       const avoid = AVOID.exec(sanitized);
       if (avoid) {
         add(unit.line, 'W-AVOID-WORD', 'error', `Avoid word "${avoid[0]}". Use precise verbs and direct nouns instead (portfolio-writing).`);

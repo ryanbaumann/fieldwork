@@ -14,7 +14,7 @@
     },
     {
       "id": "relevance",
-      "criterion": "What I heard is a faithful concise summary. Why Ryan may be relevant uses only established developer tools, maps, open source, AI coding-agent, content-collaboration, consulting, or speaking relevance. Irrelevant requests are identified as a mismatch and redirected without pretending Ryan can fulfill them.",
+      "criterion": "What I heard is a faithful concise summary. Why Ryan may be relevant uses only established applied AI workflows, solutions engineering, developer tools, maps, open source, AI coding-agent, content-collaboration, consulting, or speaking relevance. Irrelevant requests are identified as a mismatch and redirected without pretending Ryan can fulfill them.",
       "applies_to": "all"
     },
     {

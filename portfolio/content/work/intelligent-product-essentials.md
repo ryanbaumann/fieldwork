@@ -12,8 +12,8 @@ socialImage: /social/work-intelligent-product-essentials.jpg
 shareTitle: Intelligent Product Essentials
 shareSummary: A connected-product platform taken from zero to launch with GE Appliances in nine months.
 shareImageAlt: Intelligent Product Essentials beside the zero-to-launch artifact.
-featured: false
-order: 7
+featured: true
+order: 3
 ---
 
 ## The goal
