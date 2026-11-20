@@ -1,11 +1,10 @@
 ---
 title: Contact
-summary: What are you building, and what is in the way?
-eyebrow: Contact
+summary: Contact Ryan Baumann about applied AI, agents, essays, or speaking.
 socialImage: /social/contact.jpg
-shareTitle: Start a Conversation With Ryan Baumann
-shareSummary: Start with the thing you are building and the friction in the way.
-shareImageAlt: Ryan Baumann beside an invitation to start with the thing you are trying to build.
+shareTitle: Contact Ryan Baumann
+shareSummary: What are you building, and what is in the way?
+shareImageAlt: Ryan Baumann beside the Contact card.
 ---
 
-If you're landing AI workflows in production, building agent systems, or want to talk through an essay or speaking event, send me a note. I'm not available for outside consulting while employed at Google.
+If you're landing AI workflows in production, building agent systems, or want to talk through an essay or speaking event, reach out below. I'm not available for outside consulting while employed at Google.

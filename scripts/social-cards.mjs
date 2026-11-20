@@ -21,8 +21,8 @@ const CARDS = [
   {
     file: 'home.png',
     eyebrow: 'FIELDWORK · RYAN BAUMANN',
-    title: 'Applied AI from prototype to production.',
-    summary: 'Agent workflows · Evals · Reference apps',
+    title: 'Applied AI, agents, and growth.',
+    summary: 'Notes · Evals · Working apps',
     source: 'portfolio/static/previews/fieldwork.jpg',
     layout: 'screenshot',
   },
@@ -44,8 +44,8 @@ const CARDS = [
   },
   {
     file: 'contact.png',
-    eyebrow: 'START A CONVERSATION',
-    title: 'Start with the workflow you are trying to ship',
+    eyebrow: 'RYAN BAUMANN',
+    title: 'Contact',
     summary: 'Applied AI · Engineering · Speaking',
     source: 'portfolio/static/img/ryan-baumann-profile.jpg',
     layout: 'screenshot',

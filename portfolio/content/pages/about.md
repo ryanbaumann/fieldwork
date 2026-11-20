@@ -1,6 +1,5 @@
 ---
 title: About
-eyebrow: Background
 summary: Ryan Baumann leads software, product, and solutions engineering teams building applied AI workflows and platforms.
 image: /img/ryan-baumann-profile.jpg
 imageAlt: Headshot of Ryan Baumann wearing a blue shirt.
@@ -20,4 +19,4 @@ Before this role, I spent a decade building industry solutions and customer-faci
 
 I studied mechanical engineering at the University of Wisconsin-Madison, but before writing software, I raced professionally for Trek-Livestrong and Bahati Foundation. Racing taught me to pace long efforts, measure the right signal, and keep looking for the next useful improvement. I still love the outdoors and pushing myself gravel riding and trail running.
 
-[View the resume](/resume/) · [Send a note](/contact/)
+[Resume](/resume/) · [Contact](/contact/)

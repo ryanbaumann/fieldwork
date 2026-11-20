@@ -1,7 +1,6 @@
 ---
 title: Resume
 summary: Software and solutions engineering leadership across applied AI, 0-to-1 products, and enterprise workflows.
-eyebrow: Experience
 socialImage: /social/resume.jpg
 shareTitle: Ryan Baumann Resume
 shareSummary: Fifteen years turning new technical capabilities into working systems across Google, Instabase, Mapbox, and Caterpillar.
@@ -30,4 +29,4 @@ I lead software, product, and solutions engineering teams that turn emerging cap
 
 Before software, I raced professionally for Trek-Livestrong and Bahati Foundation.
 
-[Read the full background](/about/) · [Send a note](/contact/)
+[About](/about/) · [Contact](/contact/)
