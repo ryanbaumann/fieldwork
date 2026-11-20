@@ -39,6 +39,18 @@
 
 * { box-sizing: border-box; }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---- skip link ---- */
 
 .skip-link {
@@ -179,7 +191,7 @@ img { max-width: 100%; height: auto; border-radius: 0.6rem; }
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
-  padding-block: 0.7rem;
+  padding-block: 0.4rem;
   background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
@@ -219,19 +231,19 @@ img { max-width: 100%; height: auto; border-radius: 0.6rem; }
 }
 .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
 
-main { padding-block: clamp(0.5rem, 2vw, 1.5rem) 2rem; }
+main { padding-block: clamp(0.5rem, 2vw, 1.25rem) 1.5rem; }
 main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
 
 .site-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem 1rem;
+  gap: 0.5rem 1rem;
   flex-wrap: wrap;
   border-top: 1px solid var(--line);
-  padding-block: 1rem 2rem;
+  padding-block: 0.75rem 1.25rem;
   color: var(--faint);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 .site-footer > p { margin: 0; }
 .footer-links { display: flex; align-items: center; gap: 0.25rem 0.9rem; flex-wrap: wrap; }
@@ -240,7 +252,7 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  min-width: 28px;
+  min-width: 44px;
   padding-inline: 0.2rem;
   color: var(--muted);
   text-decoration: none;
@@ -475,37 +487,50 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
 .back a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--muted); }
 .back a:hover { color: var(--accent-ink); }
 
-/* ---- article colophon / AI disclosure ---- */
+/* ---- article footer (disclosure + share) ---- */
 
-.article-colophon {
-  margin: 2.5rem 0 1rem;
-  padding: 0.85rem 1.1rem;
-  border: 1px solid var(--line);
-  border-radius: 0.65rem;
-  background: var(--surface);
+.article-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.25rem;
 }
 .article-disclosure {
   margin: 0;
-  font-size: 0.86rem;
-  color: var(--muted);
-  line-height: 1.5;
+  font-size: 0.85rem;
+  color: var(--faint);
+  line-height: 1.45;
 }
-
-/* ---- share links ---- */
-
 .share-links {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 2rem 0 0.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--line);
+  gap: 0.75rem;
+  margin: 0;
 }
 .share-label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--faint);
+}
+.share-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+.share-link:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
 }
 
 /* ---- email list + comments ---- */
@@ -514,12 +539,13 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
 .comments {
   width: 100%;
   max-width: var(--prose);
-  margin-top: 2.5rem;
-  padding-top: 1.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
   border-top: 1px solid var(--line);
 }
-.subscribe p { color: var(--muted); max-width: var(--prose); }
-.subscribe-form { display: grid; gap: 0.35rem; margin: 1.1rem 0 0.75rem; }
+.subscribe h2 { font-size: 1.05rem; margin: 0 0 0.65rem; }
+.subscribe p { color: var(--muted); max-width: var(--prose); font-size: 0.9rem; }
+.subscribe-form { display: grid; gap: 0.35rem; margin: 0 0 0.55rem; }
 .subscribe-form label { color: var(--muted); font-weight: 650; font-size: 0.95rem; }
 .subscribe-controls { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .subscribe-controls input {
@@ -532,12 +558,26 @@ main > section { margin-bottom: clamp(3rem, 6vw, 5.5rem); }
   font: inherit;
   padding: 0.7rem 0.8rem;
 }
-.subscribe .section-note,
-.comments .section-note { margin-bottom: 0; }
+.subscribe .section-note { margin-bottom: 0; font-size: 0.85rem; color: var(--faint); }
+.comments-details summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 0.15rem;
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 0.95rem;
+  color: var(--ink);
+  list-style: none;
+}
+.comments-details summary::-webkit-details-marker { display: none; }
+.comments-details summary::before { content: "▸ "; color: var(--faint); margin-right: 0.35rem; }
+.comments-details[open] > summary::before { content: "▾ "; }
+.comments-details summary:hover { color: var(--accent-ink); text-decoration: underline; }
 .comments .giscus,
 .comments .giscus-frame { width: 100%; }
 .comments .giscus-frame { min-height: 0; border: 0; color-scheme: normal; }
-.comments .giscus { margin-top: 1.25rem; }
+.comments .giscus { margin-top: 1rem; }
 
 /* ---- states ---- */
 
@@ -918,7 +958,6 @@ main > section.hero { margin-bottom: clamp(0.5rem, 1.5vw, 1.5rem); }
      12px. The one-line rule is held by padding and min-width, not by
      shrinking type below readable size. Verify at 390px after changing. */
   .site-header nav a { min-width: 0; padding-inline: 0; font-size: clamp(0.75rem, 2.5vw, 0.78rem); }
-  .site-header nav a.nav-contact { display: none; }
   .header-actions { justify-self: end; gap: 0.35rem; }
   .theme-toggle { font-size: 1.1rem; }
   main { padding-top: 0.75rem; }

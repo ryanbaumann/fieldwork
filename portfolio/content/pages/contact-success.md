@@ -1,11 +1,10 @@
 ---
 title: Message sent
-eyebrow: Contact
 summary: Ryan Baumann received your message.
 noindex: true
 contactDelivery: success
 ---
 
-Thanks. I have your note and enough context to reply.
+Thanks. Got your note.
 
-[Return home](/) or keep exploring [the work](/work/).
+[Home](/) · [Work](/work/)
