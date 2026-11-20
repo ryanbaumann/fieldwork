@@ -2,6 +2,16 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-19 - Lazy giscus loading inside `<details>` keeps CSP hashes static and zero-dependency
+
+Context: Collapsing `Comments` at the bottom of Field Notes pages inside `<details class="comments-details">` so Notes pages end cleanly without forcing third-party giscus iframe height or network traffic on initial load.
+
+Learning: Listening to the native `toggle` event on `<details class="comments-details">` and appending the giscus `<script>` once (`if (loaded) return;`) when `details.open` becomes `true` preserves exact CSP compatibility because `portfolio/lib/csp.mjs` hashes the static inline `<script>` body at build time (`inlineScriptHashes(html)`), while zero third-party requests run until a reader opens comments.
+
+Evidence: `portfolio/test/build.test.mjs` verified `<details class="comments-details">` ordering after `#subscribe-title` and before `<footer>`, and `node scripts/build-local.mjs && node scripts/smoke.mjs` verified per-page `csp-hashes.json` manifest generation.
+
+Use next time: Prefer `<details>` + a static one-shot `toggle` loader for optional third-party embeds so CSP manifests remain deterministic and default page loads stay lean.
+
 ## 2026-11-19 - `loadCollection()` needed a `meta.order` tie-breaker for dateless `work` entries
 
 Context: Rebalancing homepage `Selected work` cards by editing `order` in `portfolio/content/work/*.md` while preserving reverse-chronological sorting for `writing` and `talks`.

@@ -185,7 +185,7 @@ test('homepage Labs action opens the Labs collection instead of a featured demo'
   const result = build(paths, { BASE_PATH: '/preview/' });
   assert.equal(result.status, 0, result.stderr);
   const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
-  assert.match(home, /<a class="more" href="\/preview\/demos\/">Explore Labs/);
+  assert.match(home, /<a class="more" href="\/preview\/demos\/">All labs/);
 });
 
 test('contact page renders authored context alongside the form', () => {
@@ -202,7 +202,7 @@ test('contact page renders authored context alongside the form', () => {
 
 test('shared primary navigation leads with Notes and keeps the resume under About', () => {
   const paths = fixture();
-  write(join(paths.content, 'pages', 'about.md'), `---\ntitle: About\nsummary: About this person\n---\n[View the resume](/resume/)`);
+  write(join(paths.content, 'pages', 'about.md'), `---\ntitle: About\nsummary: About this person\n---\n[Resume](/resume/)`);
   write(join(paths.content, 'pages', 'resume.md'), `---\ntitle: Resume\nsummary: Resume page\n---\nExperience.`);
   const result = build(paths);
   assert.equal(result.status, 0, result.stderr);
@@ -213,10 +213,11 @@ test('shared primary navigation leads with Notes and keeps the resume under Abou
   assert.match(primaryNav, /href="\/talks\/"[^>]*>Talks<\/a>/);
   assert.match(primaryNav, /href="\/about\/"[^>]*>About<\/a>/);
   assert.doesNotMatch(primaryNav, /href="\/resume\/"/);
+  assert.doesNotMatch(primaryNav, /href="\/contact\/"/);
   assert.doesNotMatch(home, /nav-overflow-cue|Show more navigation links/);
 
   const about = readFileSync(join(paths.dist, 'about', 'index.html'), 'utf8');
-  assert.match(about, /href="\/resume\/"[^>]*>View the resume<\/a>/);
+  assert.match(about, /href="\/resume\/"[^>]*>Resume<\/a>/);
 });
 
 test('site brand and person identity stay distinct in visible and structured metadata', () => {
@@ -230,7 +231,7 @@ test('site brand and person identity stay distinct in visible and structured met
   assert.match(home, /<title>Fieldwork by Test Person<\/title>/);
   assert.match(home, /<meta property="og:site_name" content="Fieldwork" \/>/);
   assert.match(home, /<span class="site-name-full">Test Person’s Fieldwork<\/span><span class="site-name-short" aria-hidden="true">Fieldwork<\/span>/);
-  assert.match(home, /&copy; <span>\d{4}<\/span> Fieldwork by Test Person/);
+  assert.match(home, /&copy; <span>\d{4}<\/span> Test Person/);
   assert.match(home, /"@type":"WebSite","name":"Fieldwork"/);
   assert.match(home, /"@type":"Person","name":"Test Person"/);
 });
@@ -593,6 +594,13 @@ test('writer dashboard inline status helper restricts external links to https Gi
 
 test('navigation, colophon, and contact privacy disclosures stay unified and non-repetitive', () => {
   const paths = fixture();
+  const sitePath = join(paths.content, 'site.json');
+  const site = JSON.parse(readFileSync(sitePath, 'utf8'));
+  write(sitePath, JSON.stringify({
+    ...site,
+    links: { ...site.links, x: 'https://x.com/example', substack: 'https://example.substack.com/' },
+    comments: { provider: 'giscus', repo: 'example/repo', repoId: 'R_1', category: 'Announcements', categoryId: 'C_1' },
+  }));
   write(join(paths.content, 'writing', 'personal-note.md'), `---\ntitle: Personal note\nsummary: Decision fatigue\ndate: 2026-11-01\ntype: Personal\n---\nBody.`);
   write(join(paths.content, 'pages', 'contact.md'), `---\ntitle: Contact\nsummary: Send a note\neyebrow: Contact\n---\nReach out anytime.`);
   write(join(paths.content, 'pages', 'privacy.md'), `---\ntitle: Privacy\nsummary: Privacy notice\neyebrow: Privacy\n---\nPrivacy details.`);
@@ -602,16 +610,26 @@ test('navigation, colophon, and contact privacy disclosures stay unified and non
   const note = readFileSync(join(paths.dist, 'writing', 'personal-note', 'index.html'), 'utf8');
   assert.match(note, /<p class="eyebrow"><a class="eyebrow-link" href="\/writing\/">← Notes<\/a><\/p>/);
   assert.match(note, /<p class="article-meta">Personal · November 1, 2026<\/p>/);
-  assert.match(note, /Written by Ryan Baumann, with copyediting assistance by AI\./);
-  assert.doesNotMatch(note, /AI helps me copyedit/);
-  assert.ok(note.indexOf('id="subscribe-title"') < note.indexOf('>← All notes</a>'));
+  assert.match(note, /<div class="article-footer">[\s\S]*Written by Ryan Baumann, copyedited with AI\.[\s\S]*class="share-link"[^>]*>LinkedIn<\/a>[\s\S]*class="share-link"[^>]*>Email<\/a>/);
+  assert.doesNotMatch(note, /AI helps me copyedit|← All notes/);
+  assert.match(note, /<label class="sr-only" for="subscribe-email">Email address<\/label>/);
+  assert.match(note, /<details class="comments-details">\s*<summary>Comments<\/summary>/);
+  assert.match(note, /details\.addEventListener\('toggle',\(\)=>\{if\(details\.open\)load\(\)\}\)/);
+  assert.ok(note.indexOf('class="article-footer"') < note.indexOf('id="subscribe-title"'));
+  assert.ok(note.indexOf('id="subscribe-title"') < note.indexOf('class="comments-details"'));
+
+  const writerDist = join(paths.root, 'writer-dist');
+  const writerResult = build(paths, { BASE_PATH: '/writer/', PORTFOLIO_DIST_DIR: writerDist, PORTFOLIO_WRITER_MODE: 'true' });
+  assert.equal(writerResult.status, 0, writerResult.stderr);
+  const writerNote = readFileSync(join(writerDist, 'writing', 'personal-note', 'index.html'), 'utf8');
+  assert.doesNotMatch(writerNote, /<section class="comments"|giscus\.app/);
 
   const footerNav = note.match(/<nav class="footer-links" aria-label="Footer">([\s\S]*?)<\/nav>/)?.[1] || '';
   assert.match(footerNav, /href="\/contact\/"[^>]*>Contact<\/a>/);
   assert.match(footerNav, /href="\/resume\/"[^>]*>Resume<\/a>/);
   assert.match(footerNav, /href="\/privacy\/"[^>]*>Privacy<\/a>/);
   assert.match(footerNav, /href="\/feed\.xml"[^>]*>RSS<\/a>/);
-  assert.doesNotMatch(footerNav, /href="\/talks\/"|href="\/demos\/"/);
+  assert.doesNotMatch(footerNav, /href="\/talks\/"|href="\/demos\/"|x\.com|substack\.com/);
 
   const contact = readFileSync(join(paths.dist, 'contact', 'index.html'), 'utf8');
   assert.doesNotMatch(contact, /<p class="eyebrow">Contact<\/p>/);
@@ -634,7 +652,7 @@ test('dateless work entries sort by ascending order on home and work index while
   assert.equal(result.status, 0, result.stderr);
 
   const home = readFileSync(join(paths.dist, 'index.html'), 'utf8');
-  const workGrid = home.match(/Selected work[\s\S]*?<div class="grid home-work-grid">([\s\S]*?)<\/div>\s*<\/section>/)?.[1] || '';
+  const workGrid = home.match(/<h2>Work<\/h2>[\s\S]*?<div class="grid home-work-grid">([\s\S]*?)<\/div>\s*<\/section>/)?.[1] || '';
   assert.ok(workGrid.indexOf('Z First') !== -1 && workGrid.indexOf('M Second') !== -1 && workGrid.indexOf('A Third') !== -1);
   assert.ok(workGrid.indexOf('Z First') < workGrid.indexOf('M Second'));
   assert.ok(workGrid.indexOf('M Second') < workGrid.indexOf('A Third'));

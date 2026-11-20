@@ -1,6 +1,5 @@
 ---
 title: Privacy
-eyebrow: Privacy
 summary: How Fieldwork handles analytics, contact details, email subscriptions, data from Labs, and third-party services.
 ---
 

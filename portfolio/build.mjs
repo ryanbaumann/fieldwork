@@ -549,7 +549,6 @@ function layout({ title, description, content, active = '', isSubpage = false, c
     { href: `${BASE}talks/`, label: 'Talks', key: 'talks' },
     ...(demos.length ? [{ href: `${BASE}demos/`, label: 'Labs', key: 'demos' }] : []),
     { href: `${BASE}about/`, label: 'About', key: 'about' },
-    { href: `${BASE}contact/`, label: 'Contact', key: 'contact' },
   ];
   const nav = navItems
     .map((item) => {
@@ -662,16 +661,14 @@ ${WRITER_MODE ? '<div class="writer-banner" role="status">Private writer preview
 ${content}
 </main>
 <footer class="site-footer">
-  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.brandByline || `${brand} by ${site.name}`)}</p>
+  <p>&copy; <span>${new Date().getFullYear()}</span> ${escapeHtml(site.name)}</p>
   <nav class="footer-links" aria-label="Footer">
     <a href="${BASE}contact/">Contact</a>
     <a href="${BASE}resume/">Resume</a>
-    <a href="${BASE}privacy/">Privacy</a>
-    <a href="${BASE}feed.xml">RSS</a>
     <a href="${escapeHtml(site.links.github)}" target="_blank" rel="noopener noreferrer">GitHub</a>
     <a href="${escapeHtml(site.links.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-    ${site.links.x ? `<a href="${escapeHtml(site.links.x)}" target="_blank" rel="noopener noreferrer">X</a>` : ''}
-    ${site.links.substack ? `<a href="${escapeHtml(site.links.substack)}" target="_blank" rel="noopener noreferrer">Substack</a>` : ''}
+    <a href="${BASE}feed.xml">RSS</a>
+    <a href="${BASE}privacy/">Privacy</a>
   </nav>
 </footer>
 <script>(()=>{const b=document.querySelector('.theme-toggle');if(!b)return;const states=['system','light','dark'];const icons={system:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>',light:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path></svg>',dark:'<svg viewBox="0 0 24 24"><path d="M20.5 14.1A8.5 8.5 0 0 1 9.9 3.5a8.5 8.5 0 1 0 10.6 10.6Z"></path></svg>'};const sync=()=>{const current=document.documentElement.dataset.theme||'system';const next=states[(states.indexOf(current)+1)%states.length];b.querySelector('span').innerHTML=icons[current];b.setAttribute('aria-label','Color theme: '+current+'. Activate to use '+next+'.')};b.addEventListener('click',()=>{const current=document.documentElement.dataset.theme||'system';const next=states[(states.indexOf(current)+1)%states.length];if(next==='system'){delete document.documentElement.dataset.theme;localStorage.removeItem('theme')}else{document.documentElement.dataset.theme=next;localStorage.setItem('theme',next)}sync()});sync()})();</script>
@@ -943,7 +940,7 @@ function demoCard(demo) {
     <h3>${escapeHtml(demo.title)}</h3>
     <p>${escapeHtml(demo.description || '')}</p>
     ${tags}
-    <span class="demo-action">Launch demo →</span>
+    <span class="demo-action">Open →</span>
   </div>
 </a>`;
 }
@@ -974,7 +971,7 @@ function featuredNote(entry) {
     <p class="featured-note-meta">${longDate ? `Featured · ${escapeHtml(longDate)}` : 'Featured'}</p>
     <h3>${escapeHtml(meta.title)}${external ? ' ↗' : ''}</h3>
     <p>${escapeHtml(meta.summary || '')}</p>
-    <span class="featured-note-action">Read the note →</span>
+    <span class="featured-note-action">Read →</span>
   </div>
 </a>`;
 }
@@ -986,13 +983,6 @@ function sectionHeader(eyebrow, title, moreHref, moreLabel) {
 </div>`;
 }
 
-function articleDisclosure(isWriting) {
-  if (!isWriting) return '';
-  return `<div class="article-colophon">
-  <p class="article-disclosure">Written by Ryan Baumann, with copyediting assistance by AI.</p>
-</div>`;
-}
-
 function shareLinks(pageUrl, title) {
   const encodedUrl = encodeURIComponent(pageUrl);
   const encodedTitle = encodeURIComponent(title);
@@ -1000,9 +990,16 @@ function shareLinks(pageUrl, title) {
   const email = `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
   return `<p class="share-links">
   <span class="share-label">Share</span>
-  <a class="chip" href="${linkedIn}" target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn" data-analytics-share="linkedin">LinkedIn</a>
-  <a class="chip" href="${email}" aria-label="Share via email" data-analytics-share="email">Email</a>
+  <a class="share-link" href="${linkedIn}" target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn" data-analytics-share="linkedin">LinkedIn</a>
+  <a class="share-link" href="${email}" aria-label="Share via email" data-analytics-share="email">Email</a>
 </p>`;
+}
+
+function articleFooter(isWriting, pageUrl, title) {
+  return `<div class="article-footer">
+  ${isWriting ? '<p class="article-disclosure">Written by Ryan Baumann, copyedited with AI.</p>' : ''}
+  ${shareLinks(pageUrl, title)}
+</div>`;
 }
 
 // Email-list signup. Plain form POST to the gateway's /api/subscribe route
@@ -1010,11 +1007,9 @@ function shareLinks(pageUrl, title) {
 // the Resend dashboard whenever there is something worth announcing.
 function subscribeSection() {
   return `<section class="subscribe" aria-labelledby="subscribe-title">
-  <p class="eyebrow">Email list</p>
-  <h2 id="subscribe-title">Get new notes by email</h2>
-  <p>Occasional emails when a new note, talk, or Lab goes live.</p>
+  <h2 id="subscribe-title">Subscribe</h2>
   <form class="subscribe-form" action="${BASE}api/subscribe" method="post">
-    <label for="subscribe-email">Email address</label>
+    <label class="sr-only" for="subscribe-email">Email address</label>
     <div class="subscribe-controls">
       <input id="subscribe-email" name="email" type="email" autocomplete="email" maxlength="200" placeholder="you@example.com" required />
       <button class="button button-primary" type="submit">Subscribe</button>
@@ -1023,17 +1018,15 @@ function subscribeSection() {
       <label>Company fax number <input name="company_fax_number" tabindex="-1" autocomplete="off" /></label>
     </div>
   </form>
-  <p class="section-note">Used only to send these updates. Unsubscribe in any email &middot; <a href="${BASE}privacy/#email-list">Privacy</a>.</p>
+  <p class="section-note">New notes by email. Unsubscribe anytime &middot; <a href="${BASE}privacy/#email-list">Privacy</a>.</p>
 </section>`;
 }
 
 // Reader comments on field notes via giscus, which stores each thread as a
 // GitHub Discussion on the portfolio repo — readers sign in with GitHub
-// inside the widget. Renders nothing until site.json's comments block has
-// the repoId/categoryId values from https://giscus.app, so the site stays
-// inert (and script-free) until comments are deliberately switched on.
-// This is the one sanctioned third-party embed; see the portfolio-design
-// skill before adding others. Skipped in the private writer preview.
+// inside the widget. Collapsed by default and loaded on demand when opened so
+// the page avoids third-party iframe requests until requested. Skipped in the
+// private writer preview.
 function commentsSection() {
   const comments = site.comments || {};
   const configured = comments.provider === 'giscus'
@@ -1053,12 +1046,12 @@ function commentsSection() {
     'data-loading': 'lazy',
   };
   const configJson = JSON.stringify(config).replaceAll('<', '\\u003c');
-  return `<section class="comments" aria-labelledby="comments-title">
-  <p class="eyebrow">Discussion</p>
-  <h2 id="comments-title">Comments</h2>
-  <p class="section-note">Comments are GitHub Discussions rendered by <a href="https://giscus.app" target="_blank" rel="noopener noreferrer">giscus</a>. Sign in with GitHub inside the widget to post or react.</p>
-  <div class="giscus"></div>
-  <script>(()=>{const config=${configJson};const theme=()=>({light:'light',dark:'dark'})[document.documentElement.dataset.theme]||'preferred_color_scheme';const mount=document.querySelector('.giscus');const script=document.createElement('script');script.src='https://giscus.app/client.js';script.async=true;script.crossOrigin='anonymous';for(const [key,value] of Object.entries(config))script.setAttribute(key,value);script.setAttribute('data-theme',theme());mount.appendChild(script);new MutationObserver(()=>{const frame=document.querySelector('iframe.giscus-frame');if(frame)frame.contentWindow.postMessage({giscus:{setConfig:{theme:theme()}}},'https://giscus.app')}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})})();</script>
+  return `<section class="comments" aria-label="Comments">
+  <details class="comments-details">
+    <summary>Comments</summary>
+    <div class="giscus"></div>
+  </details>
+  <script>(()=>{const details=document.querySelector('.comments-details');if(!details)return;const config=${configJson};const theme=()=>({light:'light',dark:'dark'})[document.documentElement.dataset.theme]||'preferred_color_scheme';let loaded=false;const load=()=>{if(loaded)return;loaded=true;const mount=details.querySelector('.giscus');const script=document.createElement('script');script.src='https://giscus.app/client.js';script.async=true;script.crossOrigin='anonymous';for(const [key,value] of Object.entries(config))script.setAttribute(key,value);script.setAttribute('data-theme',theme());mount.appendChild(script)};details.addEventListener('toggle',()=>{if(details.open)load()});new MutationObserver(()=>{const frame=document.querySelector('iframe.giscus-frame');if(frame)frame.contentWindow.postMessage({giscus:{setConfig:{theme:theme()}}},'https://giscus.app')}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})})();</script>
 </section>`;
 }
 
@@ -1205,7 +1198,6 @@ function detailPage(collection, entry, activeKey) {
   const jsonLdBlocks = jsonLd ? [jsonLd, jsonLdBreadcrumbList(collection, entry, pageUrl)] : jsonLd;
 
   const formattedDate = meta.date ? (formatLongDate(meta.date) || meta.date) : null;
-  const backLink = `<p class="back"><a href="${BASE}${collection.name}/">← All ${collection.label.toLowerCase()}</a></p>`;
   const content = `<article class="prose">
   <p class="eyebrow"><a class="eyebrow-link" href="${BASE}${collection.name}/">← ${escapeHtml(collection.label)}</a></p>
   <h1>${escapeHtml(meta.title)}</h1>
@@ -1214,10 +1206,8 @@ function detailPage(collection, entry, activeKey) {
   ${linkChips(meta.links)}
   ${meta.type === 'Personal' ? '' : heroImage(meta, collection.name)}
   ${markdownToHtml(entry.body)}
-  ${articleDisclosure(isWriting)}
-  ${shareLinks(pageUrl, meta.title)}
-  ${isWriting ? '' : backLink}
-</article>${isWriting ? `\n${subscribeSection()}\n${commentsSection()}\n<div class="prose">${backLink}</div>` : ''}`;
+  ${articleFooter(isWriting, pageUrl, meta.title)}
+</article>${isWriting ? `\n${subscribeSection()}\n${commentsSection()}` : ''}`;
   writePage(join(collection.name, entry.slug, 'index.html'), layout({
     title: `${meta.title} - ${brand}`,
     description: meta.summary || site.description,
@@ -1384,7 +1374,7 @@ function buildHome(collections) {
   const demosSection = homeDemos.length
     ? `
 <section>
-  ${sectionHeader('', 'Labs', `${BASE}demos/`, 'Explore Labs')}
+  ${sectionHeader('', 'Labs', `${BASE}demos/`, 'All labs')}
   ${site.sectionIntros?.demos ? `<p class="section-note">${escapeHtml(site.sectionIntros.demos)}</p>` : ''}
   <div class="grid demo-grid">
     ${homeDemos.map(demoCard).join('\n')}
@@ -1429,18 +1419,17 @@ function buildHome(collections) {
 
 ${demosSection}
 <section>
-  ${sectionHeader('', 'Selected work', `${BASE}work/`, 'All work')}
+  ${sectionHeader('', 'Work', `${BASE}work/`, 'All work')}
   <div class="grid home-work-grid">${selectedWork.map((entry) => gridCard('work', entry)).join('\n')}</div>
 </section>
 
 <section class="build-section home-close">
   <div>
-    <p class="eyebrow">Contact</p>
-    <h2>Working on an applied AI workflow, agent system, or engineering problem?</h2>
-    <p>Reach out to compare approaches, talk through a problem, or discuss a speaking event.</p>
+    <h2>Working on applied AI or agent workflows?</h2>
+    <p>Compare notes, work through a problem, or ask about speaking.</p>
   </div>
   <div>
-    <a class="button button-primary" href="${BASE}contact/">Send a note</a>
+    <a class="button button-primary" href="${BASE}contact/">Contact</a>
   </div>
 </section>
 `;
@@ -1464,7 +1453,7 @@ function buildDemosPage() {
   <div class="grid demo-grid">
     ${demos.map(demoCard).join('\n')}
   </div>
-  <p class="section-note"><a href="${escapeHtml(site.links.github)}/fieldwork" target="_blank" rel="noopener noreferrer">Read the source</a>.</p>
+  <p class="section-note"><a href="${escapeHtml(site.links.github)}/fieldwork" target="_blank" rel="noopener noreferrer">Source on GitHub</a>.</p>
 </section>`;
 
   writePage(join('demos', 'index.html'), layout({
@@ -1547,14 +1536,14 @@ function resumePageContent(meta, body) {
 
 function contactPageContent(meta, body) {
   return `<section class="contact-shell">
-  <h1>Start a conversation</h1>
+  <h1>Contact</h1>
   <div class="prose">${markdownToHtml(body)}</div>
   <form id="contact-form" class="contact-form" action="${BASE}api/contact" method="post">
-    <fieldset class="intent-options"><legend>What is this about?</legend>
+    <fieldset class="intent-options"><legend>Topic</legend>
       ${['Applied AI or engineering discussion', 'Content collaboration', 'Speaking opportunity', 'Other'].map((intent) => `<label><input type="radio" name="intent" value="${intent}" required /> <span>${intent}</span></label>`).join('')}
     </fieldset>
-    <label for="contact-message">What would you like to discuss?
-      <textarea id="contact-message" name="message" rows="6" required minlength="20" maxlength="5000" placeholder="A few sentences about the idea, audience, timing, and useful next step."></textarea>
+    <label for="contact-message">Message
+      <textarea id="contact-message" name="message" rows="6" required minlength="20" maxlength="5000" placeholder="What you're building, the context, and a useful next step."></textarea>
     </label>
     <label for="contact-name">Name <input id="contact-name" name="name" autocomplete="name" maxlength="120" required /></label>
     <label for="contact-email">Email <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="200" required /></label>
@@ -1563,9 +1552,9 @@ function contactPageContent(meta, body) {
     </div>
     <input type="hidden" name="fill_ms" value="" />
     <label class="human-check" for="contact-human"><input id="contact-human" name="human" type="checkbox" value="1" required /> <span>This is a personal note, not an unsolicited pitch.</span></label>
-    <button class="button" type="submit">Send note</button>
+    <button class="button" type="submit">Send</button>
   </form>
-  <p class="section-note">Used only to reply. Messages are screened for spam without your name or email; please don't include secrets or sensitive data. <a href="${BASE}privacy/#contact">Privacy</a>.</p>
+  <p class="section-note">Used only to reply. Screened for spam without your name or email; don't include secrets. <a href="${BASE}privacy/#contact">Privacy</a>.</p>
   <script>(()=>{const form=document.getElementById('contact-form');const start=performance.now();form.addEventListener('submit',()=>{form.elements.fill_ms.value=String(Math.round(performance.now()-start))});const value=new URLSearchParams(location.search).get('intent');const intents={ai:'Applied AI or engineering discussion',platform:'Applied AI or engineering discussion',content:'Content collaboration',speaking:'Speaking opportunity',other:'Other'};const selected=intents[value];if(!selected)return;const input=[...form.querySelectorAll('input[name="intent"]')].find((item)=>item.value===selected);if(input)input.checked=true})();</script>
 </section>`;
 }
@@ -1623,7 +1612,7 @@ function buildNotFoundPage() {
   <p>That page moved or no longer exists.</p>
   <p class="hero-actions">
     <a class="button button-primary" href="${BASE}">Home</a>
-    <a class="button button-secondary" href="${BASE}writing/">Read notes</a>
+    <a class="button button-secondary" href="${BASE}writing/">Notes</a>
   </p>
 </section>`;
   writePage('404.html', layout({

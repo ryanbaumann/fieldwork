@@ -34,12 +34,13 @@ description: How Ryan designs. Use before changing style.css, page layouts in bu
 - **Artifact cards**: generated SVGs (`scripts/artifact-cards.mjs`) for entries with no honest screenshot to show. State only facts already in the entry copy.
 - **Eyebrows** (`.eyebrow`) label every section in uppercase accent text.
 - **Empty states** (`.empty-state`) are designed, not apologetic: sections ship before their content does (see the writing section).
-- **Subscribe** (`.subscribe`) and **Comments** (`.comments`): quiet bordered-top sections at the end of writing pages. The subscribe form is a plain POST to `/api/subscribe` (no client JS); comments are the sanctioned giscus embed described in principle 2. See `docs/EMAIL_LIST_AND_COMMENTS.md`.
+- **Article footer, subscribe, and comments**: Detail pages end with a compact `.article-footer` horizontal row pairing the inline AI copyediting disclosure with text `Share` links (no boxed card). On Field Notes, keep `.subscribe` compact (`h2`, email input with `.sr-only` label, submit button, one-line privacy note, plain POST to `/api/subscribe`) and keep `.comments` inside a native `<details class="comments-details">` disclosure that loads giscus (`commentsSection` in `build.mjs`) only when opened so default page loads stay free of third-party iframe requests. See `docs/EMAIL_LIST_AND_COMMENTS.md`.
 
 ## Accessibility
 
 - Semantic landmarks (`header`, `main`, `footer`, `nav` with `aria-label`).
-- Keep primary navigation to reader destinations. Resume belongs under About, not in the header. On mobile, keep Fieldwork, Notes, Work, Talks, Labs, About, and the theme control on one non-scrolling line; Contact remains available in the page and footer.
+- Keep primary navigation to 5 reader destinations across desktop and mobile (`Notes · Work · Talks · Labs · About`) with brand `Fieldwork` and the theme control on one non-scrolling line. `Resume` belongs under `About` and in the compact 6-link global footer (`Contact · Resume · GitHub · LinkedIn · RSS · Privacy`).
+- Say what it actually is: avoid redundant eyebrows that repeat a page title or heading, and use concrete bare nouns for nav items, links, and button labels (`Resume`, `Contact`, `Open`, `Read`, `Send`) instead of padded verb-article wrappers.
 - Treat a section title and its explanatory subhead as one unit: keep their gap compact, then use the larger spacing before cards or the next section.
 - `aria-current="page"` on active nav.
 - Visible `:focus-visible` ring on everything interactive.
