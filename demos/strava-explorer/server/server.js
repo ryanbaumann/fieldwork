@@ -36,28 +36,29 @@ if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) {
 }
 
 export function corsHeaders(origin, isTokenEndpoint = false) {
-  let allowOrigin = '*';
+  let allowOrigin = null;
 
   if (allowedOrigins.length > 0 && !allowedOrigins.includes('*')) {
-    if (origin && isOriginAllowed(origin)) {
+    if (origin && origin !== 'null' && isOriginAllowed(origin)) {
       allowOrigin = origin;
-    } else {
-      allowOrigin = 'null';
     }
-  } else {
-    if (process.env.NODE_ENV === 'production' && isTokenEndpoint) {
+  } else if (!(process.env.NODE_ENV === 'production' && isTokenEndpoint)) {
+    if (origin && origin !== 'null') {
+      allowOrigin = origin;
+    } else if (!origin) {
       allowOrigin = '*';
-    } else {
-      allowOrigin = origin || '*';
     }
   }
 
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
+  const headers = {
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
     'Vary': 'Origin',
   };
+  if (allowOrigin) {
+    headers['Access-Control-Allow-Origin'] = allowOrigin;
+  }
+  return headers;
 }
 
 function sendJson(response, statusCode, payload, origin, isTokenEndpoint = false) {
@@ -72,14 +73,16 @@ function sendJson(response, statusCode, payload, origin, isTokenEndpoint = false
 
 export function resolveClientIp(request, env = process.env) {
   const remote = (request.socket?.remoteAddress || '').replace(/^::ffff:/, '');
-  const behindCloudRun = env.TRUST_PROXY === 'true' || remote.startsWith('169.254.');
-  if (behindCloudRun) {
-    const chain = String(request.headers?.['x-forwarded-for'] || '')
-      .split(',')
-      .map((part) => part.trim())
-      .filter(Boolean);
-    const client = chain.at(-2) || chain.at(-1);
-    if (client) return client;
+  const chain = String(request.headers?.['x-forwarded-for'] || '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (remote.startsWith('169.254.') && chain.length >= 1) {
+    // Cloud Run direct ingress (GFE) appends the true client IP last.
+    return chain.at(-1);
+  }
+  if (env.TRUST_PROXY === 'true' && chain.length >= 2) {
+    return chain.at(-2);
   }
   return remote || 'unknown';
 }

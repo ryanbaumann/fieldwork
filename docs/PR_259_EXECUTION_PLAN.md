@@ -65,7 +65,7 @@ npx --yes skills add addyosmani/clarity --global --agent codex --skill clarity -
 ```
 
 The installed skill is version `0.2.1` at
-`/home/user/.agents/skills/clarity/SKILL.md` in the preparation
+`~/.agents/skills/clarity/SKILL.md` in the preparation
 environment. It is a user-level installation, not a vendored repository
 dependency. In another environment, inspect installed skills first and use the
 command above if it is absent. Record the actual installed version before use.

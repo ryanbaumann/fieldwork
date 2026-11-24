@@ -13,6 +13,7 @@
     "build": "node scripts/build-local.mjs",
     "start": "node --env-file=.env gateway/server.js",
     "smoke": "node scripts/smoke.mjs",
+    "security:scan": "node scripts/scan-secrets-pii.mjs",
     "security:audit": "node scripts/auto-update-security-deps.mjs --check",
     "security:fix": "node scripts/auto-update-security-deps.mjs --fix",
     "skills:improve": "node scripts/skill-improvement.mjs",

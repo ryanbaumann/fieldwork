@@ -42,6 +42,7 @@ async function main() {
   const GOOGLE_OAUTH_CLIENT_ID = await ask('   Google OAuth client ID');
   const GOOGLE_OAUTH_CLIENT_SECRET = await ask('   Google OAuth client secret');
   const GOOGLE_OAUTH_SESSION_SECRET = await ask('   Google OAuth session secret');
+  const GOOGLE_OAUTH_ALLOWED_EMAIL = await ask('   Google OAuth allowed email');
   const WRITER_PUBLIC_ORIGIN = await ask('   Dashboard HTTPS origin');
   const GITHUB_CONTENT_TOKEN = await ask('   Fine-grained GitHub Contents token');
   const GITHUB_REVIEW_TOKEN = await ask('   Fine-grained GitHub Issues token');
@@ -72,6 +73,7 @@ async function main() {
     GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET,
     GOOGLE_OAUTH_SESSION_SECRET,
+    GOOGLE_OAUTH_ALLOWED_EMAIL,
     WRITER_PUBLIC_ORIGIN,
     GITHUB_CONTENT_TOKEN,
     GITHUB_REVIEW_TOKEN,
@@ -111,7 +113,7 @@ RESEND_TOPIC_ID=${values.RESEND_TOPIC_ID || ''}
 GOOGLE_OAUTH_CLIENT_ID=${values.GOOGLE_OAUTH_CLIENT_ID || ''}
 GOOGLE_OAUTH_CLIENT_SECRET=${values.GOOGLE_OAUTH_CLIENT_SECRET || ''}
 GOOGLE_OAUTH_SESSION_SECRET=${values.GOOGLE_OAUTH_SESSION_SECRET || ''}
-GOOGLE_OAUTH_ALLOWED_EMAIL=user@example.com
+GOOGLE_OAUTH_ALLOWED_EMAIL=${values.GOOGLE_OAUTH_ALLOWED_EMAIL || ''}
 WRITER_PUBLIC_ORIGIN=${values.WRITER_PUBLIC_ORIGIN || ''}
 GITHUB_CONTENT_TOKEN=${values.GITHUB_CONTENT_TOKEN || ''}
 GITHUB_REVIEW_TOKEN=${values.GITHUB_REVIEW_TOKEN || ''}

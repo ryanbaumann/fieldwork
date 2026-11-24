@@ -21,7 +21,7 @@ Create a safe draft with `npm run new:post -- "Essay title"`. Use `--publish` fo
 
 ## Writer page
 
-Production builds a second copy at `/writer/`. It includes drafts and future essays, is excluded from public app discovery, forces `noindex, nofollow`, disables analytics, and is protected by Google OAuth. Only `user@example.com` is accepted by default. Point `WRITER_PUBLIC_ORIGIN` at the production HTTPS origin (for example, `https://writer.example.com`) and register `${WRITER_PUBLIC_ORIGIN}/auth/google/callback` as an authorized redirect URI in the Google Cloud OAuth client.
+Production builds a second copy at `/writer/`. It includes drafts and future essays, is excluded from public app discovery, forces `noindex, nofollow`, disables analytics, and is protected by Google OAuth. Only the exact account configured in `GOOGLE_OAUTH_ALLOWED_EMAIL` is accepted (the dashboard fails closed when unset). Point `WRITER_PUBLIC_ORIGIN` at the production HTTPS origin (for example, `https://writer.example.com`) and register `${WRITER_PUBLIC_ORIGIN}/auth/google/callback` as an authorized redirect URI in the Google Cloud OAuth client.
 
 The release dashboard makes the workflow explicit: open the private preview, edit the Markdown, save the draft, leave a review note, and request agentic review before publishing. A review request creates a GitHub issue with the content file, branch, and the required `portfolio-writing`, `portfolio-review`, and `portfolio-design` review lanes. A connected coding agent can pick up that issue, leave findings, and make a follow-up commit. Return to the dashboard to review that iteration in the private preview, then schedule or publish it. Publish now still requires an explicit browser confirmation. Every save creates a focused commit on the configured branch through the GitHub Contents API. The branch defaults to `main`, so no pull request is required. The normal push deploy handles immediate publication, and an hourly scheduled deploy publishes due timestamps.
 
@@ -30,7 +30,7 @@ Required runtime configuration:
 - `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`: the server-side Google OAuth web-client credentials.
 - `GOOGLE_OAUTH_SESSION_SECRET`: a long random value used only to sign short-lived dashboard sessions.
 - `WRITER_PUBLIC_ORIGIN`: the exact HTTPS dashboard origin, with no path or trailing slash.
-- `GOOGLE_OAUTH_ALLOWED_EMAIL`: optional override, defaults to `user@example.com`.
+- `GOOGLE_OAUTH_ALLOWED_EMAIL`: required exact Google account email allowed to access the dashboard (fails closed if unset).
 - `GITHUB_CONTENT_TOKEN`: a fine-grained GitHub token restricted to this repository with **Contents: read and write**. Store it in Secret Manager.
 - `GITHUB_REVIEW_TOKEN`: a dedicated fine-grained GitHub token with **Issues: read and write**. Required to submit agent-review requests; it never reaches the browser.
 - `GITHUB_CONTENT_REPOSITORY`: optional, defaults to `ryanbaumann/fieldwork`.

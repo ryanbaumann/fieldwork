@@ -111,6 +111,6 @@ Use next time: keep Grounding Lite attribution title/URL and each place link adj
 
 ## 2026-07-21 — Always pass --project geojson-bq-blog; never trust gcloud default
 
-Context: A deploy attempt used the local gcloud default project (`gmp-demos-ryanbaumann`) instead of the correct project (`geojson-bq-blog`). The local default is set to a different project that `user@example.com` does not even have permissions on, so the build failed with PERMISSION_DENIED — but if the account *had* access, it would have deployed to the wrong environment.
+Context: A deploy attempt used the local gcloud default project (`gmp-demos-ryanbaumann`) instead of the correct project (`geojson-bq-blog`). The local default is set to a different project that the personal gcloud account does not even have permissions on, so the build failed with PERMISSION_DENIED — but if the account *had* access, it would have deployed to the wrong environment.
 Learning: The local `gcloud config get-value project` is unreliable and returns the wrong project for this repo. Every `gcloud` command — builds, deploys, secrets, services, artifact repos — MUST include `--project geojson-bq-blog` explicitly. The forbidden project `gmp-demos-ryanbaumann` must never be targeted.
 Use next time: Hardcoded in `AGENTS.md`. Always pass `--project geojson-bq-blog` on every gcloud invocation. Never omit `--project` and never use `gmp-demos-ryanbaumann`.

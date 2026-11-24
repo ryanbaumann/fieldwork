@@ -268,11 +268,19 @@ describe('server/server.js (Security / CORS & Rate Limiting)', () => {
     };
     expect(resolveClientIp(untrusted, {})).toBe('198.51.100.2');
 
-    const cloudRun = {
-      headers: { 'x-forwarded-for': '1.2.3.4, 203.0.113.99, 34.102.0.1' },
-      socket: { remoteAddress: '169.254.1.1' },
+    // Cloud Run direct ingress (GFE 169.254.*): true client IP is appended last.
+    const cloudRunGfe = {
+      headers: { 'x-forwarded-for': '1.2.3.4, 203.0.113.99' },
+      socket: { remoteAddress: '169.254.169.126' },
     };
-    expect(resolveClientIp(cloudRun, {})).toBe('203.0.113.99');
+    expect(resolveClientIp(cloudRunGfe, {})).toBe('203.0.113.99');
+
+    // Explicit multi-hop trusted proxy uses chain.at(-2).
+    const trustedProxy = {
+      headers: { 'x-forwarded-for': '1.2.3.4, 203.0.113.99, 34.102.0.1' },
+      socket: { remoteAddress: '10.0.0.5' },
+    };
+    expect(resolveClientIp(trustedProxy, { TRUST_PROXY: 'true' })).toBe('203.0.113.99');
   });
   test('isOriginAllowed and CORS headers', () => {
     // Since allowedOrigins is imported, let's see how it behaves
@@ -282,6 +290,19 @@ describe('server/server.js (Security / CORS & Rate Limiting)', () => {
     // Let's test corsHeaders returning correct format
     const headers = corsHeaders('http://localhost:3000');
     expect(headers['Access-Control-Allow-Origin']).toBe('http://localhost:3000');
+
+    // Production token endpoint fails closed (omits ACAO) when ALLOWED_ORIGIN is unset,
+    // and Origin: null is never reflected or emitted.
+    const prevNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const prodTokenHeaders = corsHeaders('https://evil.example', true);
+      expect(prodTokenHeaders['Access-Control-Allow-Origin']).toBeUndefined();
+      const nullOriginHeaders = corsHeaders('null', false);
+      expect(nullOriginHeaders['Access-Control-Allow-Origin']).toBeUndefined();
+    } finally {
+      process.env.NODE_ENV = prevNodeEnv;
+    }
   });
 
   test('checkRateLimit limit enforcement', () => {

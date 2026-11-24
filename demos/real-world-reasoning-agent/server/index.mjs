@@ -50,13 +50,59 @@ const heartbeatMs = Number(process.env.PROXY_HEARTBEAT_MS ?? HEARTBEAT_MS);
 const heartbeats = new Map();
 let daily = { day: new Date().toISOString().slice(0, 10), ai: 0, inputBytes: 0, video: 0, mcp: 0 };
 
+const MAX_RATE_BUCKETS = 10_000;
+const SAFE_UPSTREAM_RESPONSE_HEADERS = [
+  'content-type',
+  'cache-control',
+  'etag',
+  'last-modified',
+  'content-disposition',
+  'retry-after',
+];
+const AI_GENERATE_PATH_RE = /^\/v1(?:beta)?\/models\/([A-Za-z0-9._-]+):(?:streamGenerateContent|generateContent)$/;
+const AI_INTERACTIONS_PATH_RE = /^\/v1(?:beta)?\/interactions$/;
+
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 // Cloud Run / GFE appends the real client IP as the LAST X-Forwarded-For hop.
-// Trusting the first (client-supplied) hop lets callers forge a fresh bucket
-// per request and defeat rate limiting, so use the last entry.
-function ip(req) { const xff = (req.headers['x-forwarded-for'] || '').toString().split(',').map((s) => s.trim()).filter(Boolean); return xff.length ? xff[xff.length - 1] : (req.socket.remoteAddress || 'unknown'); }
-function rate(req, kind, limit) { const key = `${kind}:${ip(req)}`; const now = Date.now(); const b = buckets.get(key) || []; const fresh = b.filter((t) => now - t < windowMs); fresh.push(now); buckets.set(key, fresh); return fresh.length <= limit; }
-function sameOrigin(req) { const host = req.headers['x-forwarded-host'] || req.headers.host; const source = req.headers.origin || req.headers.referer; if (!source) return true; try { return new URL(source).host === host; } catch { return false; } }
+// Ignore untrusted X-Forwarded-For on direct non-GFE sockets unless TRUST_PROXY=true.
+function ip(req) {
+  const remote = req.socket.remoteAddress || 'unknown';
+  const xff = (req.headers['x-forwarded-for'] || '').toString().split(',').map((s) => s.trim()).filter(Boolean);
+  if (/^(:{2}ffff:)?169\.254\./i.test(remote) && xff.length >= 1) return xff[xff.length - 1];
+  if (process.env.TRUST_PROXY === 'true' && xff.length >= 2) return xff[xff.length - 2];
+  return remote;
+}
+function rate(req, kind, limit) {
+  const key = `${kind}:${ip(req)}`;
+  const now = Date.now();
+  if (!buckets.has(key) && buckets.size >= MAX_RATE_BUCKETS) {
+    for (const [entryKey, times] of buckets.entries()) {
+      const kept = times.filter((t) => now - t < windowMs);
+      if (kept.length === 0) buckets.delete(entryKey);
+      else buckets.set(entryKey, kept);
+    }
+    if (buckets.size >= MAX_RATE_BUCKETS) {
+      const oldestKey = buckets.keys().next().value;
+      if (oldestKey !== undefined) buckets.delete(oldestKey);
+    }
+  }
+  const b = buckets.get(key) || [];
+  const fresh = b.filter((t) => now - t < windowMs);
+  fresh.push(now);
+  buckets.set(key, fresh);
+  return fresh.length <= limit;
+}
+function sameOrigin(req) {
+  const secFetchSite = String(req.headers['sec-fetch-site'] || '').toLowerCase();
+  if (secFetchSite === 'cross-site') return false;
+  const originHeader = req.headers.origin;
+  if (originHeader === 'null') return false;
+  if (secFetchSite === 'same-origin') return true;
+  const host = req.headers.host;
+  const source = originHeader || req.headers.referer;
+  if (!source) return true;
+  try { return Boolean(host) && new URL(source).host === host; } catch { return false; }
+}
 function appendKey(url, key) { url.searchParams.set('key', key); return url; }
 function send(res, status, body, headers = {}) { res.writeHead(status, { 'content-type': 'text/plain; charset=utf-8', ...security(), ...headers }); res.end(body); }
 function sendJson(res, status, value) { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', ...security(), 'cache-control': 'no-store' }); res.end(JSON.stringify(value)); }
@@ -88,16 +134,43 @@ function security() {
 }
 async function body(req) { const chunks = []; let total = 0; for await (const c of req) { total += c.length; if (total > bodyCap) throw new Error('body_too_large'); chunks.push(c); } return Buffer.concat(chunks); }
 function resetDaily() { const day = new Date().toISOString().slice(0, 10); if (daily.day !== day) daily = { day, ai: 0, inputBytes: 0, video: 0, mcp: 0 }; }
+const PHOTO_MEDIA_PATH_RE = /^\/v1\/places\/[A-Za-z0-9_-]+\/photos\/[A-Za-z0-9_-]+\/media$/;
+
 function allowedPhotoTarget(raw) {
   try {
     const target = new URL(raw);
-    const ok = target.protocol === 'https:' && (target.hostname === 'places.googleapis.com' || target.hostname === 'googleusercontent.com' || target.hostname.endsWith('.googleusercontent.com'));
-    if (!ok) return null;
-    if (target.hostname === 'places.googleapis.com') appendKey(target, gmpKey);
-    return target;
+    if (
+      target.protocol !== 'https:'
+      || target.username
+      || target.password
+      || (target.port && target.port !== '443')
+      || target.hostname !== 'places.googleapis.com'
+      || hasDotSegment(target.pathname)
+      || !PHOTO_MEDIA_PATH_RE.test(target.pathname)
+    ) return null;
+    const cleanTarget = new URL(target.pathname, 'https://places.googleapis.com');
+    for (const name of ['maxWidthPx', 'maxHeightPx']) {
+      const values = target.searchParams.getAll(name);
+      if (values.length > 1) return null;
+      if (values.length === 1) {
+        const value = values[0];
+        if (!/^\d{1,4}$/.test(value) || Number(value) < 1 || Number(value) > 1_600) return null;
+        cleanTarget.searchParams.set(name, value);
+      }
+    }
+    return appendKey(cleanTarget, gmpKey);
   } catch {
     return null;
   }
+}
+
+function safeUpstreamHeaders(upstreamHeadersObj) {
+  const safe = {};
+  for (const name of SAFE_UPSTREAM_RESPONSE_HEADERS) {
+    const value = upstreamHeadersObj.get(name);
+    if (value) safe[name] = value;
+  }
+  return safe;
 }
 
 async function proxy(req, res, target, opts = {}) {
@@ -112,9 +185,8 @@ async function proxy(req, res, target, opts = {}) {
     // rawHeaders bypasses upstreamHeaders entirely for server-to-server calls
     // that must NOT send browser referer/origin (e.g. MCP API-key auth).
     const hdrs = opts.rawHeaders ?? { ...upstreamHeaders(req.headers, target), ...opts.headers };
-    const up = await fetch(target, { method: req.method, headers: hdrs, body: buf, signal: ctrl.signal });
-    const headers = Object.fromEntries(up.headers); delete headers['content-encoding']; delete headers['content-length'];
-    res.writeHead(up.status, { ...headers, ...security() });
+    const up = await fetch(target, { method: req.method, headers: hdrs, body: buf, redirect: 'manual', signal: ctrl.signal });
+    res.writeHead(up.status, { ...safeUpstreamHeaders(up.headers), ...security() });
     if (opts.endpoint) logProxy(opts.endpoint, up.status);
     if (up.body) { for await (const chunk of up.body) res.write(chunk); }
     res.end();
@@ -131,17 +203,48 @@ async function proxy(req, res, target, opts = {}) {
   finally { clearTimeout(timer); }
 }
 
+function hasDotSegment(pathname) {
+  if (pathname.includes('\\') || /[\u0000-\u001f\u007f]/.test(pathname)) return true;
+  for (const segment of pathname.split('/')) {
+    if (segment === '.' || segment === '..') return true;
+    try {
+      const decoded = decodeURIComponent(segment);
+      if (decoded === '.' || decoded === '..' || decoded.includes('/') || decoded.includes('\\')) return true;
+    } catch {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Build a target URL pinned to `host`. Rejects any `rest` that would let the
-// WHATWG URL parser override the host — e.g. a protocol-relative `//evil.example`
-// or an absolute `https://evil.example` — which would otherwise leak the API key
-// to an attacker-controlled server (SSRF + key exfiltration).
+// WHATWG URL parser override the host or resolve dot-segments (`..`) to a
+// disallowed path/model.
 function pinnedTarget(rest, query, host) {
-  if (!rest.startsWith('/') || rest.startsWith('//')) return null;
-  const target = new URL(rest + query, host);
-  if (target.origin !== host) return null;
+  if (!rest.startsWith('/') || rest.startsWith('//') || rest.includes('?') || rest.includes('#')) return null;
+  if (hasDotSegment(rest)) return null;
+  let target;
+  try {
+    target = new URL(rest + query, host);
+  } catch {
+    return null;
+  }
+  if (target.origin !== host || target.pathname !== rest) return null;
   return target;
 }
-function gmpTarget(path, query) {
+function gmpTarget(path, query, method) {
+  const allowed = [
+    ['GET', /^\/gmp\/geocode\/json$/],
+    ['POST', /^\/gmp\/airquality\/v1\/currentConditions:lookup$/],
+    ['GET', /^\/gmp\/airquality\/v1\/mapTypes\/US_AQI\/heatmapTiles\/\d+\/\d+\/\d+$/],
+    ['GET', /^\/gmp\/weather\/v1\/currentConditions:lookup$/],
+    ['GET', /^\/gmp\/pollen\/v1\/forecast:lookup$/],
+    ['GET', /^\/gmp\/pollen\/v1\/mapTypes\/TREE_UPI\/heatmapTiles\/\d+\/\d+\/\d+$/],
+    ['GET', /^\/gmp\/solar\/v1\/buildingInsights:findClosest$/],
+    ['GET', /^\/gmp\/streetview\/maps\/api\/streetview(?:\/metadata)?$/],
+    ['GET', /^\/gmp\/staticmap\/maps\/api\/staticmap$/],
+  ];
+  if (!allowed.some(([verb, pattern]) => verb === method && pattern.test(path))) return null;
   let host = 'https://maps.googleapis.com'; let rest = path;
   if (path.startsWith('/gmp/geocode')) rest = '/maps/api/geocode' + path.slice('/gmp/geocode'.length);
   else if (path.startsWith('/gmp/airquality')) { host = 'https://airquality.googleapis.com'; rest = path.slice('/gmp/airquality'.length); }
@@ -156,9 +259,12 @@ function gmpTarget(path, query) {
 }
 function aiTarget(path, query) {
   if (!path.startsWith('/ai/')) return null;
-  if (!path.endsWith(':generateContent') && !path.endsWith(':streamGenerateContent')) return null;
-  const m = path.match(/models\/([^/:]+)/); if (!m || !allowedModels.has(m[1])) return null;
-  return pinnedTarget(path.replace(/^\/ai/, ''), query, 'https://generativelanguage.googleapis.com');
+  const target = pinnedTarget(path.replace(/^\/ai/, ''), query, 'https://generativelanguage.googleapis.com');
+  if (!target) return null;
+  const m = target.pathname.match(AI_GENERATE_PATH_RE);
+  if (!m || !allowedModels.has(m[1])) return null;
+  target.searchParams.delete('key');
+  return target;
 }
 // The omni video model uses the Interactions API, which POSTs to
 // `/{version}/interactions` — there is no `models/<id>` in the path, so the model
@@ -166,12 +272,20 @@ function aiTarget(path, query) {
 // collection endpoint (create); per-id sub-paths (/interactions/<id>...) are not
 // exposed. The caller checks the body's `model` against allowedModels.
 function aiInteractionsTarget(path, query) {
-  if (!/^\/ai\/[^/]+\/interactions$/.test(path)) return null;
-  return pinnedTarget(path.replace(/^\/ai/, ''), query, 'https://generativelanguage.googleapis.com');
+  if (!path.startsWith('/ai/')) return null;
+  const target = pinnedTarget(path.replace(/^\/ai/, ''), query, 'https://generativelanguage.googleapis.com');
+  if (!target || !AI_INTERACTIONS_PATH_RE.test(target.pathname)) return null;
+  target.searchParams.delete('key');
+  return target;
 }
 
 createServer(async (req, res) => {
-  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  let url;
+  try {
+    url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  } catch {
+    return send(res, 400, 'Bad Request');
+  }
   if (url.pathname === '/capabilities') {
     if (req.method !== 'GET') return send(res, 405, 'Capabilities only accepts GET');
     return sendJson(res, 200, {
@@ -209,6 +323,7 @@ createServer(async (req, res) => {
   if (url.pathname.startsWith('/gmp/')) {
     if (!gmpKey) return send(res, 500, 'GMP server key is not configured');
     if (url.pathname === '/gmp/placephoto') {
+      if (req.method !== 'GET') return sendProxy(res, 'gmp:photo', 405, 'Photo proxy only accepts GET');
       if (!sameOrigin(req) || !rate(req, 'gmp', gmpLimit * 10)) return sendProxy(res, 'gmp:photo', 429, 'The demo is busy right now — try again in a few minutes');
       const target = allowedPhotoTarget(url.searchParams.get('url') || ''); if (!target) return sendProxy(res, 'gmp:photo', 400, 'Unsupported photo URL');
       return proxy(req, res, target, { endpoint: 'gmp:photo' });
@@ -217,7 +332,7 @@ createServer(async (req, res) => {
     const endpoint = isTile ? 'gmp:tile' : 'gmp';
     const limit = isTile ? gmpLimit * 10 : gmpLimit;
     if (!sameOrigin(req) || !rate(req, 'gmp', limit)) return sendProxy(res, endpoint, 429, 'The demo is busy right now — try again in a few minutes');
-    const target = gmpTarget(url.pathname, url.search); if (!target) return sendProxy(res, endpoint, 404, 'Unknown GMP proxy route');
+    const target = gmpTarget(url.pathname, url.search, req.method || 'GET'); if (!target) return sendProxy(res, endpoint, 404, 'Unknown GMP proxy route');
     return proxy(req, res, target, { endpoint });
   }
   // Consent-gated browser metadata sink (reliability §5). Accepts ONLY strictly

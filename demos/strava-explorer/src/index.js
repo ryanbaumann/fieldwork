@@ -144,7 +144,7 @@ function showToast(message, type = 'info', duration = 4000) {
     toast.innerHTML = `
         <div class="flex items-center">
             ${icon}
-            <span>${message}</span>
+            <span class="toast-message"></span>
         </div>
         <button class="ml-4 text-gray-400 hover:text-white focus:outline-none p-1 rounded-md" aria-label="Close">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -152,6 +152,7 @@ function showToast(message, type = 'info', duration = 4000) {
             </svg>
         </button>
     `;
+    toast.querySelector('.toast-message').textContent = String(message ?? '');
     
     container.appendChild(toast);
     

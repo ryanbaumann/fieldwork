@@ -818,7 +818,7 @@ export const geminiOmniRateLimiter = createCircularBucketRateLimiter({
     : DEFAULT_GEMINI_OMNI_LIMITS.globalMaxCostMicros,
 });
 
-export function clientIp(request) {
+export function clientIp(request, env = process.env) {
   const remote = request.socket?.remoteAddress || 'unknown';
   const forwarded = request.headers['x-forwarded-for'];
   if (forwarded) {
@@ -829,9 +829,9 @@ export function clientIp(request) {
     if (/^(:{2}ffff:)?169\.254\./i.test(remote) && chain.length >= 1) {
       return chain.at(-1);
     }
-    // Behind a two-hop load balancer or in local proxy tests where the proxy hop
-    // is recorded in X-Forwarded-For, use the address before the final proxy hop.
-    if (chain.length >= 2) return chain.at(-2);
+    // Only trust a multi-hop forwarded chain on non-GFE sockets when an operator
+    // explicitly configures TRUST_PROXY=true for a trusted front proxy.
+    if (env?.TRUST_PROXY === 'true' && chain.length >= 2) return chain.at(-2);
   }
   return remote;
 }

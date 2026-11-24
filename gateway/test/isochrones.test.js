@@ -45,3 +45,23 @@ test('VITE_GMP_API_KEY is not accepted as a server credential', async () => {
   const result = await handleIsochronesApi(validBody, { env: { VITE_GMP_API_KEY: 'browser-public-key' } });
   assert.equal(result.statusCode, 503);
 });
+
+test('handleIsochronesApi strips unallowlisted fields and enforces redirect manual', async () => {
+  let seenInit = null;
+  const result = await handleIsochronesApi(
+    { ...validBody, injectedField: 'drop-me', extra: { nested: true } },
+    {
+      env: { GMP_SERVER_API_KEY: 'server-test-key' },
+      fetch: async (_url, init) => {
+        seenInit = init;
+        return new Response(JSON.stringify({ isochrone: {} }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      },
+    },
+  );
+  assert.equal(result.statusCode, 200);
+  assert.equal(seenInit.redirect, 'manual');
+  assert.deepEqual(JSON.parse(seenInit.body), validBody);
+});

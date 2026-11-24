@@ -1,6 +1,6 @@
 import { createServer as createHttpServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { dirname, extname, join, resolve } from 'node:path';
+import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer as createViteServer } from 'vite';
 import { loadEnvFile } from 'node:process';
@@ -15,7 +15,14 @@ try {
 
 const isDev = process.argv.includes('--dev');
 const port = Number(process.env.PORT || 5174);
-const dist = join(root, 'dist');
+const dist = resolve(root, 'dist');
+const MAX_BODY_BYTES = 16 * 1024;
+
+const SECURITY_HEADERS = {
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+};
 
 const mimeTypes = new Map([
   ['.html', 'text/html; charset=utf-8'],
@@ -31,19 +38,31 @@ const vite = isDev
 
 async function readJson(request) {
   const chunks = [];
-  for await (const chunk of request) chunks.push(chunk);
+  let total = 0;
+  for await (const chunk of request) {
+    total += chunk.length;
+    if (total > MAX_BODY_BYTES) {
+      throw Object.assign(new Error('Request body too large.'), { statusCode: 413 });
+    }
+    chunks.push(chunk);
+  }
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
 }
 
 function sendJson(response, status, payload) {
-  response.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });
+  response.writeHead(status, {
+    ...SECURITY_HEADERS,
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
+  });
   response.end(JSON.stringify(payload));
 }
 
 function validateIsochroneBody(body) {
   const latitude = Number(body.location?.latitude);
   const longitude = Number(body.location?.longitude);
-  const seconds = Number.parseInt(String(body.travelDuration || '').replace('s', ''), 10);
+  const rawDuration = String(body.travelDuration ?? '').trim();
+  const seconds = /^\d+s?$/.test(rawDuration) ? Number.parseInt(rawDuration.replace('s', ''), 10) : NaN;
   const travelMode = String(body.travelMode || '');
   const travelDirection = String(body.travelDirection || '');
   const routingPreference = String(body.routingPreference || '');
@@ -61,16 +80,20 @@ function validateIsochroneBody(body) {
 }
 
 async function handleIsochrone(request, response) {
-  const apiKey = process.env.GMP_SERVER_API_KEY || process.env.VITE_GMP_API_KEY;
+  const apiKey = (process.env.GMP_SERVER_API_KEY || '').trim();
   if (!apiKey) {
-    sendJson(response, 500, { error: 'Set GMP_SERVER_API_KEY or VITE_GMP_API_KEY before running Isochrones.' });
+    sendJson(response, 503, { error: 'Isochrones proxy is not configured on this server.' });
     return;
   }
 
   let body;
   try {
     body = await readJson(request);
-  } catch {
+  } catch (error) {
+    if (error?.statusCode === 413) {
+      sendJson(response, 413, { error: 'Request body too large.' });
+      return;
+    }
     sendJson(response, 400, { error: 'Request body must be valid JSON.' });
     return;
   }
@@ -81,6 +104,18 @@ async function handleIsochrone(request, response) {
     return;
   }
 
+  const sanitizedBody = {
+    location: {
+      latitude: Number(body.location.latitude),
+      longitude: Number(body.location.longitude),
+    },
+    travelDuration: `${Number.parseInt(String(body.travelDuration || '').replace('s', ''), 10)}s`,
+    travelMode: String(body.travelMode),
+    travelDirection: String(body.travelDirection),
+    routingPreference: String(body.routingPreference),
+    polygonFidelity: String(body.polygonFidelity || 'MEDIUM'),
+  };
+
   let upstream;
   try {
     upstream = await fetch('https://isochrones.googleapis.com/v1/isochrones:generate', {
@@ -90,7 +125,9 @@ async function handleIsochrone(request, response) {
         'x-goog-api-key': apiKey,
         'x-goog-fieldmask': 'isochrone.geoJson',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(sanitizedBody),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000),
     });
   } catch (error) {
     console.error('Isochrones API connection error:', error);
@@ -100,7 +137,11 @@ async function handleIsochrone(request, response) {
 
   try {
     const text = await upstream.text();
-    response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') || 'application/json' });
+    response.writeHead(upstream.status, {
+      ...SECURITY_HEADERS,
+      'content-type': upstream.headers.get('content-type') || 'application/json',
+      'cache-control': 'no-store',
+    });
     response.end(text);
   } catch (error) {
     console.error('Failed to read response from Isochrones API:', error);
@@ -108,23 +149,43 @@ async function handleIsochrone(request, response) {
   }
 }
 
-async function serveStatic(request, response) {
-  const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
-  const safePath = pathname === '/' ? '/index.html' : pathname;
-  const filePath = join(dist, safePath);
+async function serveStatic(pathname, response) {
+  let decodedPath;
   try {
+    decodedPath = decodeURIComponent(pathname);
+  } catch {
+    sendJson(response, 400, { error: 'Bad request path.' });
+    return;
+  }
+  const safePath = decodedPath === '/' ? '/index.html' : decodedPath;
+  const filePath = resolve(dist, `.${safePath.startsWith('/') ? safePath : `/${safePath}`}`);
+  const insideDist = filePath === dist || filePath.startsWith(dist + sep);
+  try {
+    if (!insideDist) throw new Error('outside dist');
     const file = await readFile(filePath);
-    response.writeHead(200, { 'content-type': mimeTypes.get(extname(filePath)) || 'application/octet-stream' });
+    response.writeHead(200, {
+      ...SECURITY_HEADERS,
+      'content-type': mimeTypes.get(extname(filePath)) || 'application/octet-stream',
+    });
     response.end(file);
   } catch {
     const index = await readFile(join(dist, 'index.html'));
-    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.writeHead(200, {
+      ...SECURITY_HEADERS,
+      'content-type': 'text/html; charset=utf-8',
+    });
     response.end(index);
   }
 }
 
 const server = createHttpServer(async (request, response) => {
-  const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
+  let pathname;
+  try {
+    pathname = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`).pathname;
+  } catch {
+    sendJson(response, 400, { error: 'Bad request URL.' });
+    return;
+  }
   // /api/isochrone (singular) is this standalone dev server's original
   // route; /api/isochrones (plural) matches the gateway's route so the
   // client code can call the same path in both standalone and
@@ -139,7 +200,7 @@ const server = createHttpServer(async (request, response) => {
     return;
   }
 
-  await serveStatic(request, response);
+  await serveStatic(pathname, response);
 });
 
 server.listen(port, () => {

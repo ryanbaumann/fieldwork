@@ -58,7 +58,7 @@ service followed by a domain cutover:
 
 Every Google Cloud command must include `--project geojson-bq-blog` and the
 service commands must include `--region us-west1`. For this migration, local
-commands also use `--account user@example.com`.
+commands also use `--account YOUR_GCLOUD_ACCOUNT`.
 
 ### Domain mapping cutover
 
@@ -67,7 +67,7 @@ record and verify the current owner:
 
 ```bash
 gcloud beta run domain-mappings list \
-  --account user@example.com \
+  --account YOUR_GCLOUD_ACCOUNT \
   --project geojson-bq-blog \
   --region us-west1 \
   --format='table(metadata.name,spec.routeName,status.conditions[0].status)'
@@ -80,14 +80,14 @@ an exact delete followed immediately by a recreate:
 
 ```bash
 gcloud beta run domain-mappings delete \
-  --account user@example.com \
+  --account YOUR_GCLOUD_ACCOUNT \
   --project geojson-bq-blog \
   --region us-west1 \
   --domain=DOMAIN \
   --quiet
 
 gcloud beta run domain-mappings create \
-  --account user@example.com \
+  --account YOUR_GCLOUD_ACCOUNT \
   --project geojson-bq-blog \
   --region us-west1 \
   --service fieldwork \
@@ -103,7 +103,7 @@ moving another domain:
 
 ```bash
 gcloud beta run domain-mappings describe \
-  --account user@example.com \
+  --account YOUR_GCLOUD_ACCOUNT \
   --project geojson-bq-blog \
   --region us-west1 \
   --domain DOMAIN \

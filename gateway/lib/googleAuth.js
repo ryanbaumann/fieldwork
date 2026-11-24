@@ -19,7 +19,12 @@ function readCookie(request, name) {
 }
 
 export function googleAuthConfigured(env = process.env) {
-  return Boolean(env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET && env.GOOGLE_OAUTH_SESSION_SECRET);
+  return Boolean(
+    env.GOOGLE_OAUTH_CLIENT_ID
+    && env.GOOGLE_OAUTH_CLIENT_SECRET
+    && env.GOOGLE_OAUTH_SESSION_SECRET
+    && (env.GOOGLE_OAUTH_ALLOWED_EMAIL || '').trim(),
+  );
 }
 
 export function beginGoogleLogin(request, response, env = process.env) {
@@ -47,7 +52,8 @@ export async function finishGoogleLogin(request, response, searchParams, env = p
   const claimsResponse = await fetchImpl(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(String(token.id_token || ''))}`, { signal: AbortSignal.timeout(10_000) });
   if (!claimsResponse.ok) throw Object.assign(new Error('Google could not verify the sign-in token.'), { statusCode: 401 });
   const payload = await claimsResponse.json();
-  const allowedEmail = env.GOOGLE_OAUTH_ALLOWED_EMAIL || 'user@example.com';
+  const allowedEmail = (env.GOOGLE_OAUTH_ALLOWED_EMAIL || '').trim();
+  if (!allowedEmail) throw Object.assign(new Error('Google sign-in is not configured.'), { statusCode: 503 });
   // tokeninfo serializes verified status and expiry as strings. In particular,
   // the string "false" is truthy; absent/non-numeric expiry also fails open if
   // checked only with a <= comparison because Number(undefined) is NaN.
@@ -73,10 +79,12 @@ export function hasGoogleSession(request, env = process.env) {
   if (!/^\d+$/.test(expires) || !/^[a-f0-9]{32}$/.test(nonce) || !/^[a-f0-9]{64}$/.test(signature)) return false;
   const payload = `${email}:${expires}:${nonce}`;
   if (!equal(signature, sign(payload, env.GOOGLE_OAUTH_SESSION_SECRET))) return false;
+  const allowedEmail = (env.GOOGLE_OAUTH_ALLOWED_EMAIL || '').trim();
   const expiresAt = Number(expires);
-  return Number.isSafeInteger(expiresAt)
+  return Boolean(allowedEmail)
+    && Number.isSafeInteger(expiresAt)
     && expiresAt > Date.now() / 1000
-    && email === (env.GOOGLE_OAUTH_ALLOWED_EMAIL || 'user@example.com');
+    && email === allowedEmail;
 }
 
 function escapeHtml(str) {

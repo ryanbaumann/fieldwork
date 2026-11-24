@@ -40,7 +40,7 @@ VITE_STRAVA_AUTH_BASE_URL=https://YOUR_CLOUD_RUN_BROKER_URL
 VITE_STRAVA_API_BASE_URL=https://www.strava.com/api/v3
 ```
 
-Static-only local development still supports `VITE_STRAVA_CLIENT_SECRET`, but do not use or publish a browser-exposed Strava client secret for a public deployment. The Cloud Run broker uses non-`VITE_` `STRAVA_CLIENT_SECRET` from Secret Manager and the frontend calls it through `VITE_STRAVA_AUTH_BASE_URL`.
+Never expose `STRAVA_CLIENT_SECRET` through any `VITE_` build variable. The Cloud Run broker / gateway owns server-only `STRAVA_CLIENT_SECRET` from Secret Manager and the frontend calls it through `VITE_STRAVA_AUTH_BASE_URL` (or same-origin `/api/strava/*`).
 
 ### Deploy the full GCP architecture
 

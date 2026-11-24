@@ -17,6 +17,7 @@ test('setup writes separate browser, server, and contact configuration', () => {
     GOOGLE_OAUTH_CLIENT_ID: 'google-client',
     GOOGLE_OAUTH_CLIENT_SECRET: 'google-secret',
     GOOGLE_OAUTH_SESSION_SECRET: 'session-secret',
+    GOOGLE_OAUTH_ALLOWED_EMAIL: 'writer@example.com',
     WRITER_PUBLIC_ORIGIN: 'https://dashboard.example.com',
     GITHUB_CONTENT_TOKEN: 'github-token',
     GITHUB_REVIEW_TOKEN: 'review-token',
@@ -36,6 +37,7 @@ test('setup writes separate browser, server, and contact configuration', () => {
   assert.match(generated, /^GOOGLE_OAUTH_CLIENT_ID=google-client$/m);
   assert.match(generated, /^GOOGLE_OAUTH_CLIENT_SECRET=google-secret$/m);
   assert.match(generated, /^GOOGLE_OAUTH_SESSION_SECRET=session-secret$/m);
+  assert.match(generated, /^GOOGLE_OAUTH_ALLOWED_EMAIL=writer@example\.com$/m);
   assert.match(generated, /^WRITER_PUBLIC_ORIGIN=https:\/\/dashboard\.example\.com$/m);
   assert.match(generated, /^GITHUB_CONTENT_TOKEN=github-token$/m);
   assert.match(generated, /^GITHUB_REVIEW_TOKEN=review-token$/m);
@@ -44,4 +46,15 @@ test('setup writes separate browser, server, and contact configuration', () => {
   assert.match(generated, /^BUFFER_LINKEDIN_CHANNEL_ID=buffer-linkedin$/m);
   assert.match(generated, /^BUFFER_X_CHANNEL_ID=buffer-x$/m);
   assert.match(generated, /^ANALYTICS_MEASUREMENT_ID=G-TEST123$/m);
+  const minimal = formatEnv({
+    STRAVA_CLIENT_ID: '',
+    STRAVA_CLIENT_SECRET: '',
+    VITE_GMP_API_KEY: '',
+    VITE_ISOCHRONES_GMP_API_KEY: '',
+    GMP_SERVER_API_KEY: '',
+    RESEND_API_KEY: '',
+    CONTACT_TO_EMAIL: '',
+    CONTACT_FROM_EMAIL: '',
+  });
+  assert.match(minimal, /^GOOGLE_OAUTH_ALLOWED_EMAIL=$/m);
 });

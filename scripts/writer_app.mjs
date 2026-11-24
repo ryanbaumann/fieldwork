@@ -96,9 +96,9 @@ function isSafeMarkdownUrl(rawUrl) {
 function inlineMd(text) {
   let html = escapeHtml(text);
   html = html
-    .replace(/&lt;ins class=&quot;([^&]+)&quot;&gt;/g, '<ins class="$1">')
+    .replace(/&lt;ins class=&quot;([a-zA-Z0-9 _-]+)&quot;&gt;/g, '<ins class="$1">')
     .replace(/&lt;\/ins&gt;/g, '</ins>')
-    .replace(/&lt;del class=&quot;([^&]+)&quot;&gt;/g, '<del class="$1">')
+    .replace(/&lt;del class=&quot;([a-zA-Z0-9 _-]+)&quot;&gt;/g, '<del class="$1">')
     .replace(/&lt;\/del&gt;/g, '</del>');
   const codeSpans = [];
   html = html.replace(/`([^`]+)`/g, (_, code) => {
@@ -328,7 +328,7 @@ body {
   <div class="prose">
     <div class="preview-header-bar">
       <span class="preview-badge"><span class="preview-dot"></span> Live Rendered Output</span>
-      <span>${collectionName === 'writing' ? 'Field Notes' : collectionName.toUpperCase()}</span>
+      <span>${collectionName === 'writing' ? 'Field Notes' : escapeHtml(String(collectionName || '').toUpperCase())}</span>
     </div>
 
     <article>
@@ -353,7 +353,7 @@ body {
         <span class="chip">Email</span>
       </p>
 
-      <p class="back">← All ${collectionName === 'writing' ? 'notes' : collectionName}</p>
+      <p class="back">← All ${collectionName === 'writing' ? 'notes' : escapeHtml(collectionName)}</p>
     </article>
   </div>
 
@@ -363,13 +363,16 @@ body {
       const el = e.target.closest('[data-src-line]');
       if (el) {
         const line = parseInt(el.getAttribute('data-src-line'), 10);
-        window.parent.postMessage({ type: 'jump-to-line', line }, '*');
+        if (Number.isInteger(line) && line > 0) {
+          window.parent.postMessage({ type: 'jump-to-line', line }, window.location.origin);
+        }
       }
     });
 
     // Theme listener from parent
     window.addEventListener('message', (e) => {
-      if (e.data && e.data.type === 'set-theme') {
+      if (e.origin !== window.location.origin || e.source !== window.parent) return;
+      if (e.data && e.data.type === 'set-theme' && ['light', 'dark', 'system'].includes(e.data.theme)) {
         document.documentElement.dataset.theme = e.data.theme;
       }
     });
@@ -845,7 +848,7 @@ del.rich-diff-del {
   <div class="prose">
     <div class="preview-header-bar">
       <span class="preview-badge"><span class="preview-dot"></span> ✨ Rich Prose Diff vs Git HEAD</span>
-      <span>${collectionName === 'writing' ? 'Field Notes' : collectionName.toUpperCase()}</span>
+      <span>${collectionName === 'writing' ? 'Field Notes' : escapeHtml(String(collectionName || '').toUpperCase())}</span>
     </div>
 
     <div class="rich-diff-banner">
@@ -875,7 +878,7 @@ del.rich-diff-del {
         <p class="article-disclosure">Written by Ryan Baumann, with copyediting assistance by AI.</p>
       </div>
 
-      <p class="back">← All ${collectionName === 'writing' ? 'notes' : collectionName}</p>
+      <p class="back">← All ${collectionName === 'writing' ? 'notes' : escapeHtml(collectionName)}</p>
     </article>
   </div>
 
@@ -884,12 +887,15 @@ del.rich-diff-del {
       const el = e.target.closest('[data-src-line]');
       if (el) {
         const line = parseInt(el.getAttribute('data-src-line'), 10);
-        window.parent.postMessage({ type: 'jump-to-line', line }, '*');
+        if (Number.isInteger(line) && line > 0) {
+          window.parent.postMessage({ type: 'jump-to-line', line }, window.location.origin);
+        }
       }
     });
 
     window.addEventListener('message', (e) => {
-      if (e.data && e.data.type === 'set-theme') {
+      if (e.origin !== window.location.origin || e.source !== window.parent) return;
+      if (e.data && e.data.type === 'set-theme' && ['light', 'dark', 'system'].includes(e.data.theme)) {
         document.documentElement.dataset.theme = e.data.theme;
       }
     });
@@ -1001,10 +1007,82 @@ function listAllPosts() {
   });
 }
 
+const ALLOWED_COLLECTIONS = new Set(['writing', 'work', 'talks', 'scripts']);
+const SAFE_SLUG_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,120}$/;
+const SAFE_GIT_REF_RE = /^[A-Za-z0-9][A-Za-z0-9._/~^@+-]{0,99}$/;
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const RESOLVED_CONTENT_DIR = path.resolve(CONTENT_DIR);
+
+function resolveContentTarget(collection, slug) {
+  if (!ALLOWED_COLLECTIONS.has(collection)) {
+    throw Object.assign(new Error(`Invalid collection: ${collection}`), { statusCode: 400 });
+  }
+  if (typeof slug !== 'string' || !SAFE_SLUG_RE.test(slug) || slug.includes('..')) {
+    throw Object.assign(new Error('Invalid slug parameter'), { statusCode: 400 });
+  }
+  const dir = path.resolve(RESOLVED_CONTENT_DIR, collection);
+  const filepath = path.resolve(dir, `${slug}.md`);
+  if (!filepath.startsWith(dir + path.sep) || !filepath.startsWith(RESOLVED_CONTENT_DIR + path.sep)) {
+    throw Object.assign(new Error('Path escapes content directory'), { statusCode: 400 });
+  }
+  return {
+    dir,
+    filepath,
+    relPath: path.join('portfolio', 'content', collection, `${slug}.md`),
+  };
+}
+
+const SAFE_SINGLE_GIT_REF_RE = /^[A-Za-z0-9][A-Za-z0-9._/~^@-]{0,98}[A-Za-z0-9~^]?$/;
+
+function isValidSingleGitRef(part) {
+  if (!part || !SAFE_SINGLE_GIT_REF_RE.test(part)) return false;
+  if (part.startsWith('-') || part.startsWith('.') || part.endsWith('.') || part.startsWith('/') || part.endsWith('/')) return false;
+  if (part.includes('..') || part.includes('//') || part.includes('@{')) return false;
+  return true;
+}
+
+function validateGitRef(ref) {
+  if (typeof ref !== 'string' || ref.length === 0 || ref.length > 100 || ref.startsWith('-')) {
+    throw Object.assign(new Error('Invalid git base ref'), { statusCode: 400 });
+  }
+  const rangeMatch = ref.match(/^(.+?)\.{2,3}(.+)$/);
+  if (rangeMatch) {
+    if (!isValidSingleGitRef(rangeMatch[1]) || !isValidSingleGitRef(rangeMatch[2])) {
+      throw Object.assign(new Error('Invalid git base ref'), { statusCode: 400 });
+    }
+    return ref;
+  }
+  if (!isValidSingleGitRef(ref)) {
+    throw Object.assign(new Error('Invalid git base ref'), { statusCode: 400 });
+  }
+  return ref;
+}
+
+function validateCollection(collection) {
+  const normalized = typeof collection === 'string' && collection ? collection : 'writing';
+  if (!ALLOWED_COLLECTIONS.has(normalized)) {
+    throw Object.assign(new Error(`Invalid collection: ${normalized}`), { statusCode: 400 });
+  }
+  return normalized;
+}
+
+function isAllowedLocalOrigin(req) {
+  const host = String(req.headers.host || '').toLowerCase();
+  const allowedHosts = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
+  if (host && !allowedHosts.has(host)) return false;
+  const secFetchSite = String(req.headers['sec-fetch-site'] || '').toLowerCase();
+  if (secFetchSite === 'cross-site') return false;
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  if (origin === 'null') return false;
+  const allowed = new Set([`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`]);
+  return allowed.has(origin);
+}
+
 function getPostContent(collection, slug) {
-  const filepath = path.join(CONTENT_DIR, collection, `${slug}.md`);
+  const { filepath } = resolveContentTarget(collection, slug);
   if (!fs.existsSync(filepath)) {
-    throw new Error(`Post not found: ${collection}/${slug}`);
+    throw Object.assign(new Error(`Post not found: ${collection}/${slug}`), { statusCode: 404 });
   }
   const stat = fs.statSync(filepath);
   const raw = fs.readFileSync(filepath, 'utf8');
@@ -1025,9 +1103,8 @@ function getPostContent(collection, slug) {
 }
 
 function savePostContent(collection, slug, rawMarkdown) {
-  const dir = path.join(CONTENT_DIR, collection);
+  const { dir, filepath } = resolveContentTarget(collection, slug);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const filepath = path.join(dir, `${slug}.md`);
   fs.writeFileSync(filepath, rawMarkdown, 'utf8');
   const stat = fs.statSync(filepath);
   const { meta, body } = parseFrontMatter(rawMarkdown);
@@ -1052,9 +1129,8 @@ function savePostContent(collection, slug, rawMarkdown) {
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': 'no-store'
   });
   res.end(JSON.stringify(data));
 }
@@ -1062,36 +1138,60 @@ function sendJson(res, statusCode, data) {
 function sendHtml(res, statusCode, html) {
   res.writeHead(statusCode, {
     'Content-Type': 'text/html; charset=utf-8',
-    'Access-Control-Allow-Origin': '*'
+    'X-Content-Type-Options': 'nosniff'
   });
   res.end(html);
 }
 
 function readBodyJson(req) {
   return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => { body += chunk.toString('utf8'); });
+    const chunks = [];
+    let total = 0;
+    let settled = false;
+    req.on('data', chunk => {
+      if (settled) return;
+      total += chunk.length;
+      if (total > MAX_BODY_BYTES) {
+        settled = true;
+        req.destroy();
+        reject(Object.assign(new Error('Request body too large'), { statusCode: 413 }));
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on('end', () => {
+      if (settled) return;
+      settled = true;
       try {
+        const body = Buffer.concat(chunks).toString('utf8');
         resolve(body ? JSON.parse(body) : {});
       } catch (e) {
-        reject(e);
+        reject(Object.assign(e, { statusCode: 400 }));
       }
     });
-    req.on('error', reject);
+    req.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    });
   });
 }
 
 const server = http.createServer(async (req, res) => {
-  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(req.url || '/', `http://${req.headers.host || `127.0.0.1:${PORT}`}`);
+  } catch {
+    return sendJson(res, 400, { error: 'Bad request URL' });
+  }
   const pathname = parsedUrl.pathname;
 
+  if (!isAllowedLocalOrigin(req)) {
+    return sendJson(res, 403, { error: 'Forbidden: cross-origin request blocked' });
+  }
+
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
-    });
+    res.writeHead(204);
     return res.end();
   }
 
@@ -1114,33 +1214,34 @@ const server = http.createServer(async (req, res) => {
     // API: Save post
     if (pathname === '/api/save' && req.method === 'POST') {
       const data = await readBodyJson(req);
-      if (!data.slug || !data.rawMarkdown) {
+      if (typeof data.slug !== 'string' || !data.slug || typeof data.rawMarkdown !== 'string' || !data.rawMarkdown) {
         return sendJson(res, 400, { error: 'Missing slug or rawMarkdown' });
       }
-      const result = savePostContent(data.collection || 'writing', data.slug, data.rawMarkdown);
+      const result = savePostContent(validateCollection(data.collection), data.slug, data.rawMarkdown);
       return sendJson(res, 200, result);
     }
 
     // API: Render Live Preview
     if (pathname === '/api/render' && req.method === 'POST') {
       const data = await readBodyJson(req);
-      const html = renderFullArticleHtml(data.rawMarkdown || '', data.collection || 'writing', data.theme || 'system');
+      const collection = validateCollection(data.collection);
+      const html = renderFullArticleHtml(typeof data.rawMarkdown === 'string' ? data.rawMarkdown : '', collection, data.theme || 'system');
       return sendHtml(res, 200, html);
     }
 
     // API: Render Rich Diff Preview
     if (pathname === '/api/render-rich-diff' && req.method === 'POST') {
       const data = await readBodyJson(req);
-      const collection = data.collection || 'writing';
+      const collection = validateCollection(data.collection);
       const slug = data.slug;
       let headMarkdown = data.headMarkdown;
       const baseParam = data.base || parsedUrl.searchParams.get('base');
-      if (headMarkdown === undefined && slug) {
-        const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
-        const tryRefs = baseParam ? [baseParam] : ['HEAD', 'main', 'origin/main', 'HEAD~1'];
+      const target = slug ? resolveContentTarget(collection, slug) : null;
+      if (headMarkdown === undefined && target) {
+        const tryRefs = baseParam ? [validateGitRef(baseParam)] : ['HEAD', 'main', 'origin/main', 'HEAD~1'];
         for (const ref of tryRefs) {
           try {
-            const proc = spawn('git', ['show', `${ref}:${relPath}`], { cwd: ROOT_DIR });
+            const proc = spawn('git', ['show', '--end-of-options', `${ref}:${target.relPath}`], { cwd: ROOT_DIR });
             let out = '';
             proc.stdout.on('data', d => { out += d.toString('utf8'); });
             const code = await new Promise((resolve) => { proc.on('close', resolve); });
@@ -1154,10 +1255,9 @@ const server = http.createServer(async (req, res) => {
         }
       }
       let rawMarkdown = data.rawMarkdown;
-      if (rawMarkdown === undefined && slug) {
-        const filePath = path.join(ROOT_DIR, 'portfolio', 'content', collection, `${slug}.md`);
-        if (fs.existsSync(filePath)) {
-          rawMarkdown = fs.readFileSync(filePath, 'utf8');
+      if (rawMarkdown === undefined && target) {
+        if (fs.existsSync(target.filepath)) {
+          rawMarkdown = fs.readFileSync(target.filepath, 'utf8');
         }
       }
       const html = renderRichDiffArticleHtml(headMarkdown || '', rawMarkdown || '', collection, data.theme || 'system');
@@ -1169,17 +1269,17 @@ const server = http.createServer(async (req, res) => {
       const collection = parsedUrl.searchParams.get('collection') || 'writing';
       const slug = parsedUrl.searchParams.get('slug');
       if (!slug) return sendJson(res, 400, { error: 'Missing slug parameter' });
-      
-      const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
+
+      const { filepath, relPath } = resolveContentTarget(collection, slug);
       const baseParam = parsedUrl.searchParams.get('base');
-      const tryRefs = baseParam ? [baseParam] : ['HEAD', 'main', 'origin/main', 'HEAD~1'];
-      
+      const tryRefs = baseParam ? [validateGitRef(baseParam)] : ['HEAD', 'main', 'origin/main', 'HEAD~1'];
+
       let headOutput = '';
       let success = false;
       let matchedRef = 'HEAD';
 
       for (const ref of tryRefs) {
-        const proc = spawn('git', ['show', `${ref}:${relPath}`], { cwd: ROOT_DIR });
+        const proc = spawn('git', ['show', '--end-of-options', `${ref}:${relPath}`], { cwd: ROOT_DIR });
         let out = '';
         proc.stdout.on('data', d => { out += d.toString('utf8'); });
         const code = await new Promise((resolve) => { proc.on('close', resolve); });
@@ -1187,9 +1287,8 @@ const server = http.createServer(async (req, res) => {
           headOutput = out;
           success = true;
           matchedRef = ref;
-          const filePath = path.join(ROOT_DIR, relPath);
-          if (fs.existsSync(filePath)) {
-            const diskContent = fs.readFileSync(filePath, 'utf8');
+          if (fs.existsSync(filepath)) {
+            const diskContent = fs.readFileSync(filepath, 'utf8');
             if (out.trim() !== diskContent.trim()) {
               break;
             }
@@ -1223,7 +1322,7 @@ function extractModelOutput(stdout) {
     // API: AI Voice Suggest / Edit (Selection)
     if (pathname === '/api/voice/suggest' && req.method === 'POST') {
       const data = await readBodyJson(req);
-      const text = (data.text || '').trim();
+      const text = (typeof data.text === 'string' ? data.text : '').trim();
       if (!text) return sendJson(res, 400, { error: 'No text provided for suggestion' });
 
       try {
@@ -1232,7 +1331,7 @@ function extractModelOutput(stdout) {
         return sendJson(res, 200, {
           original: text,
           suggestion: cleanSuggestion,
-          intent: data.intent || 'Voice rewrite'
+          intent: typeof data.intent === 'string' && data.intent ? data.intent : 'Voice rewrite'
         });
       } catch (err) {
         console.error('Voice suggest error:', err.message);
@@ -1243,7 +1342,8 @@ function extractModelOutput(stdout) {
     // API: AI Full Voice Review
     if (pathname === '/api/voice/review' && req.method === 'POST') {
       const data = await readBodyJson(req);
-      const text = (data.text || data.rawMarkdown || '').trim();
+      const rawText = typeof data.text === 'string' ? data.text : (typeof data.rawMarkdown === 'string' ? data.rawMarkdown : '');
+      const text = rawText.trim();
       if (!text) return sendJson(res, 400, { error: 'No text provided for review' });
 
       try {
@@ -1259,11 +1359,12 @@ function extractModelOutput(stdout) {
     // API: AI Headline Generator
     if (pathname === '/api/voice/headline' && req.method === 'POST') {
       const data = await readBodyJson(req);
-      const topic = (data.topic || data.title || data.summary || '').trim();
+      const rawTopic = typeof data.topic === 'string' ? data.topic : (typeof data.title === 'string' ? data.title : (typeof data.summary === 'string' ? data.summary : ''));
+      const topic = rawTopic.trim().replace(/^-+/, '').trim();
       if (!topic) return sendJson(res, 400, { error: 'No topic provided for headlines' });
 
       try {
-        const rawOutput = await runLocalGemma('headline', [topic]);
+        const rawOutput = await runLocalGemma('headline', ['--', topic]);
         const cleanOutput = extractModelOutput(rawOutput);
         const lines = cleanOutput.split('\n')
           .map(l => l.replace(/^[\d\.\-\*\s"\']+|["\']+$/g, '').trim())
@@ -1280,8 +1381,8 @@ function extractModelOutput(stdout) {
       const collection = parsedUrl.searchParams.get('collection') || 'writing';
       const slug = parsedUrl.searchParams.get('slug');
       if (!slug) return sendJson(res, 400, { error: 'Missing slug parameter' });
-      
-      const relPath = path.join('portfolio', 'content', collection, `${slug}.md`);
+
+      const { relPath } = resolveContentTarget(collection, slug);
       const baseParam = parsedUrl.searchParams.get('base');
 
       const runGitDiff = (args) => new Promise((resolve) => {
@@ -1295,12 +1396,13 @@ function extractModelOutput(stdout) {
       let baseUsed = 'HEAD';
 
       if (baseParam) {
-        diffOutput = await runGitDiff(['diff', baseParam, '--', relPath]);
-        baseUsed = baseParam;
+        const safeBase = validateGitRef(baseParam);
+        diffOutput = await runGitDiff(['diff', '--no-ext-diff', safeBase, '--', relPath]);
+        baseUsed = safeBase;
       } else {
-        diffOutput = await runGitDiff(['diff', 'HEAD', '--', relPath]);
+        diffOutput = await runGitDiff(['diff', '--no-ext-diff', 'HEAD', '--', relPath]);
         if (!diffOutput.trim()) {
-          const mainDiff = await runGitDiff(['diff', 'main...HEAD', '--', relPath]);
+          const mainDiff = await runGitDiff(['diff', '--no-ext-diff', 'main...HEAD', '--', relPath]);
           if (mainDiff.trim()) {
             diffOutput = mainDiff;
             baseUsed = 'main';
@@ -1322,10 +1424,10 @@ function extractModelOutput(stdout) {
     }
 
     // Serve static assets from portfolio/static (e.g. /img/..., /social/...)
-    const staticDir = path.join(ROOT_DIR, 'portfolio', 'static');
+    const staticDir = path.resolve(ROOT_DIR, 'portfolio', 'static');
     const safeRel = path.normalize(pathname).replace(/^(\.\.(\/|\\|$))+/, '').replace(/^[/\\]+/, '');
-    const staticCandidate = path.join(staticDir, safeRel);
-    if (staticCandidate.startsWith(staticDir) && fs.existsSync(staticCandidate) && fs.statSync(staticCandidate).isFile()) {
+    const staticCandidate = path.resolve(staticDir, safeRel);
+    if (staticCandidate.startsWith(staticDir + path.sep) && fs.existsSync(staticCandidate) && fs.statSync(staticCandidate).isFile()) {
       const ext = path.extname(staticCandidate).toLowerCase();
       const mimeTypes = {
         '.svg': 'image/svg+xml',
@@ -1346,8 +1448,9 @@ function extractModelOutput(stdout) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');
   } catch (err) {
-    console.error('Server error:', err);
-    sendJson(res, 500, { error: err.message });
+    const statusCode = Number.isInteger(err?.statusCode) ? err.statusCode : 500;
+    if (statusCode >= 500) console.error('Server error:', err);
+    sendJson(res, statusCode, { error: err.message });
   }
 });
 
@@ -2524,7 +2627,7 @@ function getWriterAppHtml() {
 
     themeBtn.addEventListener('click', () => {
       previewTheme = previewTheme === 'light' ? 'dark' : 'light';
-      previewFrame.contentWindow.postMessage({ type: 'set-theme', theme: previewTheme }, '*');
+      previewFrame.contentWindow.postMessage({ type: 'set-theme', theme: previewTheme }, window.location.origin);
     });
 
     aiEditBtn.addEventListener('click', handleVoiceEditSelection);
@@ -2586,7 +2689,10 @@ function getWriterAppHtml() {
 
     // Jump to line from iframe click
     window.addEventListener('message', (e) => {
-      if (e.data && e.data.type === 'jump-to-line') {
+      const frame = document.getElementById('preview-frame');
+      if (e.origin !== window.location.origin) return;
+      if (!frame || e.source !== frame.contentWindow) return;
+      if (e.data && e.data.type === 'jump-to-line' && Number.isInteger(e.data.line) && e.data.line > 0) {
         const line = e.data.line;
         const lines = rawEditor.value.split('\\n');
         let charIndex = 0;
@@ -2725,8 +2831,8 @@ function getWriterAppHtml() {
 // Server Start
 // ---------------------------------------------------------------------------
 
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`\n[Fieldwork Writer] Copywriting & Live Preview Studio running at:`);
-  console.log(`  -> http://localhost:${PORT}/\n`);
+  console.log(`  -> http://127.0.0.1:${PORT}/\n`);
   console.log(`[Fieldwork Writer] Watching content at: ${CONTENT_DIR}`);
 });

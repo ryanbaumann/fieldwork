@@ -58,12 +58,14 @@ export const downscaleDataUrl = async (
  * Validate a picked File is an image of a sane size, then return a downscaled
  * JPEG data URL suitable for upload. Throws ImageValidationError on bad input.
  */
+const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
 export const processImageFile = async (
   file: File,
   maxEdge: number = DEFAULT_MAX_EDGE
 ): Promise<string> => {
-  if (!file.type.startsWith('image/')) {
-    throw new ImageValidationError('Please choose an image file (JPG or PNG).');
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+    throw new ImageValidationError('Please choose a JPG, PNG, or WebP image file.');
   }
   if (file.size > MAX_UPLOAD_BYTES) {
     throw new ImageValidationError('That image is too large. Please pick one under 15 MB.');

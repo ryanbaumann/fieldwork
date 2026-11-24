@@ -142,14 +142,17 @@ test('handler claims only its namespaced prefix and reports configured capabilit
   });
 });
 
-test('rate buckets use the trusted Cloud Run client hop and ignore lone spoofable XFF values', async () => {
+test('rate buckets use the trusted Cloud Run client hop and ignore untrusted XFF values', async () => {
   assert.equal(clientIp(mockRequest({
     headers: { 'x-forwarded-for': 'spoofed, 198.51.100.42, trusted-proxy' },
-  })), '198.51.100.42');
+  }), {}), '127.0.0.1');
+  assert.equal(clientIp(mockRequest({
+    headers: { 'x-forwarded-for': 'spoofed, 198.51.100.42, trusted-proxy' },
+  }), { TRUST_PROXY: 'true' }), '198.51.100.42');
   assert.equal(clientIp(mockRequest({
     headers: { 'x-forwarded-for': 'spoofed-only' },
     remoteAddress: '10.0.0.5',
-  })), '10.0.0.5');
+  }), {}), '10.0.0.5');
 
   const handler = createRealWorldReasoningHandler({ logger: () => {} });
   const options = {
@@ -919,5 +922,122 @@ test('Google Maps Experience MCP proxy enforces method, origin, key, JSON-RPC al
     env,
   });
   assert.equal(capped.response.statusCode, 429);
+});
+
+test('AI proxy blocks dot-segment traversal, enforces redirect manual, and rejects spoofed x-forwarded-host or null Origin', async () => {
+  const handler = createRealWorldReasoningHandler({ logger: () => {} });
+  const env = { ...BASE_ENV, GEMINI_API_KEY: HOSTED_KEY };
+  const traversalPaths = [
+    'ai/v1beta/models/gemini-3.8-flash/../../v1beta/models/blocked-model:generateContent',
+    'ai/v1beta/models/gemini-3.8-flash/%2e%2e/%2e%2e/v1beta/models/gemini-omni-1.2-flash:generateContent',
+    'ai/v1beta/models/gemini-3.8-flash/./extra:generateContent',
+  ];
+  for (const path of traversalPaths) {
+    const res = await invoke({
+      handler,
+      path,
+      method: 'POST',
+      headers: {
+        origin: 'https://fieldwork.test',
+        'content-type': 'application/json',
+        'x-atlas-gemini-key': PERSONAL_KEY,
+      },
+      body: JSON.stringify({ contents: [{ parts: [{ text: 'hi' }] }] }),
+      env,
+    });
+    assert.equal(res.response.statusCode, 403, `Expected 403 for traversal path ${path}`);
+  }
+
+  // Spoofed x-forwarded-host cannot match attacker origin
+  const spoofedHost = await invoke({
+    handler,
+    path: 'ai/v1beta/models/gemini-3.8-flash:generateContent',
+    method: 'POST',
+    headers: {
+      origin: 'https://evil.example',
+      'x-forwarded-host': 'evil.example',
+      'content-type': 'application/json',
+      'x-atlas-gemini-key': PERSONAL_KEY,
+    },
+    body: JSON.stringify({ contents: [{ parts: [{ text: 'hi' }] }] }),
+    env,
+  });
+  assert.equal(spoofedHost.response.statusCode, 429);
+
+  // Origin: null is rejected
+  const nullOrigin = await invoke({
+    handler,
+    path: 'ai/v1beta/models/gemini-3.8-flash:generateContent',
+    method: 'POST',
+    headers: {
+      origin: 'null',
+      'content-type': 'application/json',
+      'x-atlas-gemini-key': PERSONAL_KEY,
+    },
+    body: JSON.stringify({ contents: [{ parts: [{ text: 'hi' }] }] }),
+    env,
+  });
+  assert.equal(nullOrigin.response.statusCode, 429);
+
+  // Legitimate request sends redirect: 'manual' upstream
+  let seenInit;
+  const ok = await invoke({
+    handler,
+    path: 'ai/v1beta/models/gemini-3.8-flash:generateContent',
+    method: 'POST',
+    headers: {
+      origin: 'https://fieldwork.test',
+      'content-type': 'application/json',
+      'x-atlas-gemini-key': PERSONAL_KEY,
+    },
+    body: JSON.stringify({ contents: [{ parts: [{ text: 'hi' }] }] }),
+    env,
+    fetchImpl: async (_url, init) => {
+      seenInit = init;
+      return new Response(JSON.stringify({ candidates: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+  });
+  assert.equal(ok.response.statusCode, 200);
+  assert.equal(seenInit.redirect, 'manual');
+
+  // Photo proxy rejects encoded separators/dots, credentials/ports, and duplicate maxWidthPx,
+  // and strips unallowlisted query parameters.
+  for (const badPhoto of [
+    'https://places.googleapis.com/v1/places/abc%2f..%2fdef/photos/p1/media',
+    'https://places.googleapis.com/v1/places/abc/photos/p1%252e%252e/media',
+    'https://user:pass@places.googleapis.com/v1/places/abc/photos/p1/media',
+    'https://places.googleapis.com:8443/v1/places/abc/photos/p1/media',
+    'https://places.googleapis.com/v1/places/abc/photos/p1/media?maxWidthPx=100&maxWidthPx=99999',
+  ]) {
+    const badRes = await invoke({
+      handler,
+      path: 'gmp/placephoto',
+      method: 'GET',
+      search: `url=${encodeURIComponent(badPhoto)}`,
+      headers: { origin: 'https://fieldwork.test' },
+      env: { ...BASE_ENV, GMP_SERVER_API_KEY: 'maps-test-key' },
+    });
+    assert.equal(badRes.response.statusCode, 400, `Expected 400 for bad photo URL ${badPhoto}`);
+  }
+  let cleanPhotoUrl;
+  const goodPhoto = await invoke({
+    handler,
+    path: 'gmp/placephoto',
+    method: 'GET',
+    search: `url=${encodeURIComponent('https://places.googleapis.com/v1/places/ChIJ_123/photos/AUc-456/media?maxWidthPx=800&skipHttpRedirect=true&evil=1')}`,
+    headers: { origin: 'https://fieldwork.test' },
+    env: { ...BASE_ENV, GMP_SERVER_API_KEY: 'maps-test-key' },
+    fetchImpl: async (url) => {
+      cleanPhotoUrl = new URL(url);
+      return new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { 'content-type': 'image/jpeg' } });
+    },
+  });
+  assert.equal(goodPhoto.response.statusCode, 200);
+  assert.equal(cleanPhotoUrl.searchParams.get('maxWidthPx'), '800');
+  assert.equal(cleanPhotoUrl.searchParams.get('evil'), null);
+  assert.equal(cleanPhotoUrl.searchParams.get('skipHttpRedirect'), null);
 });
 

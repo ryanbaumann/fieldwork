@@ -12,7 +12,8 @@ const ISOCHRONES_ENDPOINT = 'https://isochrones.googleapis.com/v1/isochrones:gen
 export function validateIsochroneBody(body) {
   const latitude = Number(body?.location?.latitude);
   const longitude = Number(body?.location?.longitude);
-  const seconds = Number.parseInt(String(body?.travelDuration || '').replace('s', ''), 10);
+  const rawDuration = String(body?.travelDuration ?? '').trim();
+  const seconds = /^\d+s?$/.test(rawDuration) ? Number.parseInt(rawDuration.replace('s', ''), 10) : NaN;
   const travelMode = String(body?.travelMode || '');
   const travelDirection = String(body?.travelDirection || '');
   const routingPreference = String(body?.routingPreference || '');
@@ -45,8 +46,20 @@ export async function handleIsochronesApi(body, { fetch = globalThis.fetch, env 
 
   const { apiKey } = resolveProvider('isochrones', env);
   if (!apiKey) {
-    return { statusCode: 503, json: { error: 'Isochrones proxy is not configured on this server (set GMP_SERVER_API_KEY).' } };
+    return { statusCode: 503, json: { error: 'Isochrones proxy is not configured on this server.' } };
   }
+
+  const sanitizedBody = {
+    location: {
+      latitude: Number(body.location.latitude),
+      longitude: Number(body.location.longitude),
+    },
+    travelDuration: `${Number.parseInt(String(body.travelDuration || '').replace('s', ''), 10)}s`,
+    travelMode: String(body.travelMode),
+    travelDirection: String(body.travelDirection),
+    routingPreference: String(body.routingPreference),
+    polygonFidelity: String(body.polygonFidelity || 'MEDIUM'),
+  };
 
   let upstream;
   try {
@@ -57,7 +70,8 @@ export async function handleIsochronesApi(body, { fetch = globalThis.fetch, env 
         'x-goog-api-key': apiKey,
         'x-goog-fieldmask': 'isochrone.geoJson',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(sanitizedBody),
+      redirect: 'manual',
       signal: AbortSignal.timeout(10000),
     });
   } catch (error) {
