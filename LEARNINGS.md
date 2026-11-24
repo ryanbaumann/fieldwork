@@ -2,6 +2,21 @@
 
 This log captures durable lessons discovered while building and maintaining the portfolio and demo lab, keeping the root instructions lean.
 
+## 2026-11-24 - Proxy canonicalization, loopback dev-tool boundaries, and automated secret/PII gates
+
+Context: Running a full-repository secret, PII, and vulnerability audit across `gateway/`, `demos/`, `scripts/`, docs, workflows, and git history.
+
+Learning:
+1. Matching allowlists or quota detectors against a raw request path before `new URL()` runs lets dot-segments (`..` or `%2e%2e`) resolve to a disallowed upstream model or endpoint after the check passes. Always reject raw/percent-encoded dot-segments, verify `target.pathname === rawPath`, validate normalized `target.pathname` with an anchored regex, and pass `redirect: 'manual'` on every key-bearing upstream `fetch`.
+2. Trusting `X-Forwarded-For` on non-GFE sockets without an explicit `TRUST_PROXY=true` flag lets direct callers forge arbitrary rate-limit buckets, and treating `Origin: null` as same-origin lets sandboxed iframes bypass CSRF checks. Reject `Origin: null`, ignore unverified `x-forwarded-host`, and trust `chain.at(-1)` only behind Cloud Run GFE (`169.254.0.0/16`).
+3. Local developer studios (`scripts/writer_app.mjs`, `scripts/review_app.mjs`) that set `Access-Control-Allow-Origin: *` expose local filesystem writes and subprocess execution to any open browser tab. Bind local tools to `127.0.0.1`, remove wildcard CORS, enforce loopback `Origin`, validate paths inside the target root, pass `--end-of-options` / `--no-ext-diff` to git subprocesses, and cap request bodies.
+4. Auth allowlists (such as `GOOGLE_OAUTH_ALLOWED_EMAIL`) must fail closed when unset rather than falling back to hardcoded personal details, and static secret/PII hygiene (`npm run security:scan`, Gitleaks, and centralized smoke patterns) must run automatically in both PR CI and daily security sweeps.
+5. A `.gitleaks.toml` file without `[extend] useDefault = true` silently loads zero built-in rules, and a `[[allowlists]]` entry combining `paths` and `regexes` without `condition = "AND"` defaults to `"OR"` (exempting the whole file). Always verify custom Gitleaks configs against a synthetic secret test.
+
+Evidence: Added regression tests in `gateway/test/{googleAuth,realWorldReasoning,rateLimit,isochrones,server}.test.js`, `demos/strava-explorer/test/broker.test.js`, `portfolio/test/setup.test.mjs`, and `scripts/test/scan-secrets-pii.test.mjs`; wired `npm run security:scan` into `.github/workflows/ci.yml` and `.github/workflows/security-updates.yml`.
+
+Use next time: Run `npm run security:scan` before pushing, configure repo `user.email` to GitHub's noreply address, use GitHub Private Vulnerability Reporting in `SECURITY.md`, and verify normalized proxy targets, `redirect: 'manual'`, fail-closed auth env vars, and loopback-only local tool CORS in every review.
+
 ## 2026-11-19 - Lazy giscus loading inside `<details>` keeps CSP hashes static and zero-dependency
 
 Context: Collapsing `Comments` at the bottom of Field Notes pages inside `<details class="comments-details">` so Notes pages end cleanly without forcing third-party giscus iframe height or network traffic on initial load.
@@ -189,7 +204,7 @@ Context: Live contact-form emails on `ryanbaumann.dev` showed `IP: ::ffff:169.25
 
 Learning: On Cloud Run direct ingress (custom domain without an external Cloud Load Balancer), Google Front End (GFE) connects from the link-local proxy socket `::ffff:169.254.169.126` and appends only the client IP to the end of `X-Forwarded-For`. Requiring `chain.length >= 2` and reading `chain.at(-2)` fails on direct ingress: normal visitors have `chain.length === 1`, and a visitor who sends a spoofed `X-Forwarded-For: <fake>` produces `['<fake>', '<real-ip>']` where `chain.at(-2)` would return `<fake>`. When `socket.remoteAddress` matches `169.254.0.0/16` (`/^(:{2}ffff:)?169\.254\./i`), `chain.at(-1)` is always the GFE-verified client IP.
 
-Evidence: Live Resend email `e860e8e5-7206-443a-8c3e-890aa45622a4` recorded `IP: ::ffff:169.254.169.126` while Cloud Run `httpRequest.remoteIp` logged `170.203.225.73`. `gateway/test/rateLimit.test.js` now covers both direct sockets and GFE link-local sockets with spoofed prefixes.
+Evidence: Live Resend delivery (`<redacted-message-id>`) recorded `IP: ::ffff:169.254.169.126` while Cloud Run `httpRequest.remoteIp` logged the real client IP (modeled in tests as `198.51.100.73`). `gateway/test/rateLimit.test.js` now covers both direct sockets and GFE link-local sockets with spoofed prefixes.
 
 Use next time: On Cloud Run direct ingress, when `socket.remoteAddress` is in `169.254.0.0/16`, read `chain.at(-1)` from `X-Forwarded-For`.
 

@@ -42,6 +42,14 @@ jobs:
           cache: npm
           cache-dependency-path: '**/package-lock.json'
 
+      - name: Secret and PII hygiene sweep
+        run: |
+          set -euo pipefail
+          npm run security:scan
+          node scripts/scan-secrets-pii.mjs --check-git-authors
+          echo "### Secret & PII Hygiene Sweep" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tracked files and commit author metadata: clean" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Audit and remediate security vulnerabilities
         id: audit_fix
         env:

@@ -1,7 +1,7 @@
 {
   "meta": {
     "label": "round8_dense",
-    "suite": "/Users/ryanbaumann/projects/portfolio/experiment/voice-ft/eval/heldout.jsonl",
+    "suite": "experiment/voice-ft/eval/heldout.jsonl",
     "generated_at": "2026-08-17T21:08:00",
     "temperature": 0.7,
     "seed": 11,

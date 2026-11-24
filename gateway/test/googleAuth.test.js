@@ -5,6 +5,7 @@ import {
   beginGoogleLogin,
   finishGoogleLogin,
   GOOGLE_AUTH_COOKIE,
+  googleAuthConfigured,
   googleLoginPage,
   hasGoogleSession,
 } from '../lib/googleAuth.js';
@@ -164,4 +165,23 @@ test('hasGoogleSession rejects scientific-notation or non-digit expiry timestamp
   const payload = `${env.GOOGLE_OAUTH_ALLOWED_EMAIL}:1e12:${nonce}`;
   const sig = createHmac('sha256', env.GOOGLE_OAUTH_SESSION_SECRET).update(payload).digest('hex');
   assert.equal(hasGoogleSession({ headers: { cookie: `${GOOGLE_AUTH_COOKIE}=${payload}:${sig}` } }, env), false);
+});
+
+test('Google auth fails closed when GOOGLE_OAUTH_ALLOWED_EMAIL is unset or blank', async () => {
+  for (const missingValue of [undefined, '', '   ']) {
+    const missingEnv = { ...env, GOOGLE_OAUTH_ALLOWED_EMAIL: missingValue };
+    assert.equal(googleAuthConfigured(missingEnv), false);
+    assert.throws(() => beginGoogleLogin({ headers: {} }, responseRecorder(), missingEnv), { statusCode: 503 });
+    const { request, params } = loginRequest();
+    await assert.rejects(
+      finishGoogleLogin(request, responseRecorder(), params, missingEnv, provider(claims())),
+      { statusCode: 503 },
+    );
+    const { createHmac } = await import('node:crypto');
+    const nonce = 'b'.repeat(32);
+    const expires = Math.floor(Date.now() / 1000) + 3600;
+    const payload = `${env.GOOGLE_OAUTH_ALLOWED_EMAIL}:${expires}:${nonce}`;
+    const sig = createHmac('sha256', env.GOOGLE_OAUTH_SESSION_SECRET).update(payload).digest('hex');
+    assert.equal(hasGoogleSession({ headers: { cookie: `${GOOGLE_AUTH_COOKIE}=${payload}:${sig}` } }, missingEnv), false);
+  }
 });

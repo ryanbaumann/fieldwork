@@ -235,7 +235,7 @@ jobs:
           #     --update-secrets=GITHUB_CONTENT_TOKEN=github-content-token:latest \
           #     --update-secrets=GITHUB_REVIEW_TOKEN=github-review-token:latest \
           #     --update-secrets=BUFFER_API_KEY=buffer-api-key:latest \
-          #     --update-env-vars=STRAVA_CLIENT_ID=<your Strava app's client id>,CONTACT_FROM_EMAIL=<verified sender>,GOOGLE_OAUTH_CLIENT_ID=<oauth-client-id>,WRITER_PUBLIC_ORIGIN=https://ryanbaumann-dashboardfolio.admin.com,BUFFER_ORGANIZATION_ID=<buffer-org-id>,BUFFER_LINKEDIN_CHANNEL_ID=<buffer-linkedin-id>,BUFFER_X_CHANNEL_ID=<buffer-x-id>,RWR_GROUNDING_LITE_ENABLED=true
+          #     --update-env-vars=STRAVA_CLIENT_ID=<your Strava app's client id>,CONTACT_FROM_EMAIL=<verified sender>,GOOGLE_OAUTH_CLIENT_ID=<oauth-client-id>,GOOGLE_OAUTH_ALLOWED_EMAIL=<allowed-google-email>,WRITER_PUBLIC_ORIGIN=https://writer.example.com,BUFFER_ORGANIZATION_ID=<buffer-org-id>,BUFFER_LINKEDIN_CHANNEL_ID=<buffer-linkedin-id>,BUFFER_X_CHANNEL_ID=<buffer-x-id>,RWR_GROUNDING_LITE_ENABLED=true
           #
           # STRAVA_CLIENT_ID isn't secret on its own (it's public in the
           # OAuth authorize URL), so plain --set-env-vars is fine for it.
@@ -265,6 +265,7 @@ jobs:
             'GMP_SERVER_API_KEY',
             'GEMINI_API_KEY',
             'GITHUB_CONTENT_TOKEN',
+            'GOOGLE_OAUTH_ALLOWED_EMAIL',
           ]);
           for (const app of apps) {
             if (app.auth?.envVar) required.add(app.auth.envVar);

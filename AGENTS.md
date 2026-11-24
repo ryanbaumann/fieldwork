@@ -136,6 +136,14 @@ Run commands from the app directory unless noted.
   crash) when its secret is unset, so the gateway always boots and
   smoke-tests keyless.
 
+### Security and Privacy Invariants
+
+- Keep plaintext personal emails, corporate usernames, local home paths (`/Users/<name>/`, `/home/<name>/`), live visitor IPs, and hardcoded OAuth email fallbacks out of tracked files and commits. Use GitHub's noreply address in repo git config and run `npm run security:scan` before pushing.
+- Fail closed when auth allowlists (`GOOGLE_OAUTH_ALLOWED_EMAIL`) or server credentials are unset.
+- Reject raw and percent-encoded dot-segments (`.` / `..`) before `new URL()` in every proxy. Validate the normalized `target.pathname` with an anchored regex, forward only allowlisted JSON fields and safe response headers, and set `redirect: 'manual'` on every key-bearing upstream `fetch`.
+- Trust `X-Forwarded-For` (`chain.at(-1)`) only on Cloud Run GFE sockets (`169.254.0.0/16`) or (`chain.at(-2)`) when `TRUST_PROXY=true`. Reject `Origin: null` and never trust unverified `x-forwarded-host`.
+- Bind local studio/dev tools (`scripts/*_app.mjs`) to `127.0.0.1` without `Access-Control-Allow-Origin: *`. Enforce loopback `Origin`, strict path containment, bounded POST bodies, and `--end-of-options` / `--no-ext-diff` on git subprocesses.
+
 ## Code Style
 
 - Use modern JavaScript modules in `demos/strava-explorer/src/`, `demos/aqi-map/src/`, and `demos/isochrones/src/`; preserve the existing no-framework Vite architecture unless explicitly asked to migrate.

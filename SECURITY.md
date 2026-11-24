@@ -3,10 +3,9 @@
 ## Reporting a Vulnerability
 
 If you find a security issue in this repository, please report it privately
-rather than opening a public issue.
+rather than opening a public issue:
 
-- Email: rsbaumann@gmail.com
-- Or use [GitHub's private vulnerability reporting](../../security/advisories/new) for this repo.
+- Use [GitHub's private vulnerability reporting](../../security/advisories/new) for this repo.
 
 Please include steps to reproduce and the potential impact. I'll acknowledge
 reports within a few days and follow up once the issue is triaged.

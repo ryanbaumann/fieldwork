@@ -1,7 +1,26 @@
-[allowlist]
-description = "Ignore mock API keys in reference docs and build artifacts"
+title = "Fieldwork Secret Scanning Rules"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignore generated build outputs, lockfiles, and deleted legacy reference docs"
 paths = [
-    '''\.agents/skills/.*''',
-    '''(.*/)?build/.*''',
-    '''(.*/)?dist/.*'''
+    '''(?:^|/)build/.*''',
+    '''(?:^|/)dist/.*''',
+    '''(?:^|/)node_modules/.*''',
+    '''^apps/.*''',
+    '''package-lock\.json$''',
+    '''^\.agents/skills/(?:geocoding|places|pollen|weather)-api-web-api/references/.*'''
+]
+
+[[allowlists]]
+description = "Ignore Cloud Build shell variable substitution syntax in deploy.yml"
+condition = "AND"
+paths = [
+    '''^\.github/workflows/deploy\.yml$'''
+]
+regexTarget = "line"
+regexes = [
+    '''_VITE_[A-Z0-9_]+="\$VITE_[A-Z0-9_]+"'''
 ]

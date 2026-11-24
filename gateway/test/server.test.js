@@ -18,6 +18,9 @@ contactDns.resolveMx = async (domain) => {
   return [{ exchange: `mx.${domain}`, priority: 10 }];
 };
 
+// Integration tests below simulate a two-hop front proxy via `x-forwarded-for`.
+process.env.TRUST_PROXY = 'true';
+
 function request(port, path, headers = {}) {
   return new Promise((resolve, reject) => {
     const req = http.get({ hostname: 'localhost', port, path, headers }, (res) => {
@@ -510,7 +513,7 @@ test('contact delivery validates intent and marks only provider-confirmed succes
     const spamSeoConsultingMatch = await postForm(port, '/api/contact', {
       ...valid,
       intent: 'Content collaboration',
-      email: 'daniel.websolution012@gmail.com',
+      email: 'seo.pitch.example@gmail.com',
       message: 'We recently ran a backend analysis of your website, and the results show that several important SEO (Search Engine Optimization) steps are incomplete.',
     }, { ...browser, 'x-forwarded-for': '1.1.1.2, proxy' });
     assert.equal(spamSeoConsultingMatch.res.statusCode, 303);
@@ -913,7 +916,8 @@ test('isCrossSitePost helper correctly identifies cross-site and same-origin req
   assert.equal(isCrossSitePost({ headers: { origin: 'https://evil.example', host: 'localhost:8080' } }), true);
   assert.equal(isCrossSitePost({ headers: { origin: 'http://localhost:8080', host: 'localhost:8080' } }), false);
   assert.equal(isCrossSitePost({ headers: { host: 'localhost:8080' } }), false);
-  assert.equal(isCrossSitePost({ headers: { origin: 'null', host: 'localhost:8080' } }), false);
+  assert.equal(isCrossSitePost({ headers: { origin: 'null', host: 'localhost:8080' } }), true);
+  assert.equal(isSameOriginRequest({ headers: { origin: 'null', host: 'localhost:8080' } }), false);
   // Vite dev proxy with changeOrigin: Host is rewritten, Origin is not.
   assert.equal(isCrossSitePost({ headers: { 'sec-fetch-site': 'same-origin', origin: 'http://localhost:5173', host: 'localhost:8080' } }), false);
   assert.equal(isCrossSitePost({ headers: { 'sec-fetch-site': 'same-site', origin: 'https://other.example', host: 'localhost:8080' } }), true);
@@ -930,6 +934,13 @@ test('cross-origin POST requests are rejected with 403 on protected routes', asy
     });
     assert.equal(contactRes.res.statusCode, 403);
     assert.deepEqual(JSON.parse(contactRes.body), { error: 'Forbidden: cross-origin request not allowed.' });
+
+    // /api/contact with Origin: null (sandboxed iframe CSRF)
+    const nullOriginRes = await postForm(port, '/api/contact', { name: 'Test' }, {
+      Origin: 'null',
+    });
+    assert.equal(nullOriginRes.res.statusCode, 403);
+    assert.deepEqual(JSON.parse(nullOriginRes.body), { error: 'Forbidden: cross-origin request not allowed.' });
 
     // /api/subscribe
     const subRes = await postForm(port, '/api/subscribe', { email: 'a@example.com' }, {

@@ -147,15 +147,40 @@ function exportDatasets() {
   return { approved, removed, total: candidates.length };
 }
 
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const ALLOWED_REVIEW_ACTIONS = new Set(['select_a', 'select_b', 'remove', 'edit']);
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function isAllowedLocalOrigin(req) {
+  const host = String(req.headers.host || '').toLowerCase();
+  if (host && host !== `127.0.0.1:${PORT}` && host !== `localhost:${PORT}`) return false;
+  const secFetchSite = String(req.headers['sec-fetch-site'] || '').toLowerCase();
+  if (secFetchSite === 'cross-site') return false;
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  if (origin === 'null') return false;
+  return origin === `http://127.0.0.1:${PORT}` || origin === `http://localhost:${PORT}`;
+}
+
 // Server logic
 const server = http.createServer((req, res) => {
-  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(req.url || '/', `http://${req.headers.host || `127.0.0.1:${PORT}`}`);
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'application/json', 'X-Content-Type-Options': 'nosniff' });
+    res.end(JSON.stringify({ error: 'Bad request URL' }));
+    return;
+  }
   const pathname = parsedUrl.pathname;
 
-  // Set CORS and headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  if (!isAllowedLocalOrigin(req)) {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Forbidden: cross-origin request blocked' }));
+    return;
+  }
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -173,12 +198,32 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/action' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
+    const chunks = [];
+    let total = 0;
+    let tooLarge = false;
+    req.on('data', chunk => {
+      if (tooLarge) return;
+      total += chunk.length;
+      if (total > MAX_BODY_BYTES) {
+        tooLarge = true;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Request body too large' }));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on('end', () => {
+      if (tooLarge) return;
       try {
+        const body = Buffer.concat(chunks).toString('utf8');
         const payload = JSON.parse(body);
         const { id, action, text, nextIndex } = payload;
+        if (typeof id !== 'string' || !id.trim() || FORBIDDEN_KEYS.has(id) || !ALLOWED_REVIEW_ACTIONS.has(action)) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid review action payload' }));
+          return;
+        }
         const state = loadState();
         
         state.decisions[id] = {

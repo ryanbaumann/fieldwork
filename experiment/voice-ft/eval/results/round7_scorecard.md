@@ -3,9 +3,9 @@
 | Field | Value |
 | --- | --- |
 | label | `round7` |
-| model | `/Users/ryanbaumann/projects/portfolio/models/gemma-4-26b-a4b-it-4bit` |
+| model | `models/gemma-4-26b-a4b-it-4bit` |
 | adapter | `adapters/gemma-4-26b-ryan-voice-v7` |
-| suite | `/Users/ryanbaumann/projects/portfolio/experiment/voice-ft/eval/heldout.jsonl` |
+| suite | `experiment/voice-ft/eval/heldout.jsonl` |
 | generated_at | `2026-08-17T19:48:36` |
 | temperature | `0.7` |
 | seed | `11` |

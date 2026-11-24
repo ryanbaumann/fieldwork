@@ -5,7 +5,7 @@
 | label | `round8_dense` |
 | model | `models/gemma-4-31b-it-4bit` |
 | adapter | `adapters/gemma-4-31b-ryan-voice-v8` |
-| suite | `/Users/ryanbaumann/projects/portfolio/experiment/voice-ft/eval/heldout.jsonl` |
+| suite | `experiment/voice-ft/eval/heldout.jsonl` |
 | generated_at | `2026-08-17T21:08:00` |
 | temperature | `0.7` |
 | seed | `11` |

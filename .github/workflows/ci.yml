@@ -170,6 +170,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Static Secret and PII Hygiene Scanner
+        run: npm run security:scan
+
       - name: Secret Scanner (Gitleaks)
         env:
           REPO_WORKSPACE: ${{ github.workspace }}

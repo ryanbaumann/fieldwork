@@ -18,6 +18,7 @@ import { spawn } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SERVER_SECRET_PATTERNS } from './lib/production-smoke.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const APPS_JSON_PATH = join(REPO_ROOT, 'apps.json');
@@ -147,18 +148,6 @@ async function fetchText(url) {
   return { response, text };
 }
 
-// ---------------------------------------------------------------------------
-// Secret-leak patterns. Each entry: [label, regex, note].
-// ---------------------------------------------------------------------------
-
-const SECRET_PATTERNS = [
-  ['Strava/generic OAuth client_secret value', /client_secret["']?\s*[:=]\s*["'][^"'\\\s]{12,}/i],
-  // Referrer-restricted Maps browser keys are expected in Vite bundles.
-  // Server keys use non-VITE env vars and are never exposed to this scan.
-  ['Stripe-style live secret key', /sk_live_[0-9A-Za-z]+/],
-  ['PEM private key block', /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
-];
-
 function scanForSecrets(rootDirs) {
   const hits = [];
   const textExtensions = new Set(['.html', '.js', '.mjs', '.css', '.json', '.map', '.svg', '.txt', '.webmanifest']);
@@ -172,10 +161,9 @@ function scanForSecrets(rootDirs) {
         continue;
       }
       const relPath = relative(REPO_ROOT, filePath);
-      for (const [label, pattern] of SECRET_PATTERNS) {
-        const match = content.match(pattern);
-        if (match) {
-          hits.push(`${label} in ${relPath}: "${match[0].slice(0, 60)}"`);
+      for (const [label, pattern] of SERVER_SECRET_PATTERNS) {
+        if (pattern.test(content)) {
+          hits.push(`${label} in ${relPath}`);
         }
       }
     }
@@ -316,10 +304,10 @@ async function main() {
       }
     });
 
-    await check('no known secret pattern in any served asset', () => {
+    await check('no known secret or PII pattern in any served asset', () => {
       const hits = [];
       for (const [url, content] of servedTextAssets) {
-        for (const [label, pattern] of SECRET_PATTERNS) {
+        for (const [label, pattern] of SERVER_SECRET_PATTERNS) {
           if (pattern.test(content)) hits.push(`${label}: ${url}`);
         }
       }

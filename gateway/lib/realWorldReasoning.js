@@ -264,12 +264,16 @@ const configFromEnv = (env) => ({
 });
 
 const sameOrigin = (request) => {
-  if (headerValue(request.headers, 'sec-fetch-site') === 'cross-site') return false;
-  const host = headerValue(request.headers, 'x-forwarded-host') || headerValue(request.headers, 'host');
-  const source = headerValue(request.headers, 'origin') || headerValue(request.headers, 'referer');
+  const secFetchSite = String(headerValue(request.headers, 'sec-fetch-site') || '').toLowerCase();
+  if (secFetchSite === 'cross-site') return false;
+  const originHeader = headerValue(request.headers, 'origin');
+  if (originHeader === 'null') return false;
+  if (secFetchSite === 'same-origin') return true;
+  const host = headerValue(request.headers, 'host');
+  const source = originHeader || headerValue(request.headers, 'referer');
   if (!source) return true;
   try {
-    return new URL(source).host === host;
+    return Boolean(host) && new URL(source).host === host;
   } catch {
     return false;
   }
@@ -327,10 +331,30 @@ const appendKey = (target, key) => {
   return target;
 };
 
+const hasDotSegment = (pathname) => {
+  if (pathname.includes('\\') || /[\u0000-\u001f\u007f]/.test(pathname)) return true;
+  for (const segment of pathname.split('/')) {
+    if (segment === '.' || segment === '..') return true;
+    try {
+      const decoded = decodeURIComponent(segment);
+      if (decoded === '.' || decoded === '..' || decoded.includes('/') || decoded.includes('\\')) return true;
+    } catch {
+      return true;
+    }
+  }
+  return false;
+};
+
 const pinnedTarget = (rest, searchParams, origin) => {
-  if (!rest.startsWith('/') || rest.startsWith('//')) return null;
-  const target = new URL(rest, origin);
-  if (target.origin !== origin) return null;
+  if (!rest.startsWith('/') || rest.startsWith('//') || rest.includes('?') || rest.includes('#')) return null;
+  if (hasDotSegment(rest)) return null;
+  let target;
+  try {
+    target = new URL(rest, origin);
+  } catch {
+    return null;
+  }
+  if (target.origin !== origin || target.pathname !== rest) return null;
   for (const [key, value] of searchParams) target.searchParams.append(key, value);
   return target;
 };
@@ -380,47 +404,63 @@ const gmpTarget = (path, searchParams, gmpKey, method) => {
   return target;
 };
 
+const PHOTO_MEDIA_PATH_RE = /^\/v1\/places\/[A-Za-z0-9_-]+\/photos\/[A-Za-z0-9_-]+\/media$/;
+
 const allowedPhotoTarget = (raw, gmpKey) => {
   try {
     const target = new URL(raw);
     if (
       target.protocol !== 'https:'
+      || target.username
+      || target.password
+      || (target.port && target.port !== '443')
       || target.hostname !== 'places.googleapis.com'
-      || !/^\/v1\/places\/[^/]+\/photos\/[^/]+\/media$/.test(target.pathname)
+      || hasDotSegment(target.pathname)
+      || !PHOTO_MEDIA_PATH_RE.test(target.pathname)
     ) return null;
+    const cleanTarget = new URL(target.pathname, 'https://places.googleapis.com');
     for (const name of ['maxWidthPx', 'maxHeightPx']) {
-      const value = target.searchParams.get(name);
-      if (value !== null && (!/^\d{1,4}$/.test(value) || Number(value) > 1_600)) return null;
+      const values = target.searchParams.getAll(name);
+      if (values.length > 1) return null;
+      if (values.length === 1) {
+        const value = values[0];
+        if (!/^\d{1,4}$/.test(value) || Number(value) < 1 || Number(value) > 1_600) return null;
+        cleanTarget.searchParams.set(name, value);
+      }
     }
-    appendKey(target, gmpKey);
-    return target;
+    appendKey(cleanTarget, gmpKey);
+    return cleanTarget;
   } catch {
     return null;
   }
 };
 
+const AI_GENERATE_PATH_RE = /^\/v1(?:beta)?\/models\/([A-Za-z0-9._-]+):(?:streamGenerateContent|generateContent)$/;
+const AI_INTERACTIONS_PATH_RE = /^\/v1(?:beta)?\/interactions$/;
+
 const aiGenerateTarget = (path, searchParams, allowedModels) => {
   if (!path.startsWith('/ai/')) return null;
-  if (!path.endsWith(':generateContent') && !path.endsWith(':streamGenerateContent')) return null;
-  const match = path.match(/models\/([^/:]+)/);
-  if (!match || !allowedModels.has(match[1])) return null;
   const target = pinnedTarget(
     path.replace(/^\/ai/, ''),
     searchParams,
     'https://generativelanguage.googleapis.com',
   );
-  target?.searchParams.delete('key');
+  if (!target) return null;
+  const match = target.pathname.match(AI_GENERATE_PATH_RE);
+  if (!match || !allowedModels.has(match[1])) return null;
+  target.searchParams.delete('key');
   return target;
 };
 
 const aiInteractionsTarget = (path, searchParams) => {
-  if (!/^\/ai\/[^/]+\/interactions$/.test(path)) return null;
+  if (!path.startsWith('/ai/')) return null;
   const target = pinnedTarget(
     path.replace(/^\/ai/, ''),
     searchParams,
     'https://generativelanguage.googleapis.com',
   );
-  target?.searchParams.delete('key');
+  if (!target || !AI_INTERACTIONS_PATH_RE.test(target.pathname)) return null;
+  target.searchParams.delete('key');
   return target;
 };
 
@@ -557,6 +597,7 @@ export function createRealWorldReasoningHandler({
           ...headers,
         },
         body,
+        redirect: 'manual',
         signal: controller.signal,
       });
       response.writeHead(upstream.status, upstreamResponseHeaders(upstream.headers));
@@ -1042,7 +1083,7 @@ export function createRealWorldReasoningHandler({
         sendProxy(response, 'ai', 403, 'AI model or method is not allowed', config);
         return true;
       }
-      const targetModel = path.match(/models\/([^/:]+)/)?.[1] || '';
+      const targetModel = target.pathname.match(AI_GENERATE_PATH_RE)?.[1] || '';
       let body;
       try {
         body = await readBody(request, config.bodyCap);

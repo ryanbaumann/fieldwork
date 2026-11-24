@@ -169,7 +169,8 @@ function escapeHtml(value) {
 
 function isSameOriginRequest(request) {
   const originHeader = request.headers.origin;
-  if (!originHeader || originHeader === 'null') return true;
+  if (!originHeader) return true;
+  if (originHeader === 'null') return false;
   try {
     const originHost = new URL(originHeader).host;
     return originHost === request.headers.host;
@@ -183,11 +184,12 @@ function isSameOriginRequest(request) {
 // an Origin-vs-Host comparison alone would reject legitimate same-origin calls.
 // Fall back to the Origin check only for `same-site` or clients that omit it.
 function isCrossSitePost(request) {
+  const originHeader = request.headers.origin;
+  if (originHeader === 'null') return true;
   const secFetchSite = String(request.headers['sec-fetch-site'] || '').toLowerCase();
   if (secFetchSite === 'same-origin' || secFetchSite === 'none') return false;
   if (secFetchSite === 'cross-site') return true;
-  const originHeader = request.headers.origin;
-  if (originHeader && originHeader !== 'null') {
+  if (originHeader) {
     return !isSameOriginRequest(request);
   }
   return false;
