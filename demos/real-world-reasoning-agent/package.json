@@ -47,13 +47,13 @@
     "@deck.gl/layers": "9.4.1",
     "@fontsource-variable/inter": "5.3.0",
     "@fontsource-variable/space-grotesk": "5.3.0",
-    "@google/genai": "3.3.0",
+    "@google/genai": "3.6.1",
     "@googlemaps/markerclusterer": "2.6.2",
     "@vis.gl/react-google-maps": "1.10.2",
-    "lucide-react": "1.73.0",
+    "lucide-react": "1.77.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "terra-draw": "^1.39.0",
+    "terra-draw": "^1.40.0",
     "terra-draw-google-maps-adapter": "^1.7.0",
     "zustand": "5.1.0"
   },
@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "@a2ui/web_core": "0.15.0",
-    "@types/google.maps": "3.66.10",
+    "@types/google.maps": "3.67.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",
@@ -76,6 +76,6 @@
     "playwright-core": "1.65.1",
     "typescript": "7.0.2",
     "vite": "8.3.8",
-    "vitest": "5.1.0"
+    "vitest": "5.1.1"
   }
 }
